@@ -19,14 +19,15 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           script: |
-            # Pull latest code
+            # Setup Git credentials for private repo
             cd /opt/app
 
-            # Clone if doesn't exist, otherwise pull
+            # Clone with token if doesn't exist
             if [ ! -d ".git" ]; then
-              git clone https://github.com/${{ github.repository }}.git .
+              git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
             else
-              git pull origin main
+              git config pull.rebase false
+              git pull https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
             fi
 
             # Build and run with Docker
@@ -34,7 +35,7 @@ jobs:
             docker stop radioapp || true
             docker rm radioapp || true
 
-            # Run the container connected to infrastructure network
+            # Run the container
             docker run -d \
               --name radioapp \
               --network radio-network \
@@ -42,5 +43,5 @@ jobs:
               --restart always \
               radioapp
 
-            # Clean up old images
+            # Clean up
             docker image prune -f
