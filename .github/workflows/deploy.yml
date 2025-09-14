@@ -1,0 +1,46 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            # Pull latest code
+            cd /opt/app
+
+            # Clone if doesn't exist, otherwise pull
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/${{ github.repository }}.git .
+            else
+              git pull origin main
+            fi
+
+            # Build and run with Docker
+            docker build -t radioapp .
+            docker stop radioapp || true
+            docker rm radioapp || true
+
+            # Run the container connected to infrastructure network
+            docker run -d \
+              --name radioapp \
+              --network radio-network \
+              -p 3000:3000 \
+              --restart always \
+              radioapp
+
+            # Clean up old images
+            docker image prune -f
