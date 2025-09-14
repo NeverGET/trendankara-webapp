@@ -9,36 +9,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.0 # Updated version
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: 22
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }} # Add your root password as secret
           script: |
             cd /opt/app
-
-            # Clone with token if doesn't exist
-            if [ ! -d ".git" ]; then
-              git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
-            else
-              git config pull.rebase false
-              git pull https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
-            fi
-
-            # Build and run with Docker
+            git pull
             docker build -t radioapp .
             docker stop radioapp || true
             docker rm radioapp || true
-
-            docker run -d \
-              --name radioapp \
-              --network radio-network \
-              -p 3000:3000 \
-              --restart always \
-              radioapp
-
-            docker image prune -f
+            docker run -d --name radioapp --network radio-network -p 3000:3000 --restart always radioapp
