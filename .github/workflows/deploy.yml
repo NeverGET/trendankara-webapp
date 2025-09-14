@@ -12,14 +12,13 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@v0.1.5
+        uses: appleboy/ssh-action@v1.0.0 # Updated version
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           script: |
-            # Setup Git credentials for private repo
             cd /opt/app
 
             # Clone with token if doesn't exist
@@ -35,7 +34,6 @@ jobs:
             docker stop radioapp || true
             docker rm radioapp || true
 
-            # Run the container
             docker run -d \
               --name radioapp \
               --network radio-network \
@@ -43,5 +41,4 @@ jobs:
               --restart always \
               radioapp
 
-            # Clean up
             docker image prune -f
