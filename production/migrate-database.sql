@@ -1,8 +1,12 @@
--- Initial database setup for Radio Station CMS
-CREATE DATABASE IF NOT EXISTS radio_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Production Database Migration Script for Radio CMS
+-- This script safely creates/updates all necessary tables
+-- Run this on production server with: mysql -u radiouser -p radio_db < migrate-database.sql
+
 USE radio_db;
 
--- Users table for admin authentication
+-- ========================================
+-- 1. USERS TABLE (Authentication)
+-- ========================================
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -17,7 +21,9 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_active (is_active, deleted_at)
 );
 
--- News categories table
+-- ========================================
+-- 2. NEWS CATEGORIES
+-- ========================================
 CREATE TABLE IF NOT EXISTS news_categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -33,14 +39,16 @@ CREATE TABLE IF NOT EXISTS news_categories (
     INDEX idx_active (is_active, deleted_at)
 );
 
--- Insert default news categories
-INSERT INTO news_categories (name, slug, is_system) VALUES
+-- Insert system categories if not exist
+INSERT IGNORE INTO news_categories (name, slug, is_system) VALUES
     ('MAGAZINE', 'magazine', TRUE),
     ('ARTIST', 'artist', TRUE),
     ('ALBUM RELEASE', 'album-release', TRUE),
     ('CONCERT', 'concert', TRUE);
 
--- News articles table
+-- ========================================
+-- 3. NEWS ARTICLES
+-- ========================================
 CREATE TABLE IF NOT EXISTS news (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(500) NOT NULL,
@@ -67,7 +75,9 @@ CREATE TABLE IF NOT EXISTS news (
     INDEX idx_published (published_at, is_active, deleted_at)
 );
 
--- Polls table
+-- ========================================
+-- 4. POLLS SYSTEM
+-- ========================================
 CREATE TABLE IF NOT EXISTS polls (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -87,7 +97,6 @@ CREATE TABLE IF NOT EXISTS polls (
     INDEX idx_homepage (show_on_homepage, is_active)
 );
 
--- Poll items table
 CREATE TABLE IF NOT EXISTS poll_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     poll_id INT NOT NULL,
@@ -104,7 +113,6 @@ CREATE TABLE IF NOT EXISTS poll_items (
     INDEX idx_votes (poll_id, vote_count DESC)
 );
 
--- Poll votes table with device tracking
 CREATE TABLE IF NOT EXISTS poll_votes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     poll_id INT NOT NULL,
@@ -120,7 +128,9 @@ CREATE TABLE IF NOT EXISTS poll_votes (
     INDEX idx_poll_item (poll_item_id)
 );
 
--- Media library table
+-- ========================================
+-- 5. MEDIA LIBRARY
+-- ========================================
 CREATE TABLE IF NOT EXISTS media (
     id INT AUTO_INCREMENT PRIMARY KEY,
     filename VARCHAR(255) NOT NULL,
@@ -143,7 +153,41 @@ CREATE TABLE IF NOT EXISTS media (
     INDEX idx_type (mime_type)
 );
 
--- Settings table for application configuration
+-- Add thumbnails column if it doesn't exist (for backward compatibility)
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'radio_db'
+AND TABLE_NAME = 'media'
+AND COLUMN_NAME = 'thumbnails';
+
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE media ADD COLUMN thumbnails JSON AFTER url',
+    'SELECT "Column thumbnails already exists"');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add metadata column if it doesn't exist
+SET @col_exists = 0;
+SELECT COUNT(*) INTO @col_exists
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'radio_db'
+AND TABLE_NAME = 'media'
+AND COLUMN_NAME = 'metadata';
+
+SET @sql = IF(@col_exists = 0,
+    'ALTER TABLE media ADD COLUMN metadata JSON AFTER thumbnails',
+    'SELECT "Column metadata already exists"');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- ========================================
+-- 6. SETTINGS TABLES
+-- ========================================
 CREATE TABLE IF NOT EXISTS settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     setting_key VARCHAR(100) UNIQUE NOT NULL,
@@ -157,7 +201,6 @@ CREATE TABLE IF NOT EXISTS settings (
     INDEX idx_category (category)
 );
 
--- Radio settings table
 CREATE TABLE IF NOT EXISTS radio_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     stream_url VARCHAR(500) NOT NULL,
@@ -172,11 +215,15 @@ CREATE TABLE IF NOT EXISTS radio_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Insert default radio settings
-INSERT INTO radio_settings (stream_url, metadata_url) VALUES
-    ('https://radyo.yayin.com.tr:5132/stream', 'https://radyo.yayin.com.tr:5132/');
+-- Insert default radio settings if not exist
+INSERT IGNORE INTO radio_settings (stream_url, metadata_url)
+SELECT 'https://radyo.yayin.com.tr:5132/stream', 'https://radyo.yayin.com.tr:5132/'
+FROM dual
+WHERE NOT EXISTS (SELECT 1 FROM radio_settings LIMIT 1);
 
--- Dynamic content pages for mobile app
+-- ========================================
+-- 7. DYNAMIC CONTENT SYSTEM (For Mobile App)
+-- ========================================
 CREATE TABLE IF NOT EXISTS content_pages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -199,7 +246,6 @@ CREATE TABLE IF NOT EXISTS content_pages (
     INDEX idx_dates (start_date, end_date)
 );
 
--- Content component types registry
 CREATE TABLE IF NOT EXISTS content_components (
     id INT AUTO_INCREMENT PRIMARY KEY,
     component_type VARCHAR(50) UNIQUE NOT NULL,
@@ -213,8 +259,8 @@ CREATE TABLE IF NOT EXISTS content_components (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Insert default component types
-INSERT INTO content_components (component_type, display_name, category, default_props) VALUES
+-- Insert default component types if not exist
+INSERT IGNORE INTO content_components (component_type, display_name, category, default_props) VALUES
     ('text', 'Text Block', 'text', '{"content": "", "fontSize": "medium", "align": "left"}'),
     ('image', 'Image', 'media', '{"url": "", "alt": "", "width": "100%", "height": "auto"}'),
     ('button', 'Button', 'interactive', '{"text": "Click Me", "action": "", "style": "primary"}'),
@@ -224,7 +270,6 @@ INSERT INTO content_components (component_type, display_name, category, default_
     ('video', 'Video', 'media', '{"url": "", "autoplay": false, "controls": true}'),
     ('carousel', 'Carousel', 'media', '{"items": [], "autoplay": true, "duration": 5000}');
 
--- Content page versions for history tracking
 CREATE TABLE IF NOT EXISTS content_versions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     page_id INT NOT NULL,
@@ -239,7 +284,11 @@ CREATE TABLE IF NOT EXISTS content_versions (
     INDEX idx_page_version (page_id, version_number DESC)
 );
 
--- Create trigger for updating poll vote counts
+-- ========================================
+-- 8. TRIGGERS
+-- ========================================
+DROP TRIGGER IF EXISTS update_vote_count;
+
 DELIMITER $$
 CREATE TRIGGER update_vote_count AFTER INSERT ON poll_votes
 FOR EACH ROW
@@ -250,7 +299,24 @@ BEGIN
 END$$
 DELIMITER ;
 
--- Create default admin user (password: admin123 - should be changed immediately)
--- Hash generated from bcrypt for 'admin123'
-INSERT INTO users (email, password, name, role) VALUES
+-- ========================================
+-- 9. DEFAULT DATA
+-- ========================================
+
+-- Insert default admin user if not exists (password: admin123)
+INSERT IGNORE INTO users (email, password, name, role) VALUES
     ('admin@trendankara.com', '$2a$10$xH6.TmKwtLVgVr7rR3HJaeWz1oA0Xj1V9k4rYZhF4Y8ZN7z0N7cBa', 'Admin User', 'admin');
+
+-- ========================================
+-- 10. STATUS REPORT
+-- ========================================
+SELECT 'Migration completed successfully!' AS Status;
+
+-- Show table count
+SELECT COUNT(*) AS 'Total Tables' FROM information_schema.tables WHERE table_schema = 'radio_db';
+
+-- Show all tables
+SELECT table_name AS 'Tables in radio_db'
+FROM information_schema.tables
+WHERE table_schema = 'radio_db'
+ORDER BY table_name;
