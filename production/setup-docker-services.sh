@@ -384,6 +384,35 @@ echo -e "${YELLOW}Starting Docker services...${NC}"
 
 cd docker
 
+# Check for existing containers
+EXISTING_CONTAINERS=$(docker ps -a --filter "name=radio_" --format "{{.Names}}" | wc -l)
+if [ $EXISTING_CONTAINERS -gt 0 ]; then
+    echo -e "${YELLOW}Found existing Radio CMS containers:${NC}"
+    docker ps -a --filter "name=radio_" --format "table {{.Names}}\t{{.Status}}"
+    echo ""
+    echo "Options:"
+    echo "1) Stop and remove existing containers (recommended)"
+    echo "2) Keep existing containers and exit"
+    read -p "Choose option (1-2): " CHOICE
+
+    case $CHOICE in
+        1)
+            echo "Stopping existing containers..."
+            docker stop radio_mysql radio_minio radio_phpmyadmin 2>/dev/null || true
+            docker rm radio_mysql radio_minio radio_phpmyadmin 2>/dev/null || true
+            echo -e "${GREEN}✅ Old containers removed${NC}"
+            ;;
+        2)
+            echo "Keeping existing containers. Exiting..."
+            exit 0
+            ;;
+        *)
+            echo "Invalid choice. Exiting..."
+            exit 1
+            ;;
+    esac
+fi
+
 # Stop existing containers if any
 $DOCKER_COMPOSE down 2>/dev/null || true
 
