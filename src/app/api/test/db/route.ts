@@ -47,14 +47,14 @@ export async function GET(request: NextRequest) {
 
         // Get table list
         try {
-          const tablesResult = await db.query<{ TABLE_NAME: string }>(`
+          const tablesResult = await db.query(`
             SELECT TABLE_NAME
             FROM INFORMATION_SCHEMA.TABLES
             WHERE TABLE_SCHEMA = DATABASE()
               AND TABLE_TYPE = 'BASE TABLE'
             ORDER BY TABLE_NAME
           `);
-          tableList = tablesResult.rows.map(row => row.TABLE_NAME);
+          tableList = tablesResult.rows.map((row: any) => row.TABLE_NAME);
         } catch (error) {
           console.warn('Failed to get table list:', error);
         }

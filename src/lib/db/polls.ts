@@ -3,7 +3,7 @@
  * Handles vote counting since we can't use triggers in production
  */
 
-import { getDb } from './client';
+import { db } from './client';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 interface PollVote {
@@ -19,7 +19,6 @@ interface PollVote {
  * This replaces the database trigger functionality
  */
 export async function recordVote(vote: PollVote): Promise<boolean> {
-  const db = await getDb();
   const connection = await db.getConnection();
 
   try {
@@ -71,9 +70,7 @@ export async function recordVote(vote: PollVote): Promise<boolean> {
  * Get active polls
  */
 export async function getActivePolls() {
-  const db = await getDb();
-
-  const [polls] = await db.execute<RowDataPacket[]>(
+  const result = await db.query<RowDataPacket>(
     `SELECT p.*,
             (SELECT COUNT(*) FROM poll_votes WHERE poll_id = p.id) as total_votes
      FROM polls p
@@ -83,15 +80,17 @@ export async function getActivePolls() {
      ORDER BY p.created_at DESC`
   );
 
+  const polls = result.rows;
+
   // Get poll items for each poll
   for (const poll of polls) {
-    const [items] = await db.execute<RowDataPacket[]>(
+    const itemResult = await db.query<RowDataPacket>(
       `SELECT * FROM poll_items
        WHERE poll_id = ? AND is_active = true
        ORDER BY display_order, id`,
       [poll.id]
     );
-    poll.items = items;
+    poll.items = itemResult.rows;
   }
 
   return polls;
@@ -101,28 +100,26 @@ export async function getActivePolls() {
  * Get poll by ID with items
  */
 export async function getPollById(pollId: number) {
-  const db = await getDb();
-
-  const [polls] = await db.execute<RowDataPacket[]>(
+  const result = await db.query<RowDataPacket>(
     `SELECT * FROM polls WHERE id = ? AND deleted_at IS NULL`,
     [pollId]
   );
 
-  if (polls.length === 0) {
+  if (result.rows.length === 0) {
     return null;
   }
 
-  const poll = polls[0];
+  const poll = result.rows[0];
 
   // Get poll items
-  const [items] = await db.execute<RowDataPacket[]>(
+  const itemResult = await db.query<RowDataPacket>(
     `SELECT * FROM poll_items
      WHERE poll_id = ? AND is_active = true
      ORDER BY display_order, id`,
     [pollId]
   );
 
-  poll.items = items;
+  poll.items = itemResult.rows;
   return poll;
 }
 
@@ -130,16 +127,14 @@ export async function getPollById(pollId: number) {
  * Check if user has voted
  */
 export async function hasVoted(pollId: number, deviceId: string, ipAddress?: string): Promise<boolean> {
-  const db = await getDb();
-
-  const [votes] = await db.execute<RowDataPacket[]>(
+  const result = await db.query<RowDataPacket>(
     `SELECT id FROM poll_votes
      WHERE poll_id = ? AND (device_id = ? OR ip_address = ?)
      LIMIT 1`,
     [pollId, deviceId, ipAddress || '']
   );
 
-  return votes.length > 0;
+  return result.rows.length > 0;
 }
 
 /**
@@ -147,9 +142,7 @@ export async function hasVoted(pollId: number, deviceId: string, ipAddress?: str
  * Use this if vote counts get out of sync
  */
 export async function recalculateVoteCounts(pollId: number): Promise<void> {
-  const db = await getDb();
-
-  await db.execute(
+  await db.update(
     `UPDATE poll_items pi
      SET vote_count = (
        SELECT COUNT(*)

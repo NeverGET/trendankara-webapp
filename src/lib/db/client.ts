@@ -138,23 +138,12 @@ class MySQLClient implements DatabaseClient {
       waitForConnections: config.waitForConnections,
       connectionLimit: Math.max(5, Math.min(20, config.connectionLimit)), // Enforce 5-20 range
       queueLimit: config.queueLimit,
-      acquireTimeout: config.acquireTimeout,
-      timeout: config.timeout,
-      enableKeepAlive: config.enableKeepAlive,
-      keepAliveInitialDelay: config.keepAliveInitialDelay,
-      // Enable prepared statements cache
+      // Standard mysql2 options
       namedPlaceholders: true,
-      // Set charset to ensure proper UTF-8 handling
       charset: 'utf8mb4',
-      // Connection settings
-      ssl: false, // Disable SSL for local development
       supportBigNumbers: true,
       bigNumberStrings: true,
       dateStrings: false,
-      debug: false,
-      trace: process.env.NODE_ENV === 'development',
-      // Prepared statements cache
-      typeCast: true,
     }) as ConnectionPool;
   }
 

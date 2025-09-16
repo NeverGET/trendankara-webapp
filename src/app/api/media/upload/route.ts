@@ -127,13 +127,12 @@ export async function POST(request: NextRequest) {
     let uploadResult;
     try {
       uploadResult = await uploadImage(uploadData.file, uploadData.filename, {
-        originalName: uploadData.filename,
-        mimeType: uploadData.mimeType,
         generateThumbnails: true,
         metadata: {
           alt,
           description,
           category,
+          mimeType: uploadData.mimeType,
           uploadedAt: new Date().toISOString()
         }
       });

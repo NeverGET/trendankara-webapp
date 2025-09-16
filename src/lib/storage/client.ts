@@ -192,10 +192,13 @@ class MinioStorageClient implements StorageClient {
       };
 
       // Upload the file
+      // Convert Uint8Array to Buffer if necessary
+      const fileBuffer = file instanceof Uint8Array ? Buffer.from(file) : file;
+
       const uploadResult = await client.putObject(
         config.bucket,
         key,
-        file,
+        fileBuffer,
         undefined,
         metadata
       );
@@ -302,7 +305,7 @@ class MinioStorageClient implements StorageClient {
       const files: FileMetadata[] = [];
       let isTruncated = false;
 
-      const objectStream = client.listObjectsV2(config.bucket, prefix, false, undefined, maxKeys);
+      const objectStream = client.listObjectsV2(config.bucket, prefix, false);
 
       for await (const obj of objectStream) {
         files.push({
@@ -327,10 +330,13 @@ class MinioStorageClient implements StorageClient {
     const client = getMinioClient();
 
     await withRetry(async () => {
+      // MinIO copyObject requires CopyConditions as 4th parameter
+      const conds = new (require('minio').CopyConditions)();
       await client.copyObject(
         config.bucket,
         destinationKey,
-        `/${config.bucket}/${sourceKey}`
+        `/${config.bucket}/${sourceKey}`,
+        conds
       );
       logger.success(`File copied: ${sourceKey} -> ${destinationKey}`);
     }, `copyFile(${sourceKey} -> ${destinationKey})`);
@@ -399,7 +405,7 @@ export async function healthCheck(): Promise<StorageHealthCheck> {
       await client.removeObject(config.bucket, testKey);
       canWrite = true;
     } catch (error) {
-      logger.warning('Write permission test failed:', error);
+      logger.warning(`Write permission test failed: ${(error as Error).message}`);
     }
 
     return {
