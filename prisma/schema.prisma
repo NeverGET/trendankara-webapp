@@ -1,0 +1,300 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String
+  name          String
+  role          UserRole  @default(EDITOR)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  news          News[]
+  polls         Poll[]
+  media         Media[]
+  contentPages  ContentPage[]
+  contentVersions ContentVersion[]
+
+  @@index([email])
+  @@index([isActive, deletedAt])
+  @@map("users")
+}
+
+model NewsCategory {
+  id        Int       @id @default(autoincrement())
+  name      String
+  slug      String    @unique
+  isSystem  Boolean   @default(false)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy Int?
+  deletedAt DateTime?
+
+  // Relations
+  news      News[]
+  creator   User?     @relation(fields: [createdBy], references: [id])
+
+  @@index([slug])
+  @@index([isActive, deletedAt])
+  @@map("news_categories")
+}
+
+model News {
+  id            Int       @id @default(autoincrement())
+  title         String    @db.VarChar(500)
+  slug          String    @unique @db.VarChar(500)
+  summary       String?   @db.Text
+  content       String    @db.Text
+  featuredImage String?   @db.VarChar(500)
+  categoryId    Int?
+  isFeatured    Boolean   @default(false)
+  isBreaking    Boolean   @default(false)
+  isHot         Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  views         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  publishedAt   DateTime?
+  createdBy     Int?
+  deletedAt     DateTime?
+
+  // Relations
+  category      NewsCategory? @relation(fields: [categoryId], references: [id])
+  creator       User?         @relation(fields: [createdBy], references: [id])
+
+  @@index([slug])
+  @@index([categoryId, createdAt])
+  @@index([isFeatured, isActive, deletedAt])
+  @@index([publishedAt, isActive, deletedAt])
+  @@map("news")
+}
+
+model Poll {
+  id             Int       @id @default(autoincrement())
+  title          String    @db.VarChar(255)
+  description    String?   @db.Text
+  pollType       PollType  @default(CUSTOM)
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean   @default(true)
+  showOnHomepage Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdBy      Int?
+  deletedAt      DateTime?
+
+  // Relations
+  creator        User?      @relation(fields: [createdBy], references: [id])
+  items          PollItem[]
+  votes          PollVote[]
+
+  @@index([startDate, endDate])
+  @@index([isActive, deletedAt])
+  @@index([showOnHomepage, isActive])
+  @@map("polls")
+}
+
+model PollItem {
+  id           Int       @id @default(autoincrement())
+  pollId       Int
+  title        String    @db.VarChar(255)
+  description  String?   @db.Text
+  imageUrl     String?   @db.VarChar(500)
+  displayOrder Int       @default(0)
+  voteCount    Int       @default(0)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  poll         Poll      @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes        PollVote[]
+
+  @@index([pollId, displayOrder])
+  @@index([pollId, voteCount])
+  @@map("poll_items")
+}
+
+model PollVote {
+  id         Int      @id @default(autoincrement())
+  pollId     Int
+  pollItemId Int
+  deviceId   String   @db.VarChar(255)
+  ipAddress  String?  @db.VarChar(45)
+  userAgent  String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  // Relations
+  poll       Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  pollItem   PollItem @relation(fields: [pollItemId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, deviceId, ipAddress])
+  @@index([deviceId, ipAddress])
+  @@index([pollItemId])
+  @@map("poll_votes")
+}
+
+model Media {
+  id           Int       @id @default(autoincrement())
+  filename     String    @db.VarChar(255)
+  originalName String?   @db.VarChar(255)
+  mimeType     String?   @db.VarChar(100)
+  size         Int?
+  url          String    @db.VarChar(500)
+  thumbnailUrl String?   @db.VarChar(500)
+  mediumUrl    String?   @db.VarChar(500)
+  width        Int?
+  height       Int?
+  altText      String?   @db.VarChar(500)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    Int?
+  deletedAt    DateTime?
+
+  // Relations
+  creator      User?     @relation(fields: [createdBy], references: [id])
+
+  @@index([filename])
+  @@index([createdAt])
+  @@index([mimeType])
+  @@map("media")
+}
+
+model Setting {
+  id           Int          @id @default(autoincrement())
+  settingKey   String       @unique @db.VarChar(100)
+  settingValue String?      @db.Text
+  settingType  SettingType  @default(STRING)
+  category     String       @default("general") @db.VarChar(50)
+  description  String?      @db.Text
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([settingKey])
+  @@index([category])
+  @@map("settings")
+}
+
+model RadioSetting {
+  id                 Int      @id @default(autoincrement())
+  streamUrl          String   @db.VarChar(500)
+  metadataUrl        String?  @db.VarChar(500)
+  stationName        String   @default("Trend Ankara Radio") @db.VarChar(255)
+  stationDescription String?  @db.Text
+  facebookUrl        String?  @db.VarChar(500)
+  twitterUrl         String?  @db.VarChar(500)
+  instagramUrl       String?  @db.VarChar(500)
+  youtubeUrl         String?  @db.VarChar(500)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("radio_settings")
+}
+
+model ContentPage {
+  id           Int          @id @default(autoincrement())
+  title        String       @db.VarChar(255)
+  slug         String       @unique @db.VarChar(255)
+  pageType     PageType     @default(CUSTOM)
+  contentJson  Json
+  isActive     Boolean      @default(true)
+  isPublished  Boolean      @default(false)
+  mobileOnly   Boolean      @default(true)
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  publishedAt  DateTime?
+  createdBy    Int?
+  deletedAt    DateTime?
+
+  // Relations
+  creator      User?        @relation(fields: [createdBy], references: [id])
+  versions     ContentVersion[]
+
+  @@index([slug])
+  @@index([isActive, isPublished, deletedAt])
+  @@index([startDate, endDate])
+  @@map("content_pages")
+}
+
+model ContentComponent {
+  id           Int              @id @default(autoincrement())
+  componentType String          @unique @db.VarChar(50)
+  displayName  String          @db.VarChar(100)
+  description  String?         @db.Text
+  defaultProps Json?
+  icon         String?         @db.VarChar(50)
+  category     ComponentCategory @default(CUSTOM)
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@map("content_components")
+}
+
+model ContentVersion {
+  id                Int      @id @default(autoincrement())
+  pageId            Int
+  versionNumber     Int
+  contentJson       Json
+  changeDescription String?  @db.Text
+  createdAt         DateTime @default(now())
+  createdBy         Int?
+
+  // Relations
+  page              ContentPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  creator           User?       @relation(fields: [createdBy], references: [id])
+
+  @@unique([pageId, versionNumber])
+  @@index([pageId, versionNumber])
+  @@map("content_versions")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  EDITOR
+}
+
+enum PollType {
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum SettingType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+}
+
+enum PageType {
+  SPONSORSHIP
+  PROMOTION
+  INFO
+  CUSTOM
+}
+
+enum ComponentCategory {
+  LAYOUT
+  TEXT
+  MEDIA
+  INTERACTIVE
+  CUSTOM
+}

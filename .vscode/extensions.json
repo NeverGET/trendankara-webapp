@@ -1,0 +1,57 @@
+{
+  "recommendations": [
+    // Essential for Next.js Development
+    "esbenp.prettier-vscode", // Prettier - Code formatter
+    "dbaeumer.vscode-eslint", // ESLint
+    "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
+
+    // JavaScript/React Development
+    "dsznajder.es7-react-js-snippets", // ES7+ React/Redux/React-Native snippets
+    "formulahendry.auto-rename-tag", // Auto Rename Tag
+    "formulahendry.auto-close-tag", // Auto Close Tag
+    "xabikos.javascriptsnippets", // JavaScript (ES6) code snippets
+
+    // Productivity Tools
+    "christian-kohler.path-intellisense", // Path Intellisense
+    "christian-kohler.npm-intellisense", // npm Intellisense
+    "wix.vscode-import-cost", // Import Cost
+    "usernamehw.errorlens", // Error Lens
+    "streetsidesoftware.code-spell-checker", // Code Spell Checker
+
+    // Debugging & Testing
+    "msjsdiag.debugger-for-chrome", // Debugger for Chrome
+    "ms-vscode.js-debug-nightly", // JavaScript Debugger (Nightly)
+
+    // Git Integration
+    "eamodio.gitlens", // GitLens
+    "donjayamanne.githistory", // Git History
+
+    // Code Quality
+    "aaron-bond.better-comments", // Better Comments
+    "chakrounanas.turbo-console-log", // Turbo Console Log
+    "wayou.vscode-todo-highlight", // TODO Highlight
+
+    // File Management
+    "sleistner.vscode-fileutils", // File Utils
+    "ritwickdey.liveserver", // Live Server
+
+    // Theme & Icons (Optional)
+    "pkief.material-icon-theme", // Material Icon Theme
+    "zhuangtongfa.material-theme", // One Dark Pro theme
+
+    // MongoDB (for database work)
+    "mongodb.mongodb-vscode", // MongoDB for VS Code
+
+    // Environment Variables
+    "mikestead.dotenv", // DotENV
+    "irongeek.vscode-env", // ENV
+
+    // Markdown
+    "yzhang.markdown-all-in-one", // Markdown All in One
+    "davidanson.vscode-markdownlint" // markdownlint
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript-tslint-plugin", // Not needed for JavaScript projects
+    "eg2.tslint" // Not needed for JavaScript projects
+  ]
+}

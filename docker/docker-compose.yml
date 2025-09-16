@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  radioapp:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: radioapp
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mysql://root:radiopass123@radiodb:3306/radio_db
+      - MINIO_ENDPOINT=radio_minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_BUCKET=media
+      - NEXTAUTH_URL=https://radyo.trendankara.com
+      - NEXTAUTH_SECRET=your-secret-key-here
+    depends_on:
+      - radiodb
+      - radio_minio
+    networks:
+      - radio_network
+    restart: unless-stopped
+
+  radiodb:
+    image: mysql:8.0
+    container_name: radiodb
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=radiopass123
+      - MYSQL_DATABASE=radio_db
+      - MYSQL_CHARACTER_SET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+    volumes:
+      - radio_db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - radio_network
+    restart: unless-stopped
+
+  radio_minio:
+    image: minio/minio:latest
+    container_name: radio_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    volumes:
+      - radio_minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - radio_network
+    restart: unless-stopped
+
+  radio_phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: radio_phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=radiodb
+      - PMA_PORT=3306
+      - UPLOAD_LIMIT=100M
+    depends_on:
+      - radiodb
+    networks:
+      - radio_network
+    restart: unless-stopped
+
+volumes:
+  radio_db_data:
+  radio_minio_data:
+
+networks:
+  radio_network:
+    driver: bridge

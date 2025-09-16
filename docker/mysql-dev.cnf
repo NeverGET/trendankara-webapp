@@ -1,0 +1,71 @@
+[mysqld]
+# Development MySQL Configuration
+# Optimized for local development with reasonable performance
+
+# Basic Settings
+default-storage-engine = innodb
+default-authentication-plugin = mysql_native_password
+
+# Connection Settings
+max_connections = 100
+max_connect_errors = 100000
+back_log = 100
+
+# Buffer Settings
+innodb_buffer_pool_size = 256M
+innodb_log_file_size = 64M
+innodb_log_buffer_size = 16M
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# Query Cache (for MySQL 5.7 compatibility)
+query_cache_type = 1
+query_cache_size = 32M
+query_cache_limit = 2M
+
+# MyISAM Settings
+key_buffer_size = 32M
+myisam_sort_buffer_size = 8M
+
+# Thread Settings
+thread_cache_size = 16
+thread_stack = 256K
+
+# Temporary Tables
+tmp_table_size = 32M
+max_heap_table_size = 32M
+
+# Logging (for development debugging)
+general_log = 1
+general_log_file = /var/lib/mysql/general.log
+slow_query_log = 1
+slow_query_log_file = /var/lib/mysql/slow.log
+long_query_time = 2
+
+# Binary Logging (disabled for development)
+skip-log-bin
+
+# Character Set
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+# Time Zone
+default-time-zone = '+00:00'
+
+# Security Settings (relaxed for development)
+skip-name-resolve
+local-infile = 0
+
+# Performance Schema (enabled for development monitoring)
+performance_schema = ON
+performance_schema_max_table_instances = 400
+performance_schema_max_table_handles = 4000
+
+[mysql]
+default-character-set = utf8mb4
+
+[mysqldump]
+default-character-set = utf8mb4
+
+[client]
+default-character-set = utf8mb4

@@ -1,0 +1,211 @@
+version: '3.8'
+
+services:
+  # Next.js Application (Development)
+  webapp:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: development  # Use development stage if multi-stage build
+    container_name: webapp_dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mysql://root:radiopass123@radiodb:3306/radio_db
+      - MINIO_ENDPOINT=radio_minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_BUCKET=media
+      - MINIO_USE_SSL=false
+      - MINIO_REGION=us-east-1
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=dev-secret-change-in-production
+      - RADIO_STREAM_URL=https://radyo.yayin.com.tr:5132/stream
+      - RADIO_METADATA_URL=https://radyo.yayin.com.tr:5132/
+      - RADIO_CORS_PROXY=https://cros9.yayin.com.tr
+      - API_VERSION=v1
+      - MOBILE_API_KEY=dev-api-key-change-in-production
+      - RATE_LIMIT_MOBILE=100
+      - SITE_NAME=Trend Ankara Radio Dev
+      - SITE_URL=http://localhost:3000
+      - SITE_DESCRIPTION=Professional Turkish Radio Station (Development)
+      - DEBUG=true
+      - DATABASE_CONNECTION_LIMIT=10
+      - DATABASE_TIMEOUT=5000
+    volumes:
+      # Mount source for hot reload (optional - for development)
+      - ../src:/app/src:delegated
+      - ../public:/app/public:delegated
+      - ../package.json:/app/package.json:ro
+      - ../next.config.mjs:/app/next.config.mjs:ro
+      - ../tailwind.config.ts:/app/tailwind.config.ts:ro
+      - ../tsconfig.json:/app/tsconfig.json:ro
+    depends_on:
+      radiodb:
+        condition: service_healthy
+      radio_minio:
+        condition: service_healthy
+    networks:
+      - radio_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/test/db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # MySQL Database (Development)
+  radiodb:
+    image: mysql:8.0
+    container_name: radiodb_dev
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=radiopass123
+      - MYSQL_DATABASE=radio_db
+      - MYSQL_CHARACTER_SET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+      # Performance settings for development
+      - MYSQL_INNODB_BUFFER_POOL_SIZE=256M
+      - MYSQL_INNODB_LOG_FILE_SIZE=64M
+      - MYSQL_MAX_CONNECTIONS=100
+      - MYSQL_QUERY_CACHE_SIZE=32M
+    volumes:
+      - radio_db_data_dev:/var/lib/mysql
+      # Optional: Mount initialization scripts
+      # - ./init-dev.sql:/docker-entrypoint-initdb.d/init.sql
+      # MySQL configuration for development
+      - ./mysql-dev.cnf:/etc/mysql/conf.d/dev.cnf
+    networks:
+      - radio_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --bind-address=0.0.0.0
+      --innodb-buffer-pool-size=256M
+      --max-connections=100
+      --query-cache-size=32M
+      --general-log=1
+      --general-log-file=/var/lib/mysql/general.log
+      --slow-query-log=1
+      --slow-query-log-file=/var/lib/mysql/slow.log
+      --long-query-time=2
+
+  # MinIO Object Storage (Development)
+  radio_minio:
+    image: minio/minio:latest
+    container_name: radio_minio_dev
+    ports:
+      - "9000:9000"      # API
+      - "9001:9001"      # Console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+      - MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
+      # Development settings
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+    volumes:
+      - radio_minio_data_dev:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - radio_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # PHPMyAdmin (Database Management)
+  radio_phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: radio_phpmyadmin_dev
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=radiodb
+      - PMA_PORT=3306
+      - PMA_USER=root
+      - PMA_PASSWORD=radiopass123
+      - UPLOAD_LIMIT=100M
+      - MEMORY_LIMIT=512M
+      - MAX_EXECUTION_TIME=600
+      # Development settings
+      - PMA_ARBITRARY=1
+      - PMA_ABSOLUTE_URI=http://localhost:8080/
+    depends_on:
+      radiodb:
+        condition: service_healthy
+    networks:
+      - radio_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis (Optional - for caching and sessions)
+  redis:
+    image: redis:7-alpine
+    container_name: redis_dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - radio_redis_data_dev:/data
+    networks:
+      - radio_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # MinIO MC (MinIO Client for initialization)
+  minio_init:
+    image: minio/mc:latest
+    container_name: minio_init_dev
+    depends_on:
+      radio_minio:
+        condition: service_healthy
+    networks:
+      - radio_network
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to be ready...';
+      sleep 10;
+      /usr/bin/mc config host add minio http://radio_minio:9000 minioadmin minioadmin123;
+      /usr/bin/mc mb minio/media --ignore-existing;
+      /usr/bin/mc anonymous set public minio/media;
+      echo 'MinIO initialization completed.';
+      "
+    restart: "no"
+
+volumes:
+  radio_db_data_dev:
+    driver: local
+  radio_minio_data_dev:
+    driver: local
+  radio_redis_data_dev:
+    driver: local
+
+networks:
+  radio_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

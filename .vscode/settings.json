@@ -1,0 +1,190 @@
+{
+  // Editor Settings
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.renderWhitespace": "trailing",
+  "editor.rulers": [100],
+  "editor.snippetSuggestions": "top",
+  "editor.suggestSelection": "first",
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+
+  // JavaScript/JSX Settings
+  "javascript.preferences.quoteStyle": "single",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "javascript.suggest.autoImports": true,
+  "javascript.preferences.importModuleSpecifier": "relative",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // ESLint Settings
+  "eslint.validate": ["javascript", "javascriptreact"],
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "eslint.format.enable": false,
+  "eslint.lintTask.enable": true,
+
+  // Prettier Settings
+  "prettier.requireConfig": true,
+  "prettier.useEditorConfig": false,
+
+  // Files Settings
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/.git": true,
+    "**/.turbo": true,
+    "**/dist": true,
+    "**/out": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/.next/**": true,
+    "**/out/**": true,
+    "**/dist/**": true
+  },
+  "files.associations": {
+    "*.js": "javascript",
+    "*.jsx": "javascriptreact",
+    "*.css": "css"
+  },
+
+  // Search Settings
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/out": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/package-lock.json": true
+  },
+
+  // Tailwind CSS Settings
+  "tailwindCSS.experimental.classRegex": [
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+  "tailwindCSS.includeLanguages": {
+    "javascript": "javascript",
+    "javascriptreact": "javascriptreact"
+  },
+  "tailwindCSS.emmetCompletions": true,
+
+  // CSS Settings
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
+
+  // Git Settings
+  "git.enableSmartCommit": true,
+  "git.autofetch": true,
+
+  // Terminal Settings
+  "terminal.integrated.env.osx": {
+    "NODE_ENV": "development"
+  },
+  "terminal.integrated.env.linux": {
+    "NODE_ENV": "development"
+  },
+  "terminal.integrated.env.windows": {
+    "NODE_ENV": "development"
+  },
+
+  // Debug Settings
+  "debug.javascript.autoAttachFilter": "onlyWithFlag",
+  "debug.javascript.terminalOptions": {
+    "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+  },
+
+  // Next.js Specific Settings
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  },
+  "emmet.triggerExpansionOnTab": true,
+
+  // Path Intellisense Settings
+  "path-intellisense.mappings": {
+    "@": "${workspaceFolder}/src",
+    "@components": "${workspaceFolder}/src/components",
+    "@services": "${workspaceFolder}/src/services",
+    "@hooks": "${workspaceFolder}/src/hooks",
+    "@utils": "${workspaceFolder}/src/utils",
+    "@stores": "${workspaceFolder}/src/stores",
+    "@contexts": "${workspaceFolder}/src/contexts",
+    "@auth": "${workspaceFolder}/src/auth",
+    "@config": "${workspaceFolder}/src/config"
+  },
+
+  // Auto Rename Tag
+  "auto-rename-tag.activationOnLanguage": ["javascriptreact"],
+
+  // Error Lens Settings (if extension is installed)
+  "errorLens.enabled": true,
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+
+  // Better Comments Settings (if extension is installed)
+  "better-comments.tags": [
+    {
+      "tag": "!",
+      "color": "#FF2D00",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "tag": "?",
+      "color": "#3498DB",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "tag": "//",
+      "color": "#474747",
+      "strikethrough": true,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "tag": "todo",
+      "color": "#FF8C00",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    },
+    {
+      "tag": "*",
+      "color": "#98C379",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": false,
+      "italic": false
+    }
+  ]
+}
