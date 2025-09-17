@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import "./globals.css";
 
+const inter = Inter({ subsets: ['latin'] });
+
 export const metadata: Metadata = {
-  title: 'Radio Station CMS',
-  description: 'Professional Radio Station Content Management System',
+  title: 'Trend Ankara Radio',
+  description: 'Türkiye\'nin en iyi radyo istasyonu - 24/7 kesintisiz müzik yayını',
 };
 
 export default function RootLayout({
@@ -13,8 +16,10 @@ export default function RootLayout({
 }) {
   // Server-side initialization will happen when API routes are accessed
   return (
-    <html lang="tr">
-      <body>{children}</body>
+    <html lang="tr" className="dark">
+      <body suppressHydrationWarning className={`${inter.className} bg-dark-bg-primary text-dark-text-primary min-h-screen`}>
+        {children}
+      </body>
     </html>
   );
 }
