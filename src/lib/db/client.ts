@@ -53,6 +53,10 @@ class MySQLClient implements DatabaseClient {
       this.config = await this.createConfig();
       this.pool = this.createPool(this.config);
 
+      logInfo(`Attempting to connect to MySQL at ${this.config.host}:${this.config.port}`, {
+        prefix: 'MySQL'
+      });
+
       // Test the connection
       await this.testConnection();
 
@@ -67,7 +71,11 @@ class MySQLClient implements DatabaseClient {
     } catch (error) {
       const dbError = error as DatabaseError;
       logError(`Failed to initialize database: ${dbError.message}`, {
-        prefix: 'MySQL'
+        prefix: 'MySQL',
+        host: this.config?.host,
+        port: this.config?.port,
+        database: this.config?.database,
+        errorCode: dbError.code
       });
 
       // Implement exponential backoff retry
