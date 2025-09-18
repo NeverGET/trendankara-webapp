@@ -70,12 +70,8 @@ class MySQLClient implements DatabaseClient {
 
     } catch (error) {
       const dbError = error as DatabaseError;
-      logError(`Failed to initialize database: ${dbError.message}`, {
-        prefix: 'MySQL',
-        host: this.config?.host,
-        port: this.config?.port,
-        database: this.config?.database,
-        errorCode: dbError.code
+      logError(`Failed to initialize database: ${dbError.message} | Host: ${this.config?.host}:${this.config?.port} | DB: ${this.config?.database} | Code: ${dbError.code}`, {
+        prefix: 'MySQL'
       });
 
       // Implement exponential backoff retry
