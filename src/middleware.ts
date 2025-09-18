@@ -50,8 +50,19 @@ export async function middleware(request: NextRequest) {
   // Get token using NextAuth JWT
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production',
   });
+
+  // Debug logging for production
+  if (process.env.NODE_ENV === 'production' && isProtectedRoute) {
+    console.log('Middleware check:', {
+      pathname,
+      hasToken: !!token,
+      tokenEmail: token?.email,
+      tokenRole: token?.role,
+    });
+  }
 
   const isAuthenticated = !!token;
 

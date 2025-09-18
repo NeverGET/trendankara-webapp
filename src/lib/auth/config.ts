@@ -139,6 +139,19 @@ export const authConfig: NextAuthConfig = {
     updateAge: 60 * 60, // 1 hour
   },
 
+  // Cookie configuration for production
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
+
   // Configure pages
   pages: {
     signIn: '/auth/login',
