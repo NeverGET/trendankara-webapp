@@ -1,5 +1,11 @@
 # Authentication System Requirements Document
 
+> **⚠️ IMPLEMENTATION NOTE**: The actual implementation deviates from these requirements in several key areas. See [IMPLEMENTATION_NOTES.md](./IMPLEMENTATION_NOTES.md) for the current implementation details, including:
+> - Username-based login instead of email-based
+> - JWT sessions instead of database sessions
+> - Simplified middleware without database calls
+> - Performance optimizations
+
 ## Introduction
 
 The Authentication System provides secure access control for the Trend Ankara Radio CMS platform. It implements a role-based authentication system using NextAuth.js with database sessions, supporting two user roles (Admin and Super Admin) and protecting administrative endpoints and pages. The system will consolidate authentication to a single login page and implement comprehensive session validation across all admin routes.

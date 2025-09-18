@@ -18,7 +18,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/admin';
 
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,13 +30,13 @@ export default function LoginPage() {
 
     try {
       const result = await signIn('credentials', {
-        email,
+        email: username, // We still send it as 'email' to match the provider
         password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError('E-posta veya şifre hatalı'); // Turkish: Invalid email or password
+        setError('Kullanıcı adı veya şifre hatalı'); // Turkish: Invalid username or password
       } else {
         router.push(callbackUrl);
         router.refresh();
@@ -69,14 +69,14 @@ export default function LoginPage() {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input
-            label="E-posta"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="ornek@email.com"
+            label="Kullanıcı Adı"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="admin"
             required
             disabled={isLoading}
-            autoComplete="email"
+            autoComplete="username"
           />
 
           <Input

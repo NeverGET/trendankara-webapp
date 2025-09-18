@@ -1,5 +1,13 @@
 # Authentication System Design Document
 
+> **⚠️ IMPLEMENTATION NOTE**: The actual implementation deviates from this design in several key areas. See [IMPLEMENTATION_NOTES.md](./IMPLEMENTATION_NOTES.md) for the current implementation details, including:
+> - Username-based login (not email)
+> - JWT strategy (not database sessions)
+> - No database adapter
+> - Simplified edge-compatible middleware
+> - No sessions/accounts tables
+> - Performance optimizations (removed DNS lookups, fonts)
+
 ## Overview
 
 The Authentication System will provide secure, role-based access control for the Trend Ankara Radio CMS platform using NextAuth.js v5 with database sessions stored in MySQL. The system integrates with Next.js 15's App Router architecture, leveraging existing UI components and database patterns while introducing new authentication-specific modules. The design emphasizes simplicity and security, with a single unified login page and comprehensive middleware protection for all administrative routes.
@@ -95,41 +103,19 @@ sequenceDiagram
 
 ```mermaid
 erDiagram
-    users ||--o{ sessions : "has"
-    users ||--o{ accounts : "has"
-
     users {
         int id PK
-        string email UK
-        string password
+        string email UK "stores username or email"
+        string password "bcrypt hashed"
         string name
-        enum role
+        enum role "admin, super_admin, editor"
         boolean is_active
         timestamp created_at
         timestamp updated_at
-        timestamp deleted_at
     }
 
-    sessions {
-        string id PK
-        int user_id FK
-        string session_token UK
-        datetime expires
-        string ip_address
-        text user_agent
-        timestamp created_at
-        timestamp updated_at
-    }
 
-    accounts {
-        string id PK
-        int user_id FK
-        string provider
-        string provider_account_id
-        text access_token
-        text refresh_token
-        timestamp created_at
-    }
+    %%% Sessions and Accounts tables not implemented - using JWT %%%
 ```
 
 ## Components and Interfaces
@@ -144,21 +130,18 @@ erDiagram
 - **Reuses:** Database client from `src/lib/db/client.ts`
 
 ### Component 2: Database Adapter (`src/lib/auth/adapter.ts`)
-- **Purpose:** Custom MySQL adapter for NextAuth session storage
-- **Interfaces:**
-  - CRUD operations for users, sessions, and accounts
-  - Session validation and cleanup methods
-- **Dependencies:** MySQL client, NextAuth adapter interface
-- **Reuses:** Transaction support from database client
+- **Status:** NOT IMPLEMENTED - JWT strategy doesn't require adapter
+- **Reason:** NextAuth Credentials provider incompatible with database adapters when using JWT
+- **Alternative:** Direct database queries in auth config for user validation only
 
 ### Component 3: Middleware (`src/middleware.ts`)
-- **Purpose:** Route protection and session validation for all requests
+- **Purpose:** Route protection using JWT token validation
 - **Interfaces:**
   - `matcher` configuration for protected routes
-  - Session validation logic
+  - JWT token validation using `getToken`
   - Redirect handling for unauthorized access
-- **Dependencies:** NextAuth middleware helpers, Next.js middleware
-- **Reuses:** None (new component)
+- **Dependencies:** next-auth/jwt, Next.js middleware
+- **Performance:** Edge runtime compatible, no database calls
 
 ### Component 4: Login Page Component (`src/app/auth/login/page.tsx`)
 - **Purpose:** Unified authentication interface for all users
@@ -215,16 +198,9 @@ interface User {
 
 ### Session Model
 ```typescript
-interface Session {
-  id: string; // UUID
-  user_id: number;
-  session_token: string; // Unique token
-  expires: Date;
-  created_at: Date;
-  updated_at: Date;
-  ip_address?: string;
-  user_agent?: string;
-}
+// NOT IMPLEMENTED - Using JWT tokens instead
+// Sessions are stored in JWT tokens, not database
+// Token payload includes: user id, email, name, role
 ```
 
 ### Database Migrations
@@ -232,41 +208,8 @@ interface Session {
 -- Modify users table for super_admin role (keeping 'editor' for backward compatibility)
 ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'super_admin', 'editor') DEFAULT 'editor';
 
--- Create sessions table for NextAuth
-CREATE TABLE IF NOT EXISTS sessions (
-  id VARCHAR(255) PRIMARY KEY,
-  user_id INT NOT NULL,
-  session_token VARCHAR(255) UNIQUE NOT NULL,
-  expires DATETIME NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  ip_address VARCHAR(45),
-  user_agent TEXT,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_session_token (session_token),
-  INDEX idx_user_sessions (user_id, expires),
-  INDEX idx_expires (expires)
-);
-
--- Create accounts table for NextAuth (future OAuth support)
-CREATE TABLE IF NOT EXISTS accounts (
-  id VARCHAR(255) PRIMARY KEY,
-  user_id INT NOT NULL,
-  type VARCHAR(255) NOT NULL,
-  provider VARCHAR(255) NOT NULL,
-  provider_account_id VARCHAR(255) NOT NULL,
-  refresh_token TEXT,
-  access_token TEXT,
-  expires_at INT,
-  token_type VARCHAR(255),
-  scope VARCHAR(255),
-  id_token TEXT,
-  session_state VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_provider (provider, provider_account_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+-- Note: Sessions and Accounts tables NOT created - using JWT strategy
+-- The email field stores both username and email formats for flexibility
 ```
 
 ## Error Handling
@@ -300,17 +243,17 @@ CREATE TABLE IF NOT EXISTS accounts (
 
 ## Session Management Strategy
 
-### Session Cleanup
-- **Automatic Cleanup Job**: Cron job runs every 24 hours to delete expired sessions
-- **Implementation**: Server action or API endpoint triggered by external scheduler
-- **Query**: `DELETE FROM sessions WHERE expires < NOW()`
-- **Logging**: Log number of sessions cleaned up for monitoring
+### JWT Token Management
+- **Token Expiry**: 24 hours (configured in NextAuth)
+- **Token Refresh**: Automatic refresh every 1 hour
+- **Implementation**: JWT tokens stored in httpOnly cookies
+- **No Database Cleanup**: JWT tokens expire automatically
 
 ### Session Security
-- **Token Generation**: Use crypto.randomBytes(32) for session tokens
+- **JWT Secret**: Required environment variable (AUTH_SECRET or NEXTAUTH_SECRET)
 - **Cookie Settings**: httpOnly=true, secure=true (production), sameSite='lax'
-- **Session Rotation**: On privilege escalation (role change), invalidate old sessions
-- **Concurrent Sessions**: Allow max 3 concurrent sessions per user
+- **Token Contents**: User ID, email/username, name, role (no sensitive data)
+- **Edge Compatible**: Tokens validated without database calls
 
 ## Package Dependencies
 
@@ -345,22 +288,14 @@ export const config = {
 
 ### Login Endpoint
 ```typescript
-// POST /api/auth/login
+// Handled by NextAuth at /api/auth/[...nextauth]
+// POST /api/auth/callback/credentials
 interface LoginRequest {
-  email: string;
+  username: string;  // Changed from email
   password: string;
 }
 
-interface LoginResponse {
-  success: boolean;
-  user?: {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-  };
-  error?: string;
-}
+// Response handled by NextAuth, returns JWT token in cookie
 ```
 
 ### User Management Endpoints

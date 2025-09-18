@@ -183,24 +183,14 @@ class MySQLClient implements DatabaseClient {
    * Check if running in Docker environment
    */
   public async isDockerEnvironment(): Promise<boolean> {
-    try {
-      // Method 1: Check if 'radiodb' hostname resolves
-      const dns = require('dns').promises;
-      try {
-        await dns.lookup('radiodb');
-        return true;
-      } catch {
-        // Method 2: Check for Docker-specific environment indicators
-        return (
-          process.env.DOCKER_ENV === 'true' ||
-          process.env.NODE_ENV === 'production' ||
-          process.env.DATABASE_URL?.includes('radiodb') ||
-          false
-        );
-      }
-    } catch {
-      return false;
-    }
+    // Quick check: Skip DNS lookup and use environment indicators only
+    return (
+      process.env.DOCKER_ENV === 'true' ||
+      process.env.NODE_ENV === 'production' ||
+      process.env.DATABASE_URL?.includes('radiodb') ||
+      process.env.DATABASE_HOST === 'radiodb' ||
+      false
+    );
   }
 
   /**

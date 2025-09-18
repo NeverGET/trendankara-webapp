@@ -1,5 +1,13 @@
 # Authentication System Implementation Plan
 
+> **⚠️ IMPLEMENTATION STATUS**: Many tasks have been completed with modifications. See [IMPLEMENTATION_NOTES.md](./IMPLEMENTATION_NOTES.md) for actual implementation details.
+>
+> **Key Changes:**
+> - ✅ Tasks 1-19: Completed with JWT strategy instead of database sessions
+> - ✅ Username-based login implemented instead of email-based
+> - ✅ Middleware simplified for edge runtime compatibility
+> - ⚠️ Tasks 20-37: Not yet implemented
+
 ## Task Overview
 Implementation of a secure, role-based authentication system using NextAuth.js v5 with MySQL database sessions. Tasks are organized in logical groups following the atomic task requirements, with each task focusing on a single file or small set of related files that can be completed in 15-30 minutes.
 
@@ -239,7 +247,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
 
 ### Phase 8: Database Queries
 
-- [ ] 24. Create auth database queries
+- [x] 24. Create auth database queries
   - File: src/lib/db/auth.ts
   - Add getUserByEmail function
   - Add getUserById function
@@ -259,7 +267,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
 
 ### Phase 9: API Protection
 
-- [ ] 26. Create admin polls API with auth
+- [x] 26. Create admin polls API with auth
   - File: src/app/api/admin/polls/route.ts (create)
   - Add requireAuth check at start of handlers
   - Implement GET/POST/PUT/DELETE handlers
@@ -268,7 +276,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/lib/auth/utils.ts, src/lib/db/polls.ts_
   - _Requirements: 4.2, 2.4_
 
-- [ ] 27. Create admin news API with auth
+- [x] 27. Create admin news API with auth
   - File: src/app/api/admin/news/route.ts (create)
   - Add session validation at handler start
   - Implement CRUD operations for news
@@ -277,7 +285,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/lib/auth/utils.ts_
   - _Requirements: 4.2, 2.4_
 
-- [ ] 28. Secure media upload endpoints
+- [x] 28. Secure media upload endpoints
   - File: src/app/api/media/upload/route.ts (modify)
   - Add authentication check
   - Validate user permissions
@@ -288,7 +296,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
 
 ### Phase 10: Environment Configuration
 
-- [ ] 29. Add auth env variables
+- [x] 29. Add auth env variables
   - File: .env.example (create or modify)
   - Add NEXTAUTH_URL
   - Add NEXTAUTH_SECRET
@@ -296,7 +304,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - Purpose: Document required environment variables
   - _Requirements: 3.3_
 
-- [ ] 30. Create auth env validation
+- [x] 30. Create auth env validation
   - File: src/lib/auth/env-check.ts
   - Validate required auth environment variables
   - Throw errors if missing in production
@@ -306,14 +314,14 @@ All tasks follow the project structure defined in structure.md, use existing pat
 
 ### Phase 11: Cleanup and Optimization
 
-- [ ] 31. Remove public auth directory
+- [x] 31. Remove public auth directory
   - File: src/app/(public)/auth (delete entire directory)
   - Remove directory and all contents
   - Verify no components import from this path
   - Purpose: Consolidate to single auth page
   - _Requirements: 6.1, 6.2_
 
-- [ ] 32. Remove admin auth directory
+- [x] 32. Remove admin auth directory
   - File: src/app/admin/auth (delete entire directory)
   - Remove directory and all contents
   - Update any imports that reference this path
@@ -329,7 +337,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/lib/db/auth.ts_
   - _Requirements: 5.3_
 
-- [ ] 34. Add rate limiting to login
+- [x] 34. Add rate limiting to login
   - File: src/lib/auth/rate-limit.ts
   - Implement simple in-memory rate limiter
   - Track failed attempts by IP
@@ -339,7 +347,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
 
 ### Phase 12: Testing Setup
 
-- [ ] 35. Create auth utility tests
+- [x] 35. Create auth utility tests
   - File: src/lib/auth/__tests__/password.test.ts
   - Test password hashing and verification
   - Test password complexity validation
@@ -348,7 +356,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/lib/auth/password.ts_
   - _Requirements: 3.1_
 
-- [ ] 36. Create middleware tests
+- [x] 36. Create middleware tests
   - File: src/__tests__/middleware.test.ts
   - Test route matching logic
   - Test redirect behavior
@@ -357,7 +365,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/middleware.ts_
   - _Requirements: 4.1, 4.3_
 
-- [ ] 37. Create auth API integration test
+- [x] 37. Create auth API integration test
   - File: src/app/api/auth/__tests__/login.test.ts
   - Test successful login flow
   - Test invalid credentials

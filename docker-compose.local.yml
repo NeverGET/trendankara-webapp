@@ -1,0 +1,74 @@
+# Local development setup - minimal services
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: trendankara_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: radiopass123
+      MYSQL_DATABASE: radio_db
+      MYSQL_CHARACTER_SET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: trendankara_minio
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO initialization
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc config host add local http://minio:9000 minioadmin minioadmin123;
+      mc mb local/media --ignore-existing;
+      mc anonymous set public local/media;
+      echo 'MinIO bucket created and configured';
+      "
+    restart: "no"
+
+  # PHPMyAdmin (optional)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: trendankara_phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: radiopass123
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:
+  minio_data:
