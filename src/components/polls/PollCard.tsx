@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PollCardProps, PollOption } from '@/types/polls';
@@ -25,7 +25,7 @@ export function PollCard({
   const hasEnded = new Date(endDate) < new Date();
 
   // Calculate time remaining
-  const calculateTimeRemaining = () => {
+  const calculateTimeRemaining = useCallback(() => {
     const now = new Date();
     const end = new Date(endDate);
     const diff = end.getTime() - now.getTime();
@@ -37,7 +37,7 @@ export function PollCard({
 
     if (days > 0) return `${days} gün ${hours} saat kaldı`;
     return `${hours} saat kaldı`;
-  };
+  }, [endDate]);
 
   const [timeRemaining, setTimeRemaining] = useState(calculateTimeRemaining());
 
@@ -47,7 +47,7 @@ export function PollCard({
     }, 60000); // Update every minute
 
     return () => clearInterval(timer);
-  }, [endDate]);
+  }, [calculateTimeRemaining]);
 
   // Load vote from localStorage
   useEffect(() => {

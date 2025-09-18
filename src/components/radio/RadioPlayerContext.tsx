@@ -135,6 +135,7 @@ export function RadioPlayerProvider({
       audio.pause();
       audio.src = '';
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Nuclear reset for iOS

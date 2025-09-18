@@ -156,7 +156,7 @@ export const logStorageConnection = (): void => {
 /**
  * Default export for convenience
  */
-export default {
+const logger = {
   success: logSuccess,
   error: logError,
   warning: logWarning,
@@ -165,3 +165,5 @@ export default {
   database: logDatabaseConnection,
   storage: logStorageConnection,
 };
+
+export default logger;
