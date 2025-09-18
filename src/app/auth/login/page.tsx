@@ -101,7 +101,7 @@ export default function LoginPage() {
             className="w-full"
             disabled={isLoading}
             variant="primary"
-            size="lg"
+            size="large"
           >
             {isLoading ? (
               <span className="flex items-center justify-center">
