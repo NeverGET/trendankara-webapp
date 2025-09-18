@@ -9,18 +9,124 @@ import Credentials from 'next-auth/providers/credentials';
 import { MySQLAdapter } from './adapter';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db/client';
+import { isRateLimited, recordFailedAttempt, resetFailedAttempts, getClientIP } from './rate-limit';
+
+/**
+ * Authenticate user with rate limiting
+ * This function should be called before NextAuth's signIn to handle rate limiting
+ * @param email - User's email
+ * @param password - User's password
+ * @param ipAddress - Client's IP address
+ * @returns Object with authentication result and rate limiting info
+ */
+export async function authenticateWithRateLimit(
+  email: string,
+  password: string,
+  ipAddress: string
+): Promise<{
+  success: boolean;
+  user?: any;
+  error?: string;
+  isRateLimited?: boolean;
+  remainingTime?: number;
+}> {
+  // Check if IP is rate limited
+  const rateLimitCheck = isRateLimited(ipAddress);
+  if (rateLimitCheck.isBlocked) {
+    return {
+      success: false,
+      error: rateLimitCheck.message,
+      isRateLimited: true,
+      remainingTime: rateLimitCheck.remainingTime
+    };
+  }
+
+  // Validate credentials
+  if (!email || !password) {
+    return {
+      success: false,
+      error: 'E-posta ve şifre gerekli' // Turkish: Email and password required
+    };
+  }
+
+  try {
+    // Get user from database
+    const result = await db.query(
+      `SELECT id, email, password, name, role, is_active
+       FROM users
+       WHERE email = ?`,
+      [email]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      // Record failed attempt for non-existent user
+      const failedAttempt = recordFailedAttempt(ipAddress);
+      return {
+        success: false,
+        error: failedAttempt.message || 'Geçersiz e-posta veya şifre', // Turkish: Invalid email or password
+        isRateLimited: failedAttempt.isBlocked
+      };
+    }
+
+    // Check if user is active
+    if (!user.is_active) {
+      // Record failed attempt for inactive user
+      const failedAttempt = recordFailedAttempt(ipAddress);
+      return {
+        success: false,
+        error: failedAttempt.message || 'Hesap aktif değil', // Turkish: Account is not active
+        isRateLimited: failedAttempt.isBlocked
+      };
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      // Record failed attempt for wrong password
+      const failedAttempt = recordFailedAttempt(ipAddress);
+      return {
+        success: false,
+        error: failedAttempt.message || 'Geçersiz e-posta veya şifre', // Turkish: Invalid email or password
+        isRateLimited: failedAttempt.isBlocked
+      };
+    }
+
+    // Successful authentication - reset failed attempts
+    resetFailedAttempts(ipAddress);
+
+    // Return user object (password excluded)
+    return {
+      success: true,
+      user: {
+        id: user.id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      }
+    };
+  } catch (error) {
+    console.error('Auth error:', error);
+    return {
+      success: false,
+      error: 'Sisteme giriş sırasında bir hata oluştu' // Turkish: An error occurred during login
+    };
+  }
+}
 
 /**
  * NextAuth configuration object
  * Defines providers, callbacks, and session strategy
  */
 export const authConfig: NextAuthConfig = {
-  // Use database adapter for session storage
-  adapter: MySQLAdapter(),
+  // Note: Credentials provider requires JWT strategy
+  // adapter: MySQLAdapter(), // Commented out as it's not compatible with JWT strategy
 
-  // Use database sessions instead of JWT
+  // Use JWT sessions (required for credentials provider)
   session: {
-    strategy: 'database',
+    strategy: 'jwt',
     maxAge: 24 * 60 * 60, // 24 hours
     updateAge: 60 * 60, // 1 hour
   },
@@ -39,82 +145,60 @@ export const authConfig: NextAuthConfig = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
-        try {
-          // Get user from database
-          const result = await db.query(
-            `SELECT id, email, password, name, role, is_active
-             FROM users
-             WHERE email = ? AND deleted_at IS NULL`,
-            [credentials.email]
-          );
+        // Extract IP address from request
+        // Note: In NextAuth, req might not always be available, but we try to get it
+        const ipAddress = req ? getClientIP(req.headers || {}) : 'unknown';
 
-          const user = result.rows[0];
+        // Use the rate-limited authentication function
+        const authResult = await authenticateWithRateLimit(
+          credentials.email as string,
+          credentials.password as string,
+          ipAddress
+        );
 
-          if (!user) {
-            console.error('User not found:', credentials.email);
-            return null;
-          }
+        if (!authResult.success) {
+          // Log the error for debugging
+          console.error('Authentication failed:', authResult.error, 'IP:', ipAddress);
 
-          // Check if user is active
-          if (!user.is_active) {
-            console.error('User is not active:', credentials.email);
-            return null;
-          }
-
-          // Verify password
-          const isValidPassword = await bcrypt.compare(
-            credentials.password as string,
-            user.password
-          );
-
-          if (!isValidPassword) {
-            console.error('Invalid password for user:', credentials.email);
-            return null;
-          }
-
-          // Return user object (password excluded)
-          return {
-            id: user.id.toString(),
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          };
-        } catch (error) {
-          console.error('Auth error:', error);
+          // NextAuth authorize function should return null for failed authentication
+          // The error handling will be done at the callback level
           return null;
         }
+
+        // Return user object for successful authentication
+        return authResult.user;
       }
     })
   ],
 
   // Configure callbacks
   callbacks: {
-    // Enrich session with user role
-    async session({ session, user }) {
-      if (user && session.user) {
-        // Get fresh user data from database
-        const result = await db.query(
-          `SELECT id, email, name, role, is_active
-           FROM users
-           WHERE id = ? AND deleted_at IS NULL`,
-          [user.id]
-        );
-
-        const dbUser = result.rows[0];
-
-        if (dbUser) {
-          session.user.id = dbUser.id.toString();
-          session.user.role = dbUser.role;
-          session.user.email = dbUser.email;
-          session.user.name = dbUser.name;
-        }
+    // JWT callback - runs whenever JWT is created, updated or accessed
+    async jwt({ token, user }) {
+      // Initial sign in - add user data to token
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.role = user.role;
       }
+      return token;
+    },
 
+    // Session callback - runs whenever session is accessed
+    async session({ session, token }) {
+      // Add user data from token to session
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
+        session.user.role = token.role as string;
+      }
       return session;
     },
 

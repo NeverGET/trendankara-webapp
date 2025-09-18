@@ -131,7 +131,7 @@ export function MySQLAdapter(): Adapter {
       return await this.getUser(id);
     },
 
-    async deleteUser?(userId: string) {
+    async deleteUser(userId: string) {
       // Soft delete the user
       await db.query(
         `UPDATE users SET deleted_at = NOW()
@@ -278,7 +278,7 @@ export function MySQLAdapter(): Adapter {
       );
     },
 
-    async createVerificationToken?(token: {
+    async createVerificationToken(token: {
       identifier: string;
       expires: Date;
       token: string;
@@ -292,7 +292,7 @@ export function MySQLAdapter(): Adapter {
       return token;
     },
 
-    async useVerificationToken?(token: { identifier: string; token: string }) {
+    async useVerificationToken(token: { identifier: string; token: string }) {
       const result = await db.query(
         `SELECT * FROM verification_tokens
          WHERE identifier = ? AND token = ?`,

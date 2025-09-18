@@ -4,16 +4,15 @@
  * SIMPLE implementation using NextAuth
  */
 
-import { auth } from '@/lib/auth/config';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 /**
  * Middleware function to protect routes
  */
-export default auth(async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const session = await auth();
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
   // Define public routes that don't require authentication
   const publicRoutes = [
@@ -29,6 +28,7 @@ export default auth(async function middleware(req: NextRequest) {
     '/api/polls/vote',
     '/api/mobile',
     '/api/auth', // NextAuth routes
+    '/api/test', // Test routes for development
   ];
 
   // Check if the current route is public
@@ -47,33 +47,41 @@ export default auth(async function middleware(req: NextRequest) {
   const isAdminApiRoute = pathname.startsWith('/api/admin');
   const isProtectedRoute = isAdminRoute || isAdminApiRoute;
 
+  // Get token using NextAuth JWT
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+  });
+
+  const isAuthenticated = !!token;
+
   // If it's a protected route and user is not authenticated
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !isAuthenticated) {
     // For API routes, return 401
-    if (isAdminApiRoute) {
+    if (pathname.startsWith('/api')) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
     // For pages, redirect to login
-    const url = req.nextUrl.clone();
+    const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     url.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(url);
   }
 
   // If user is authenticated and trying to access login page
-  if (pathname === '/auth/login' && session) {
-    const url = req.nextUrl.clone();
+  if (pathname === '/auth/login' && isAuthenticated) {
+    const url = request.nextUrl.clone();
     url.pathname = '/admin';
     return NextResponse.redirect(url);
   }
 
   // Check role-based access for super admin only routes
   if (pathname.startsWith('/admin/users') || pathname.startsWith('/api/admin/users')) {
-    const userRole = (session?.user as any)?.role;
+    const userRole = token?.role as string;
 
     if (userRole !== 'super_admin') {
       // For API routes, return 403
@@ -85,16 +93,15 @@ export default auth(async function middleware(req: NextRequest) {
       }
 
       // For pages, redirect to admin dashboard with error
-      const url = req.nextUrl.clone();
+      const url = request.nextUrl.clone();
       url.pathname = '/admin';
-      url.searchParams.set('error', 'unauthorized');
+      url.searchParams.set('error', 'insufficient_permissions');
       return NextResponse.redirect(url);
     }
   }
 
-  // Allow the request to continue
   return NextResponse.next();
-});
+}
 
 /**
  * Configure which routes the middleware should run on

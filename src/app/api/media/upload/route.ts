@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { uploadImage } from '@/lib/storage/upload';
 import { createMedia } from '@/lib/db/queries/media';
 import { handleMulterError, MulterValidationError, validateFile, getSupportedImageTypes, getMaxFileSizeMB } from '@/lib/storage/multer';
+import { getServerSession, isAdmin, getUserId } from '@/lib/auth/utils';
+import { logInfo, logWarning, logError } from '@/lib/utils/logger';
 
 /**
  * Media Upload API Route
@@ -57,6 +59,37 @@ async function handleFileUpload(formData: FormData): Promise<{
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check
+    const session = await getServerSession();
+
+    if (!session) {
+      logWarning('Unauthorized media upload attempt - no session');
+      return NextResponse.json({
+        success: false,
+        error: {
+          message: 'Authentication required',
+          type: 'Unauthorized'
+        }
+      }, { status: 401 });
+    }
+
+    // Authorization check - only admin and superadmin can upload media
+    if (!isAdmin(session)) {
+      const userRole = (session.user as any)?.role || 'unknown';
+      logWarning(`Unauthorized media upload attempt by user ${getUserId(session)} with role: ${userRole}`);
+      return NextResponse.json({
+        success: false,
+        error: {
+          message: 'Insufficient permissions. Admin access required.',
+          type: 'Forbidden'
+        }
+      }, { status: 403 });
+    }
+
+    const userId = getUserId(session);
+    const userRole = (session.user as any)?.role;
+    logInfo(`Media upload attempt by user ${userId} (${userRole})`);
+
     // Check content type
     const contentType = request.headers.get('content-type');
     if (!contentType || !contentType.includes('multipart/form-data')) {
@@ -138,7 +171,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       const uploadError = error as Error;
-      console.error('Image upload failed:', uploadError.message);
+      logError(`Image upload failed for user ${userId}: ${uploadError.message}`);
 
       return NextResponse.json({
         success: false,
@@ -166,7 +199,7 @@ export async function POST(request: NextRequest) {
         } : null,
         width: uploadResult.metadata.dimensions?.width || null,
         height: uploadResult.metadata.dimensions?.height || null,
-        uploaded_by: null // TODO: Get from session when auth is implemented
+        uploaded_by: userId
       };
 
       const insertResult = await createMedia(mediaData);
@@ -177,9 +210,11 @@ export async function POST(request: NextRequest) {
         updated_at: new Date()
       };
 
+      logInfo(`Media upload successful: ${mediaData.filename} (ID: ${insertResult.insertId}) by user ${userId}`);
+
     } catch (error) {
       const dbError = error as Error;
-      console.error('Database save failed:', dbError.message);
+      logError(`Database save failed for user ${userId}: ${dbError.message}`);
 
       // Upload succeeded but database save failed
       // TODO: Consider implementing cleanup of uploaded files in this case
@@ -239,7 +274,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     const serverError = error as Error;
-    console.error('Media upload API error:', serverError.message);
+    logError(`Media upload API error: ${serverError.message}`);
 
     return NextResponse.json({
       success: false,
@@ -262,9 +297,37 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/media/upload
  * Returns upload configuration and requirements
+ * Requires authentication to prevent information disclosure
  */
 export async function GET() {
   try {
+    // Authentication check
+    const session = await getServerSession();
+
+    if (!session) {
+      logWarning('Unauthorized access attempt to upload configuration');
+      return NextResponse.json({
+        success: false,
+        error: {
+          message: 'Authentication required',
+          type: 'Unauthorized'
+        }
+      }, { status: 401 });
+    }
+
+    // Authorization check - only admin and superadmin can access upload config
+    if (!isAdmin(session)) {
+      const userRole = (session.user as any)?.role || 'unknown';
+      logWarning(`Unauthorized access to upload config by user ${getUserId(session)} with role: ${userRole}`);
+      return NextResponse.json({
+        success: false,
+        error: {
+          message: 'Insufficient permissions. Admin access required.',
+          type: 'Forbidden'
+        }
+      }, { status: 403 });
+    }
+
     const uploadConfig = {
       success: true,
       data: {
@@ -303,7 +366,7 @@ export async function GET() {
 
   } catch (error) {
     const configError = error as Error;
-    console.error('Upload config API error:', configError.message);
+    logError(`Upload config API error: ${configError.message}`);
 
     return NextResponse.json({
       success: false,

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+// import { Inter } from 'next/font/google';  // Commented out to avoid timeout
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'] });
+// const inter = Inter({ subsets: ['latin'] });  // Commented out to avoid timeout
 
 export const metadata: Metadata = {
   title: 'Trend Ankara Radio',
@@ -17,8 +18,10 @@ export default function RootLayout({
   // Server-side initialization will happen when API routes are accessed
   return (
     <html lang="tr" className="dark">
-      <body suppressHydrationWarning className={`${inter.className} bg-dark-bg-primary text-dark-text-primary min-h-screen`}>
-        {children}
+      <body suppressHydrationWarning className="bg-dark-bg-primary text-dark-text-primary min-h-screen">
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
