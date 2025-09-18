@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { NewsGrid } from '@/components/news/NewsGrid';
 import { NewsModal } from '@/components/news/NewsModal';
 import { Button } from '@/components/ui/Button';
@@ -24,11 +24,7 @@ export default function NewsPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  useEffect(() => {
-    loadNews(1, true);
-  }, [selectedCategory]);
-
-  const loadNews = async (pageNum: number, reset: boolean = false) => {
+  const loadNews = useCallback(async (pageNum: number, reset: boolean = false) => {
     setLoading(true);
     try {
       const response = selectedCategory === 'ALL'
@@ -47,7 +43,11 @@ export default function NewsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    loadNews(1, true);
+  }, [loadNews]);
 
   const handleLoadMore = () => {
     if (!loading && hasMore) {

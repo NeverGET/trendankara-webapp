@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
         } : null,
         width: uploadResult.metadata.dimensions?.width || null,
         height: uploadResult.metadata.dimensions?.height || null,
-        uploaded_by: userId
+        uploaded_by: parseInt(userId, 10) || null
       };
 
       const insertResult = await createMedia(mediaData);

@@ -458,10 +458,12 @@ export async function initializeStorage(): Promise<void> {
 /**
  * Default export for convenience
  */
-export default {
+const storageClient = {
   getClient: getStorageClient,
   ensureBucket,
   getPublicUrl,
   healthCheck,
   initialize: initializeStorage,
 };
+
+export default storageClient;

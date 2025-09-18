@@ -436,7 +436,7 @@ export function getMaxFileSize(): number {
 /**
  * Default export with main functions
  */
-export default {
+const uploadUtils = {
   uploadImage,
   uploadImages,
   getSupportedImageTypes,
@@ -444,3 +444,5 @@ export default {
   getMaxFileSize,
   ImageValidationError
 };
+
+export default uploadUtils;
