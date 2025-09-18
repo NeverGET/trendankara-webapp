@@ -386,3 +386,129 @@ Before deploying:
 ### Quick Deploy Script Location
 - `/Users/cemalkurt/Projects/trendankara/webapp/production/quick-deploy.sh`
 - Updates and deploys the application with correct configuration
+
+## Authentication Implementation Lessons Learned
+
+### NextAuth.js Production Issues & Solutions
+
+#### 1. Environment Variable Conflicts
+**Problem:** `.env.production` file overriding Docker environment variables
+- `.env.production` was baked into the Docker image
+- Next.js loads `.env.production` automatically in production mode
+- File values took precedence over Docker -e flags
+
+**Solution:**
+- Remove or rename `.env.production` on the server
+- Use only Docker environment variables for production
+- Keep `.env.production` out of the repository
+
+#### 2. JWT Secret Configuration
+**Problem:** "MissingSecret" error despite NEXTAUTH_SECRET being set
+- GitHub Actions secrets not configured initially
+- Empty secret values passed to container
+
+**Solution:**
+```yaml
+# GitHub Actions workflow
+-e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
+-e AUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
+```
+- Add NEXTAUTH_SECRET to GitHub repository secrets
+- Use same secret for both NEXTAUTH_SECRET and AUTH_SECRET
+
+#### 3. Session Cookie Issues in Production
+**Problem:** Authentication successful but session not persisting
+- Cookies not being set correctly over HTTPS
+- Middleware unable to verify JWT tokens
+
+**Solution:**
+```typescript
+// auth/config.ts
+cookies: {
+  sessionToken: {
+    name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}authjs.session-token`,
+    options: {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+    },
+  },
+}
+
+// middleware.ts
+const token = await getToken({
+  req: request,
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  secureCookie: process.env.NODE_ENV === 'production',
+});
+```
+
+#### 4. Password Hash Storage Issues
+**Problem:** Password hashes truncated in database
+- Shell interpretation of `$` characters in bcrypt hashes
+- Hashes like `$2b$10$...` stored as `b0...` (missing `$2` prefix)
+
+**Solution:**
+```bash
+# Wrong - shell interprets $
+docker exec mysql -e "UPDATE users SET password='$2b$10$...'"
+
+# Correct - use SQL file
+cat > /tmp/update.sql << 'EOF'
+UPDATE users SET password = '$2b$10$...';
+EOF
+docker exec -i mysql < /tmp/update.sql
+```
+
+#### 5. Database Connection Authentication Flow
+**Problem:** Database connection failing with "ECONNREFUSED"
+- Wrong host/port configuration in production
+- SSL/TLS certificate issues with MySQL
+
+**Solution:**
+- Use container names as hosts within Docker network
+- Use internal ports (3306) not external (3307)
+- Disable SSL for local Docker connections
+
+### Authentication Setup Checklist
+
+#### Development Environment
+- [x] Use production database directly for testing
+- [x] Connection: `82.29.169.180:3307`
+- [x] Test users: admin/admin, superadmin/superadmin
+
+#### Production Deployment
+- [x] Set NEXTAUTH_SECRET in GitHub secrets
+- [x] Remove/rename .env.production files
+- [x] Use container names for database host
+- [x] Configure secure cookies for HTTPS
+- [x] Add secureCookie option in middleware
+
+#### Common Authentication Commands
+```bash
+# Create users with proper password hashes
+cat > /tmp/create_users.sql << 'EOF'
+INSERT INTO users (email, password, name, role, is_active) VALUES
+('admin', '$2b$10$LMMGfwT0NwoTWq3cQAr6p.fkDpgAbYL/NHndMNVD/Y/kTul2SuiUy', 'Admin', 'admin', 1),
+('superadmin', '$2b$10$w8fq7.W.x7Dn61mRRK/C8.468qN2cfKc5HWNtfpMtfjOVgS.emGfq', 'Super Admin', 'super_admin', 1);
+EOF
+docker exec -i radio_mysql_alt mysql -u root -p[password] radio_db < /tmp/create_users.sql
+
+# Test authentication
+curl -X POST https://www.trendankara.com/api/auth/callback/credentials \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "email=admin&password=admin&csrfToken=test"
+```
+
+### Rate Limiting Implementation
+- 5 attempts before 15-minute block
+- IP-based tracking for anonymous users
+- Reset on successful login
+- Turkish error messages with attempt count
+
+### Username vs Email Design Decision
+- Using email field for username (backward compatibility)
+- Login form shows "Kullanıcı Adı" (Username) in Turkish
+- Database stores username in email column
+- No email validation required
