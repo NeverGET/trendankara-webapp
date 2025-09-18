@@ -10,6 +10,7 @@ import { MySQLAdapter } from './adapter';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db/client';
 import { isRateLimited, recordFailedAttempt, resetFailedAttempts, getClientIP } from './rate-limit';
+import type { UserRole } from '@/types/auth';
 
 /**
  * Authenticate user with rate limiting
@@ -197,7 +198,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as UserRole;
       }
       return session;
     },

@@ -47,7 +47,7 @@ export async function seedAuthData(): Promise<boolean> {
       [email, hashedPassword, name]
     );
 
-    if (result.rows.affectedRows > 0) {
+    if ((result as any).affectedRows > 0) {
       logSuccess(`Super admin user created with email: ${email}`, { prefix: 'AuthSeed' });
       return true;
     } else {
