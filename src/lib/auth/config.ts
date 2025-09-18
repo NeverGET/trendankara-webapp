@@ -86,7 +86,11 @@ export async function authenticateWithRateLimit(
     }
 
     // Verify password
+    console.log('Verifying password for user:', user.email);
+    console.log('Password hash from DB:', user.password);
+    console.log('Password provided:', password);
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('Password verification result:', isValidPassword);
 
     if (!isValidPassword) {
       // Record failed attempt for wrong password
