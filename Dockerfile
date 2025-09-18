@@ -14,9 +14,6 @@ FROM node:current-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
@@ -26,7 +23,6 @@ COPY --from=builder /app/package*.json ./
 RUN npm ci --only=production --omit=dev && \
     npm cache clean --force
 
-USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 

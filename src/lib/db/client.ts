@@ -102,7 +102,7 @@ class MySQLClient implements DatabaseClient {
       database = url.pathname.slice(1); // Remove leading /
     } else {
       // Fallback to individual environment variables
-      host = process.env.DATABASE_HOST || (isDocker ? 'radiodb' : 'localhost');
+      host = process.env.DATABASE_HOST || (isDocker ? 'radio_mysql_alt' : 'localhost');
       port = parseInt(process.env.DATABASE_PORT || '3306');
       user = process.env.DATABASE_USER || 'root';
       password = process.env.DATABASE_PASSWORD || '';
@@ -188,7 +188,9 @@ class MySQLClient implements DatabaseClient {
       process.env.DOCKER_ENV === 'true' ||
       process.env.NODE_ENV === 'production' ||
       process.env.DATABASE_URL?.includes('radiodb') ||
+      process.env.DATABASE_URL?.includes('radio_mysql_alt') ||
       process.env.DATABASE_HOST === 'radiodb' ||
+      process.env.DATABASE_HOST === 'radio_mysql_alt' ||
       false
     );
   }
