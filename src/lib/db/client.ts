@@ -78,7 +78,14 @@ class MySQLClient implements DatabaseClient {
       if (this.retryCount < this.maxRetries) {
         await this.retryWithBackoff();
       } else {
-        throw new Error(`Database initialization failed after ${this.maxRetries} attempts: ${dbError.message}`);
+        const fullError = `Database initialization failed after ${this.maxRetries} attempts | ` +
+          `Host: ${this.config?.host}:${this.config?.port} | ` +
+          `DB: ${this.config?.database} | ` +
+          `User: ${this.config?.user} | ` +
+          `Error: ${dbError.message} | ` +
+          `Code: ${dbError.code || 'unknown'} | ` +
+          `Stack: ${dbError.stack?.split('\n')[0] || 'no stack'}`;
+        throw new Error(fullError);
       }
     }
   }
@@ -159,12 +166,18 @@ class MySQLClient implements DatabaseClient {
       throw new Error('Connection pool not initialized');
     }
 
-    const connection = await this.pool.getConnection();
     try {
-      await connection.execute('SELECT 1 as test');
-      logInfo('Database connection test successful', { prefix: 'MySQL' });
-    } finally {
-      connection.release();
+      const connection = await this.pool.getConnection();
+      try {
+        await connection.execute('SELECT 1 as test');
+        logInfo('Database connection test successful', { prefix: 'MySQL' });
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      const err = error as any;
+      logError(`Connection test failed: ${err.message} | Code: ${err.code} | errno: ${err.errno}`, { prefix: 'MySQL' });
+      throw error;
     }
   }
 
