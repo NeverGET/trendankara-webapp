@@ -52,6 +52,7 @@ export async function authenticateWithRateLimit(
 
   try {
     // Get user from database
+    console.log('Looking up user with email:', email);
     const result = await db.query(
       `SELECT id, email, password, name, role, is_active
        FROM users
@@ -59,9 +60,11 @@ export async function authenticateWithRateLimit(
       [email]
     );
 
+    console.log('Database query result rows:', result.rows.length);
     const user = result.rows[0];
 
     if (!user) {
+      console.log('User not found in database');
       // Record failed attempt for non-existent user
       const failedAttempt = recordFailedAttempt(ipAddress);
       return {
@@ -147,13 +150,18 @@ export const authConfig: NextAuthConfig = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials, req) {
+        console.log('=== AUTH ATTEMPT ===');
+        console.log('Credentials received:', { email: credentials?.email, hasPassword: !!credentials?.password });
+
         if (!credentials?.email || !credentials?.password) {
+          console.log('Missing credentials');
           return null;
         }
 
         // Extract IP address from request
         // Note: In NextAuth, req might not always be available, but we try to get it
         const ipAddress = req ? getClientIP(req.headers || {}) : 'unknown';
+        console.log('IP Address:', ipAddress);
 
         // Use the rate-limited authentication function
         const authResult = await authenticateWithRateLimit(
@@ -161,6 +169,12 @@ export const authConfig: NextAuthConfig = {
           credentials.password as string,
           ipAddress
         );
+
+        console.log('Auth Result:', {
+          success: authResult.success,
+          error: authResult.error,
+          hasUser: !!authResult.user
+        });
 
         if (!authResult.success) {
           // Log the error for debugging
@@ -172,6 +186,7 @@ export const authConfig: NextAuthConfig = {
         }
 
         // Return user object for successful authentication
+        console.log('Returning user:', authResult.user);
         return authResult.user;
       }
     })

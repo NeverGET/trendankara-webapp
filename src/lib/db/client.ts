@@ -189,8 +189,10 @@ class MySQLClient implements DatabaseClient {
       process.env.NODE_ENV === 'production' ||
       process.env.DATABASE_URL?.includes('radiodb') ||
       process.env.DATABASE_URL?.includes('radio_mysql_alt') ||
+      process.env.DATABASE_URL?.includes('trendankara_mysql') ||
       process.env.DATABASE_HOST === 'radiodb' ||
       process.env.DATABASE_HOST === 'radio_mysql_alt' ||
+      process.env.DATABASE_HOST === 'trendankara_mysql' ||
       false
     );
   }
