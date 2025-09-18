@@ -42,8 +42,8 @@ jobs:
               -e DATABASE_PASSWORD=radiopass123 \
               -e DATABASE_NAME=radio_db \
               -e NEXTAUTH_URL=https://www.trendankara.com \
-              -e NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
-              -e AUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
+              -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
+              -e AUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
               -e MINIO_ENDPOINT=trendankara_minio \
               -e MINIO_PORT=9000 \
               -e MINIO_ACCESS_KEY=minioadmin \
