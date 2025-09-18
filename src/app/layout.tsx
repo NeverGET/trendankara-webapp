@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 import "./globals.css";
 
 const inter = Inter({ subsets: ['latin'] });
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="tr" className="dark">
       <body suppressHydrationWarning className={`${inter.className} bg-dark-bg-primary text-dark-text-primary min-h-screen`}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
