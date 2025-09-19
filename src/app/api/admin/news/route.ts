@@ -15,6 +15,7 @@ import {
   type NewsFilters
 } from '@/lib/db/news';
 import { getStorageClient } from '@/lib/storage/client';
+import { invalidateEntityCache } from '@/lib/cache/invalidation';
 
 /**
  * GET /api/admin/news
@@ -309,6 +310,9 @@ export async function POST(request: NextRequest) {
 
     const newsId = await createNews(newsData);
 
+    // Invalidate news cache after creation
+    await invalidateEntityCache('news');
+
     // Get the created news article to return full data
     const createdNews = await getNewsById(newsId);
 
@@ -472,6 +476,9 @@ export async function PUT(request: NextRequest) {
 
     await updateNews(newsId, updateData);
 
+    // Invalidate news cache after update
+    await invalidateEntityCache('news', newsId.toString());
+
     // Get the updated news article to return full data
     const updatedNews = await getNewsById(newsId);
 
@@ -534,6 +541,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     await deleteNews(parseInt(newsId));
+
+    // Invalidate news cache after deletion
+    await invalidateEntityCache('news', newsId);
 
     return NextResponse.json({
       success: true,

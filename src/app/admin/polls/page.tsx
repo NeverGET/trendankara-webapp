@@ -5,6 +5,8 @@ import { PollCard } from '@/components/admin/PollCard';
 import { StatsCard } from '@/components/admin/StatsCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useConfirmation } from '@/hooks/useConfirmation';
 import {
   FiPlus,
   FiBarChart2,
@@ -152,11 +154,23 @@ const pollStatuses = [
   { value: 'draft', label: 'Taslak', color: 'default' }
 ];
 
+const pollTypeConfig: Record<string, { label: string; color: string }> = {
+  'TOP_50': { label: 'Top 50', color: 'primary' },
+  'TOP_10': { label: 'Top 10', color: 'secondary' },
+  'BEST_OF_MONTH': { label: 'Ayın En İyisi', color: 'success' },
+  'LISTENER_CHOICE': { label: 'Dinleyici Seçimi', color: 'warning' },
+  'SPECIAL': { label: 'Özel', color: 'info' }
+};
+
 export default function AdminPollsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPollIds, setSelectedPollIds] = useState<number[]>([]);
+
+  // Confirmation dialog
+  const confirmation = useConfirmation();
 
   const filteredPolls = mockPolls.filter(poll => {
     const matchesType = filterType === 'all' || poll.type === filterType;
@@ -165,6 +179,86 @@ export default function AdminPollsPage() {
                           poll.description?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesType && matchesStatus && matchesSearch;
   });
+
+  // Handle single poll deletion
+  const handleDeletePoll = async (id: number) => {
+    const poll = mockPolls.find(p => p.id === id);
+    const pollTitle = poll?.title || 'Bu anket';
+
+    const confirmed = await confirmation.confirm({
+      title: 'Anketi Sil',
+      message: `"${pollTitle}" başlıklı anketi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm oy verileri silinecektir.`,
+      confirmText: 'Sil',
+      cancelText: 'İptal',
+      variant: 'danger'
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      confirmation.setLoading(true);
+      // TODO: Add API call to delete poll
+      console.log('Deleting poll:', id);
+      // Mock deletion - in real app, refresh data after successful deletion
+    } catch (error) {
+      console.error('Error deleting poll:', error);
+      confirmation.setError('Anket silinirken bir hata oluştu.');
+    } finally {
+      confirmation.setLoading(false);
+    }
+  };
+
+  // Handle batch deletion
+  const handleBatchDelete = async () => {
+    if (selectedPollIds.length === 0) return;
+
+    const confirmed = await confirmation.confirm({
+      title: 'Anketleri Sil',
+      message: `${selectedPollIds.length} anketi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm oy verileri silinecektir.`,
+      confirmText: `${selectedPollIds.length} Anketi Sil`,
+      cancelText: 'İptal',
+      variant: 'danger'
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      confirmation.setLoading(true);
+      // TODO: Add API call to delete multiple polls
+      console.log('Deleting polls:', selectedPollIds);
+      setSelectedPollIds([]);
+      // Mock deletion - in real app, refresh data after successful deletion
+    } catch (error) {
+      console.error('Error deleting polls:', error);
+      confirmation.setError('Anketler silinirken bir hata oluştu.');
+    } finally {
+      confirmation.setLoading(false);
+    }
+  };
+
+  // Toggle poll selection
+  const togglePollSelection = (id: number) => {
+    setSelectedPollIds(prev =>
+      prev.includes(id)
+        ? prev.filter(pollId => pollId !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Select all visible polls
+  const selectAllVisiblePolls = () => {
+    const visibleIds = filteredPolls.map(poll => poll.id);
+    setSelectedPollIds(visibleIds);
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedPollIds([]);
+  };
 
   return (
     <div className="space-y-6">
@@ -183,6 +277,37 @@ export default function AdminPollsPage() {
           Yeni Anket
         </Button>
       </div>
+
+      {/* Batch Actions */}
+      {selectedPollIds.length > 0 && (
+        <div className="bg-gradient-to-r from-red-900/20 to-transparent rounded-xl border border-red-900/30 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-600/20 rounded-lg">
+                <FiCheckCircle className="w-5 h-5 text-red-500" />
+              </div>
+              <h2 className="text-lg font-semibold text-dark-text-primary">Toplu İşlemler</h2>
+              <Badge variant="error" size="small" pill>
+                {selectedPollIds.length} Anket Seçili
+              </Badge>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="small" onClick={clearSelection}>
+                Seçimi Temizle
+              </Button>
+              <Button
+                variant="danger"
+                size="small"
+                onClick={handleBatchDelete}
+                className="flex items-center gap-2"
+              >
+                <FiTrash2 className="w-4 h-4" />
+                {selectedPollIds.length} Anketi Sil
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -300,6 +425,17 @@ export default function AdminPollsPage() {
               <FiList className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Selection Controls */}
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={selectedPollIds.length === filteredPolls.length ? clearSelection : selectAllVisiblePolls}
+            >
+              {selectedPollIds.length === filteredPolls.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -344,14 +480,27 @@ export default function AdminPollsPage() {
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredPolls.map(poll => (
-            <PollCard
-              key={poll.id}
-              {...poll}
-              onEdit={(id) => console.log('Edit', id)}
-              onDelete={(id) => console.log('Delete', id)}
-              onView={(id) => console.log('View', id)}
-              onToggleStatus={(id) => console.log('Toggle', id)}
-            />
+            <div key={poll.id} className={cn(
+              "relative",
+              selectedPollIds.includes(poll.id) && "ring-2 ring-red-500 rounded-xl"
+            )}>
+              {/* Selection Checkbox */}
+              <div className="absolute top-4 left-4 z-10">
+                <input
+                  type="checkbox"
+                  checked={selectedPollIds.includes(poll.id)}
+                  onChange={() => togglePollSelection(poll.id)}
+                  className="w-4 h-4 text-red-600 bg-dark-surface-secondary border-dark-border-primary rounded focus:ring-red-500 focus:ring-2"
+                />
+              </div>
+              <PollCard
+                {...poll}
+                onEdit={(id) => console.log('Edit', id)}
+                onDelete={handleDeletePoll}
+                onView={(id) => console.log('View', id)}
+                onToggleStatus={(id) => console.log('Toggle', id)}
+              />
+            </div>
           ))}
         </div>
       ) : (
@@ -361,9 +510,21 @@ export default function AdminPollsPage() {
             return (
               <div
                 key={poll.id}
-                className="bg-gradient-to-r from-dark-surface-primary to-dark-surface-secondary/50 rounded-xl border border-dark-border-primary/50 p-4 hover:shadow-lg transition-all duration-200"
+                className={cn(
+                  "bg-gradient-to-r from-dark-surface-primary to-dark-surface-secondary/50 rounded-xl border border-dark-border-primary/50 p-4 hover:shadow-lg transition-all duration-200",
+                  selectedPollIds.includes(poll.id) && "ring-2 ring-red-500"
+                )}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-start gap-4">
+                  {/* Selection Checkbox */}
+                  <div className="mt-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedPollIds.includes(poll.id)}
+                      onChange={() => togglePollSelection(poll.id)}
+                      className="w-4 h-4 text-red-600 bg-dark-surface-secondary border-dark-border-primary rounded focus:ring-red-500 focus:ring-2"
+                    />
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-dark-text-primary">
@@ -426,7 +587,11 @@ export default function AdminPollsPage() {
                     <Button variant="ghost" size="small">
                       <FiEdit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="small">
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => handleDeletePoll(poll.id)}
+                    >
                       <FiTrash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </div>
@@ -446,6 +611,19 @@ export default function AdminPollsPage() {
           </p>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmation.isOpen}
+        onClose={confirmation.close}
+        onConfirm={confirmation.handleConfirm}
+        title={confirmation.title}
+        message={confirmation.message}
+        variant={confirmation.variant as 'danger' | 'warning' | 'info'}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        loading={confirmation.isLoading}
+      />
     </div>
   );
 }
@@ -454,11 +632,3 @@ export default function AdminPollsPage() {
 function cn(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
-
-const pollTypeConfig: Record<string, { label: string; color: string }> = {
-  'TOP_50': { label: 'Top 50', color: 'purple' },
-  'TOP_10': { label: 'Top 10', color: 'pink' },
-  'BEST_OF_MONTH': { label: 'Ayın En İyisi', color: 'info' },
-  'LISTENER_CHOICE': { label: 'Dinleyici Seçimi', color: 'success' },
-  'SPECIAL': { label: 'Özel', color: 'warning' }
-};

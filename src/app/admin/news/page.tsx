@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useConfirmation } from '@/hooks/useConfirmation';
 import {
   FiPlus,
   FiFileText,
@@ -63,6 +65,9 @@ export default function AdminNewsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingNews, setEditingNews] = useState<NewsArticle | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Confirmation dialog
+  const confirmation = useConfirmation();
 
   const categories = ['all', 'MAGAZINE', 'ARTIST', 'ALBUM', 'CONCERT'];
 
@@ -182,16 +187,31 @@ export default function AdminNewsPage() {
 
   // Handle delete news
   const handleDeleteNews = async (id: number) => {
-    if (!confirm('Bu haberi silmek istediğinizden emin misiniz?')) {
+    // Find the news article to get its title
+    const newsArticle = news.find(n => n.id === id);
+    const newsTitle = newsArticle?.title || 'Bu haber';
+
+    const confirmed = await confirmation.confirm({
+      title: 'Haberi Sil',
+      message: `"${newsTitle}" başlıklı haberi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`,
+      confirmText: 'Sil',
+      cancelText: 'İptal',
+      variant: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
     try {
+      confirmation.setLoading(true);
       await deleteAdminNews(id);
       loadNews(currentPage, searchQuery, filterCategory); // Refresh data
     } catch (error) {
       console.error('Error deleting news:', error);
-      alert('Haber silinirken bir hata oluştu.');
+      confirmation.setError('Haber silinirken bir hata oluştu.');
+    } finally {
+      confirmation.setLoading(false);
     }
   };
 
@@ -498,6 +518,19 @@ export default function AdminNewsPage() {
           />
         )}
       </Modal>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmation.isOpen}
+        onClose={confirmation.close}
+        onConfirm={confirmation.handleConfirm}
+        title={confirmation.title}
+        message={confirmation.message}
+        variant={confirmation.variant as 'danger' | 'warning' | 'info'}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        loading={confirmation.isLoading}
+      />
     </div>
   );
 }

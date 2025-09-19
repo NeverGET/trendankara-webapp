@@ -9,6 +9,7 @@ import {
   getContentPageBySlug,
   duplicateContentPage,
   setContentPagePublishStatus,
+  setContentPageActiveStatus,
   setAsHomepage,
   contentPageSlugExists,
   generateSlug,

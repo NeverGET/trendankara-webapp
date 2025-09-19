@@ -14,6 +14,7 @@ import {
   getVoteStatistics,
   resetPollVotes
 } from '@/lib/db/poll-votes';
+import { invalidateEntityCache } from '@/lib/cache/invalidation';
 
 /**
  * GET /api/admin/polls
@@ -208,6 +209,9 @@ export async function POST(request: NextRequest) {
 
     const pollId = await createPoll(pollData);
 
+    // Invalidate polls cache after creation
+    await invalidateEntityCache('polls');
+
     return NextResponse.json({
       success: true,
       data: { id: pollId },
@@ -280,6 +284,9 @@ export async function PUT(request: NextRequest) {
 
     await updatePoll(parseInt(id), updateData);
 
+    // Invalidate polls cache after update
+    await invalidateEntityCache('polls', id.toString());
+
     return NextResponse.json({
       success: true,
       message: 'Poll updated successfully'
@@ -341,6 +348,8 @@ export async function DELETE(request: NextRequest) {
     // Handle special actions
     if (action === 'reset_votes') {
       await resetPollVotes(parseInt(pollId));
+      // Invalidate polls cache when votes are reset
+      await invalidateEntityCache('polls', pollId);
       return NextResponse.json({
         success: true,
         message: 'Poll votes reset successfully'
@@ -348,6 +357,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     await deletePoll(parseInt(pollId));
+
+    // Invalidate polls cache after deletion
+    await invalidateEntityCache('polls', pollId);
 
     return NextResponse.json({
       success: true,
@@ -410,6 +422,8 @@ export async function PATCH(request: NextRequest) {
     switch (action) {
       case 'activate':
         await updatePoll(parseInt(id), { is_active: true });
+        // Invalidate cache for poll activation - affects featured polls
+        await invalidateEntityCache('polls', id.toString());
         return NextResponse.json({
           success: true,
           message: 'Poll activated successfully'
@@ -417,6 +431,8 @@ export async function PATCH(request: NextRequest) {
 
       case 'deactivate':
         await updatePoll(parseInt(id), { is_active: false });
+        // Invalidate cache for poll deactivation
+        await invalidateEntityCache('polls', id.toString());
         return NextResponse.json({
           success: true,
           message: 'Poll deactivated successfully'
@@ -424,6 +440,8 @@ export async function PATCH(request: NextRequest) {
 
       case 'toggle_homepage':
         await updatePoll(parseInt(id), { show_on_homepage: value !== false });
+        // Invalidate cache for featured poll changes
+        await invalidateEntityCache('polls', id.toString());
         return NextResponse.json({
           success: true,
           message: `Poll ${value ? 'shown' : 'hidden'} on homepage`

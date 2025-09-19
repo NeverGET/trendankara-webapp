@@ -18,21 +18,61 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
     volume,
     currentSong,
     connectionStatus,
+    reconnectAttempts,
+    lastError,
     play,
     pause,
-    setVolume
+    setVolume,
+    resetPlayer,
+    reloadConfiguration
   } = useRadioPlayer();
 
   const handlePlayPause = async () => {
     if (isPlaying) {
       pause();
     } else {
-      await play();
+      try {
+        await play();
+      } catch (error) {
+        console.error('Play error:', error);
+        // If play fails after connection issues, try reloading configuration
+        if (reconnectAttempts >= 3) {
+          await reloadConfiguration();
+        }
+      }
+    }
+  };
+
+  const handleReconnect = async () => {
+    try {
+      resetPlayer();
+      // Wait a moment for reset to complete
+      setTimeout(async () => {
+        await reloadConfiguration();
+        await play();
+      }, 1000);
+    } catch (error) {
+      console.error('Reconnect error:', error);
     }
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setVolume(parseFloat(e.target.value));
+  };
+
+  // Enhanced status display with connection timeout handling
+  const getStatusDisplay = () => {
+    if (connectionStatus === 'connected') {
+      return 'Canlı Yayın';
+    } else if (connectionStatus === 'connecting') {
+      return isLoading ? 'Bağlanıyor...' : 'Yeniden bağlanılıyor...';
+    } else if (connectionStatus === 'disconnected') {
+      if (reconnectAttempts > 0) {
+        return `Bağlantı sorunu (Deneme ${reconnectAttempts})`;
+      }
+      return lastError ? 'Bağlantı hatası' : 'Çevrimdışı';
+    }
+    return 'Çevrimdışı';
   };
 
   if (variant === 'mobile') {
@@ -66,11 +106,26 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
           <p className="text-sm text-dark-text-primary truncate">
             {currentSong}
           </p>
-          <p className="text-xs text-dark-text-tertiary">
-            {connectionStatus === 'connected' ? 'Canlı Yayın' :
-             connectionStatus === 'connecting' ? 'Bağlanıyor...' : 'Çevrimdışı'}
+          <p className={cn(
+            'text-xs',
+            connectionStatus === 'connected' ? 'text-green-400' :
+            connectionStatus === 'connecting' ? 'text-yellow-400' : 'text-red-400'
+          )}>
+            {getStatusDisplay()}
           </p>
         </div>
+
+        {/* Reconnect button for mobile when needed */}
+        {connectionStatus === 'disconnected' && reconnectAttempts >= 3 && (
+          <Button
+            onClick={handleReconnect}
+            variant="secondary"
+            size="small"
+            className="text-xs"
+          >
+            Yeniden Bağlan
+          </Button>
+        )}
       </div>
     );
   }
@@ -107,10 +162,25 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
         <p className="text-base font-medium text-dark-text-primary truncate">
           {currentSong}
         </p>
-        <p className="text-sm text-dark-text-secondary">
-          {connectionStatus === 'connected' ? 'Canlı Yayın' :
-           connectionStatus === 'connecting' ? 'Bağlanıyor...' : 'Çevrimdışı'}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className={cn(
+            'text-sm',
+            connectionStatus === 'connected' ? 'text-green-400' :
+            connectionStatus === 'connecting' ? 'text-yellow-400' : 'text-red-400'
+          )}>
+            {getStatusDisplay()}
+          </p>
+          {connectionStatus === 'disconnected' && reconnectAttempts >= 3 && (
+            <Button
+              onClick={handleReconnect}
+              variant="secondary"
+              size="small"
+              className="text-xs ml-2"
+            >
+              Yeniden Bağlan
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Volume Control */}

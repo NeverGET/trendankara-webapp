@@ -33,15 +33,16 @@ export interface ContentPageData {
   title: string;
   slug: string;
   description?: string;
-  components: ComponentData[];
-  meta?: {
-    keywords?: string[];
-    ogImage?: string;
-    ogTitle?: string;
-    ogDescription?: string;
-  };
+  page_type?: 'sponsorship' | 'promotion' | 'info' | 'custom';
+  components?: ComponentData[] | any;
+  content_json?: ComponentData[] | any;
+  meta?: any;
+  is_active?: boolean;
   is_published?: boolean;
   is_homepage?: boolean;
+  mobile_only?: boolean;
+  start_date?: Date | string;
+  end_date?: Date | string;
   created_by: number;
 }
 
@@ -53,7 +54,10 @@ export interface PaginationOptions {
 export interface ContentPageFilters {
   search?: string;
   is_published?: boolean;
+  is_active?: boolean;
   is_homepage?: boolean;
+  mobile_only?: boolean;
+  page_type?: string;
   created_by?: number;
 }
 
@@ -77,7 +81,10 @@ export async function getAllContentPages(
   const {
     search,
     is_published,
+    is_active,
     is_homepage,
+    mobile_only,
+    page_type,
     created_by
   } = filters;
 
@@ -86,9 +93,9 @@ export async function getAllContentPages(
   const params: any[] = [];
 
   if (search) {
-    conditions.push('(cp.title LIKE ? OR cp.description LIKE ? OR cp.slug LIKE ?)');
+    conditions.push('(cp.title LIKE ? OR cp.slug LIKE ?)');
     const searchPattern = `%${search}%`;
-    params.push(searchPattern, searchPattern, searchPattern);
+    params.push(searchPattern, searchPattern);
   }
 
   if (is_published !== undefined) {
@@ -96,9 +103,24 @@ export async function getAllContentPages(
     params.push(is_published ? 1 : 0);
   }
 
+  if (is_active !== undefined) {
+    conditions.push('cp.is_active = ?');
+    params.push(is_active ? 1 : 0);
+  }
+
   if (is_homepage !== undefined) {
     conditions.push('cp.is_homepage = ?');
     params.push(is_homepage ? 1 : 0);
+  }
+
+  if (mobile_only !== undefined) {
+    conditions.push('cp.mobile_only = ?');
+    params.push(mobile_only ? 1 : 0);
+  }
+
+  if (page_type !== undefined) {
+    conditions.push('cp.page_type = ?');
+    params.push(page_type);
   }
 
   if (created_by !== undefined) {
@@ -121,8 +143,7 @@ export async function getAllContentPages(
   const dataParams = [...params, limit, offset];
   const result = await db.query<RowDataPacket>(
     `SELECT cp.*,
-            u.name as creator_name,
-            (SELECT COUNT(*) FROM content_page_views WHERE page_id = cp.id) as view_count
+            u.name as creator_name
      FROM content_pages cp
      LEFT JOIN users u ON cp.created_by = u.id
      WHERE ${whereClause}
@@ -131,11 +152,10 @@ export async function getAllContentPages(
     dataParams
   );
 
-  // Parse JSON components for each page
+  // Parse JSON content for each page
   const pages = result.rows.map(row => ({
     ...row,
-    components: typeof row.components === 'string' ? JSON.parse(row.components) : row.components,
-    meta: typeof row.meta === 'string' ? JSON.parse(row.meta) : row.meta
+    content_json: typeof row.content_json === 'string' ? JSON.parse(row.content_json) : row.content_json
   }));
 
   return {
@@ -154,8 +174,7 @@ export async function getAllContentPages(
 export async function getContentPageById(pageId: number) {
   const result = await db.query<RowDataPacket>(
     `SELECT cp.*,
-            u.name as creator_name,
-            (SELECT COUNT(*) FROM content_page_views WHERE page_id = cp.id) as view_count
+            u.name as creator_name
      FROM content_pages cp
      LEFT JOIN users u ON cp.created_by = u.id
      WHERE cp.id = ? AND cp.deleted_at IS NULL`,
@@ -169,8 +188,7 @@ export async function getContentPageById(pageId: number) {
   const page = result.rows[0];
   return {
     ...page,
-    components: typeof page.components === 'string' ? JSON.parse(page.components) : page.components,
-    meta: typeof page.meta === 'string' ? JSON.parse(page.meta) : page.meta
+    content_json: typeof page.content_json === 'string' ? JSON.parse(page.content_json) : page.content_json
   };
 }
 
@@ -180,8 +198,7 @@ export async function getContentPageById(pageId: number) {
 export async function getContentPageBySlug(slug: string) {
   const result = await db.query<RowDataPacket>(
     `SELECT cp.*,
-            u.name as creator_name,
-            (SELECT COUNT(*) FROM content_page_views WHERE page_id = cp.id) as view_count
+            u.name as creator_name
      FROM content_pages cp
      LEFT JOIN users u ON cp.created_by = u.id
      WHERE cp.slug = ? AND cp.deleted_at IS NULL`,
@@ -195,8 +212,7 @@ export async function getContentPageBySlug(slug: string) {
   const page = result.rows[0];
   return {
     ...page,
-    components: typeof page.components === 'string' ? JSON.parse(page.components) : page.components,
-    meta: typeof page.meta === 'string' ? JSON.parse(page.meta) : page.meta
+    content_json: typeof page.content_json === 'string' ? JSON.parse(page.content_json) : page.content_json
   };
 }
 
@@ -204,19 +220,25 @@ export async function getContentPageBySlug(slug: string) {
  * Create a new content page
  */
 export async function createContentPage(data: ContentPageData) {
+  // Use components or content_json based on what's provided
+  const contentJson = data.components || data.content_json;
+
   const result = await db.insert(
     `INSERT INTO content_pages (
-      title, slug, description, components, meta,
-      is_published, is_homepage, created_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      title, slug, page_type, content_json, is_active,
+      is_published, is_homepage, mobile_only, start_date, end_date, created_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.title,
       data.slug,
-      data.description || null,
-      JSON.stringify(data.components),
-      data.meta ? JSON.stringify(data.meta) : null,
+      data.page_type || 'custom',
+      JSON.stringify(contentJson),
+      data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1,
       data.is_published ? 1 : 0,
       data.is_homepage ? 1 : 0,
+      data.mobile_only !== undefined ? (data.mobile_only ? 1 : 0) : 1,
+      data.start_date || null,
+      data.end_date || null,
       data.created_by
     ]
   );
@@ -238,25 +260,33 @@ export async function updateContentPage(pageId: number, data: Partial<ContentPag
     fields.push('slug = ?');
     values.push(data.slug);
   }
-  if (data.description !== undefined) {
-    fields.push('description = ?');
-    values.push(data.description);
+  if (data.page_type !== undefined) {
+    fields.push('page_type = ?');
+    values.push(data.page_type);
   }
-  if (data.components !== undefined) {
-    fields.push('components = ?');
-    values.push(JSON.stringify(data.components));
+  if (data.content_json !== undefined) {
+    fields.push('content_json = ?');
+    values.push(JSON.stringify(data.content_json));
   }
-  if (data.meta !== undefined) {
-    fields.push('meta = ?');
-    values.push(JSON.stringify(data.meta));
+  if (data.is_active !== undefined) {
+    fields.push('is_active = ?');
+    values.push(data.is_active ? 1 : 0);
   }
   if (data.is_published !== undefined) {
     fields.push('is_published = ?');
     values.push(data.is_published ? 1 : 0);
   }
-  if (data.is_homepage !== undefined) {
-    fields.push('is_homepage = ?');
-    values.push(data.is_homepage ? 1 : 0);
+  if (data.mobile_only !== undefined) {
+    fields.push('mobile_only = ?');
+    values.push(data.mobile_only ? 1 : 0);
+  }
+  if (data.start_date !== undefined) {
+    fields.push('start_date = ?');
+    values.push(data.start_date);
+  }
+  if (data.end_date !== undefined) {
+    fields.push('end_date = ?');
+    values.push(data.end_date);
   }
 
   if (fields.length === 0) {
@@ -295,11 +325,11 @@ export async function duplicateContentPage(pageId: number, newTitle: string, use
   const newData: ContentPageData = {
     title: newTitle,
     slug: newSlug,
-    description: (original as any).description,
-    components: (original as any).components,
-    meta: (original as any).meta,
+    page_type: (original as any).page_type || 'custom',
+    content_json: (original as any).content_json,
+    is_active: true,
     is_published: false, // Start as unpublished
-    is_homepage: false,
+    mobile_only: (original as any).mobile_only,
     created_by: userId
   };
 
@@ -318,19 +348,32 @@ export async function setContentPagePublishStatus(pageId: number, isPublished: b
 }
 
 /**
- * Set a page as homepage
+ * Set a content page as the homepage
+ * This will unset any existing homepage and set the new one
  */
 export async function setAsHomepage(pageId: number) {
   // First, unset any existing homepage
   await db.update(
-    `UPDATE content_pages SET is_homepage = 0 WHERE is_homepage = 1`
+    `UPDATE content_pages SET is_homepage = 0, updated_at = NOW()
+     WHERE is_homepage = 1 AND deleted_at IS NULL`
   );
 
   // Then set the new homepage
   await db.update(
-    `UPDATE content_pages SET is_homepage = 1, is_published = 1
+    `UPDATE content_pages SET is_homepage = 1, updated_at = NOW()
      WHERE id = ? AND deleted_at IS NULL`,
     [pageId]
+  );
+}
+
+/**
+ * Set a page as active/inactive
+ */
+export async function setContentPageActiveStatus(pageId: number, isActive: boolean) {
+  await db.update(
+    `UPDATE content_pages SET is_active = ?, updated_at = NOW()
+     WHERE id = ? AND deleted_at IS NULL`,
+    [isActive ? 1 : 0, pageId]
   );
 }
 
@@ -339,15 +382,15 @@ export async function setAsHomepage(pageId: number) {
  */
 export async function getPublishedPages() {
   const result = await db.query<RowDataPacket>(
-    `SELECT id, title, slug, description, meta, is_homepage, updated_at
+    `SELECT id, title, slug, page_type, content_json, mobile_only, updated_at
      FROM content_pages
      WHERE is_published = 1 AND deleted_at IS NULL
-     ORDER BY is_homepage DESC, title ASC`
+     ORDER BY created_at DESC`
   );
 
   return result.rows.map(row => ({
     ...row,
-    meta: typeof row.meta === 'string' ? JSON.parse(row.meta) : row.meta
+    content_json: typeof row.content_json === 'string' ? JSON.parse(row.content_json) : row.content_json
   }));
 }
 
@@ -358,7 +401,7 @@ export async function getHomepage() {
   const result = await db.query<RowDataPacket>(
     `SELECT cp.*
      FROM content_pages cp
-     WHERE cp.is_homepage = 1 AND cp.is_published = 1 AND cp.deleted_at IS NULL
+     WHERE cp.is_published = 1 AND cp.is_active = 1 AND cp.deleted_at IS NULL
      LIMIT 1`
   );
 
@@ -369,8 +412,7 @@ export async function getHomepage() {
   const page = result.rows[0];
   return {
     ...page,
-    components: typeof page.components === 'string' ? JSON.parse(page.components) : page.components,
-    meta: typeof page.meta === 'string' ? JSON.parse(page.meta) : page.meta
+    content_json: typeof page.content_json === 'string' ? JSON.parse(page.content_json) : page.content_json
   };
 }
 

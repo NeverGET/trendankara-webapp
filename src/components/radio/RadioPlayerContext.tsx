@@ -22,6 +22,7 @@ interface RadioPlayerContextValue {
   pause: () => void;
   setVolume: (volume: number) => void;
   resetPlayer: () => void;  // Nuclear reset for iOS
+  reloadConfiguration: () => Promise<void>; // Real-time sync for radio settings
 
   // iOS specific
   isIOS: boolean;
@@ -38,12 +39,16 @@ interface RadioPlayerProviderProps {
 
 export function RadioPlayerProvider({
   children,
-  streamUrl = 'https://radyo.yayin.com.tr:5132/stream',
-  metadataUrl = 'https://radyo.yayin.com.tr:5132/'
+  streamUrl: initialStreamUrl = 'https://radyo.yayin.com.tr:5132/stream',
+  metadataUrl: initialMetadataUrl = 'https://radyo.yayin.com.tr:5132/'
 }: RadioPlayerProviderProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Dynamic URLs for real-time configuration updates
+  const [streamUrl, setStreamUrl] = useState(initialStreamUrl);
+  const [metadataUrl, setMetadataUrl] = useState(initialMetadataUrl);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -206,6 +211,56 @@ export function RadioPlayerProvider({
     localStorage.setItem('radioVolume', clampedVolume.toString());
   }, []);
 
+  // Method to reload configuration from API
+  const reloadConfiguration = useCallback(async () => {
+    try {
+      const response = await fetch('/api/radio');
+      if (response.ok) {
+        const config = await response.json();
+
+        const newStreamUrl = config.streamUrl || initialStreamUrl;
+        const newMetadataUrl = config.metadataUrl || initialMetadataUrl;
+
+        // Update URLs if they changed
+        if (newStreamUrl !== streamUrl || newMetadataUrl !== metadataUrl) {
+          setStreamUrl(newStreamUrl);
+          setMetadataUrl(newMetadataUrl);
+
+          // If currently playing, reconnect with new stream URL
+          if (isPlaying && audioRef.current) {
+            setConnectionStatus('connecting');
+            setIsLoading(true);
+
+            // Pause current stream
+            audioRef.current.pause();
+
+            // Wait a moment for cleanup
+            setTimeout(async () => {
+              try {
+                // Use new URL with cache-busting for iOS
+                const url = isIOS
+                  ? `${newStreamUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}`
+                  : newStreamUrl;
+
+                if (audioRef.current) {
+                  audioRef.current.src = url;
+                  audioRef.current.load();
+                  await audioRef.current.play();
+                }
+              } catch (error) {
+                console.error('Error reconnecting with new stream URL:', error);
+                setConnectionStatus('disconnected');
+                setIsLoading(false);
+              }
+            }, 500);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error reloading radio configuration:', error);
+    }
+  }, [streamUrl, metadataUrl, isPlaying, isIOS, initialStreamUrl, initialMetadataUrl]);
+
   // Fetch now playing text periodically
   useEffect(() => {
     const fetchNowPlaying = async () => {
@@ -226,6 +281,20 @@ export function RadioPlayerProvider({
     return () => clearInterval(interval);
   }, []);
 
+  // Listen for radio settings update events
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      reloadConfiguration();
+    };
+
+    // Listen for custom events from admin when settings are updated
+    window.addEventListener('radioSettingsUpdated', handleSettingsUpdate);
+
+    return () => {
+      window.removeEventListener('radioSettingsUpdated', handleSettingsUpdate);
+    };
+  }, [reloadConfiguration]);
+
   const value: RadioPlayerContextValue = {
     isPlaying,
     isLoading,
@@ -241,6 +310,7 @@ export function RadioPlayerProvider({
     pause,
     setVolume,
     resetPlayer,
+    reloadConfiguration,
     isIOS,
     audioContext: audioContextRef.current || undefined
   };

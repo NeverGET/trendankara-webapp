@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useConfirmation } from '@/hooks/useConfirmation';
 import {
   FiSearch,
   FiTrash2,
@@ -67,6 +69,9 @@ export default function AdminMediaPage() {
   const [showOrphaned, setShowOrphaned] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  // Confirmation dialog
+  const confirmation = useConfirmation();
 
   // Fetch media files from API
   const fetchMedia = useCallback(async (reset = false) => {
@@ -159,11 +164,28 @@ export default function AdminMediaPage() {
   const handleDelete = async () => {
     if (selectedIds.length === 0) return;
 
-    if (!confirm(`${selectedIds.length} dosya silinecek. Emin misiniz?`)) {
+    // Get details of selected files for preview
+    const selectedFiles = mediaFiles.filter(f => selectedIds.includes(f.id));
+    const filePreview = selectedFiles.slice(0, 3).map(f => f.filename).join(', ');
+    const additionalCount = Math.max(0, selectedFiles.length - 3);
+    const previewText = additionalCount > 0
+      ? `${filePreview} ve ${additionalCount} dosya daha`
+      : filePreview;
+
+    const confirmed = await confirmation.confirm({
+      title: 'Medya Dosyalarını Sil',
+      message: `${selectedIds.length} dosyayı silmek istediğinizden emin misiniz?\n\nSilinecek dosyalar: ${previewText}\n\nBu işlem geri alınamaz ve dosyalar kalıcı olarak silinecektir.`,
+      confirmText: `${selectedIds.length} Dosyayı Sil`,
+      cancelText: 'İptal',
+      variant: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
     try {
+      confirmation.setLoading(true);
       const response = await fetch('/api/admin/media', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -177,15 +199,29 @@ export default function AdminMediaPage() {
       }
     } catch (error) {
       console.error('Error deleting media:', error);
+      confirmation.setError('Dosyalar silinirken bir hata oluştu.');
+    } finally {
+      confirmation.setLoading(false);
     }
   };
 
   const handleCleanupOrphaned = async () => {
-    if (!confirm('Kullanılmayan dosyalar silinecek. Emin misiniz?')) {
+    if (!stats?.orphanedFiles) return;
+
+    const confirmed = await confirmation.confirm({
+      title: 'Kullanılmayan Dosyaları Temizle',
+      message: `${stats.orphanedFiles} adet kullanılmayan dosya silinecek. Bu işlem geri alınamaz.\n\nEmin misiniz?`,
+      confirmText: `${stats.orphanedFiles} Dosyayı Temizle`,
+      cancelText: 'İptal',
+      variant: 'danger'
+    });
+
+    if (!confirmed) {
       return;
     }
 
     try {
+      confirmation.setLoading(true);
       const response = await fetch('/api/admin/media/cleanup', {
         method: 'POST'
       });
@@ -196,6 +232,9 @@ export default function AdminMediaPage() {
       }
     } catch (error) {
       console.error('Error cleaning up orphaned media:', error);
+      confirmation.setError('Kullanılmayan dosyalar temizlenirken bir hata oluştu.');
+    } finally {
+      confirmation.setLoading(false);
     }
   };
 
@@ -522,6 +561,19 @@ export default function AdminMediaPage() {
           </div>
         )}
       </Card>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmation.isOpen}
+        onClose={confirmation.close}
+        onConfirm={confirmation.handleConfirm}
+        title={confirmation.title}
+        message={confirmation.message}
+        variant={confirmation.variant as 'danger' | 'warning' | 'info'}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        loading={confirmation.isLoading}
+      />
     </div>
   );
 }
