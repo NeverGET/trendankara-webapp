@@ -307,3 +307,80 @@ tests/
 - API documentation in OpenAPI format
 - Database schema documentation
 - Deployment guide in /docs
+
+## Code Style & Conventions
+
+### JSX/TSX String Handling Rules
+
+#### MANDATORY: Use JSX Expressions for Strings with Quotes
+```tsx
+// ✅ ALWAYS USE - Template literals in JSX expressions
+<div>{`Text with "quotes" or 'apostrophes'`}</div>
+<Button>{`Click "here" to continue`}</Button>
+<p>{`Don't forget to save!`}</p>
+
+// ✅ CORRECT - For variables and empty strings
+<div>{myVariable}</div>
+<div>{""}</div>
+<span>{''}</span>
+
+// ❌ NEVER USE - Raw text with quotes
+<div>Text with "quotes"</div>  // Will cause build errors
+<Button>Click "here"</Button>   // ESLint will fail
+```
+
+### TypeScript Strict Typing Rules
+
+#### Component Props
+1. **Always match exact prop type definitions:**
+   ```tsx
+   // Check component definition first
+   // If Button defines: size?: 'small' | 'medium' | 'large'
+
+   // ✅ CORRECT
+   <Button size="small" />
+
+   // ❌ WRONG - Will fail TypeScript compilation
+   <Button size="sm" />
+   ```
+
+2. **Use type assertions for database results:**
+   ```tsx
+   const result = await db.query(...);
+
+   // ✅ CORRECT - When you know the structure
+   const title = (result as any).title;
+
+   // ❌ WRONG - TypeScript won't know the shape
+   const title = result.title;
+   ```
+
+### Next.js 15 Specific Patterns
+
+1. **Async Route Parameters:**
+   ```tsx
+   // ✅ CORRECT - Next.js 15
+   export async function GET(
+     request: NextRequest,
+     { params }: { params: Promise<{ id: string }> }
+   ) {
+     const { id } = await params;
+   }
+   ```
+
+2. **Async Headers:**
+   ```tsx
+   // ✅ CORRECT
+   const headers = await headers();
+   const cookie = headers.get('cookie');
+   ```
+
+### Build Validation Checklist
+
+Before committing:
+- [ ] Run `npm run build` successfully
+- [ ] No TypeScript errors
+- [ ] All ESLint warnings addressed or disabled with justification
+- [ ] All strings with quotes use JSX expressions `{``}`
+- [ ] Component props match exact type definitions
+- [ ] Database queries use proper type assertions

@@ -216,6 +216,173 @@
 - Rollback capability
 - Version tagging for releases
 
+## Next.js 15 & TypeScript Build Lessons Learned
+
+### Critical Build Issues and Solutions
+
+#### 1. JSX String Escaping
+**ALWAYS USE JSX EXPRESSIONS for strings with quotes:**
+```tsx
+// ❌ WRONG - Will cause build errors
+<div>Henüz seçenek eklenmemiş. "Seçenek Ekle" butonuna tıklayarak başlayın.</div>
+
+// ✅ CORRECT - Use template literals in JSX expressions
+<div>{`Henüz seçenek eklenmemiş. "Seçenek Ekle" butonuna tıklayarak başlayın.`}</div>
+
+// ✅ ALSO CORRECT - For simple strings
+<div>{""}</div>
+<div>{''}</div>
+```
+
+#### 2. Next.js 15 Async Params
+**Route handlers now have async params:**
+```tsx
+// ❌ WRONG - Old Next.js pattern
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const userId = params.id; // Will fail
+}
+
+// ✅ CORRECT - Next.js 15 pattern
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const resolvedParams = await params;
+  const userId = resolvedParams.id;
+}
+```
+
+#### 3. headers() Function is Async
+```tsx
+// ❌ WRONG
+const headersList = headers();
+const cookie = headersList.get('cookie');
+
+// ✅ CORRECT
+const headersList = await headers();
+const cookie = headersList.get('cookie');
+```
+
+#### 4. Component Prop Types Must Match Exactly
+**Always check component prop type definitions:**
+```tsx
+// If Button component defines:
+size?: 'small' | 'medium' | 'large' | 'giant';
+variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+
+// ❌ WRONG
+<Button size="sm" variant="outline" />
+
+// ✅ CORRECT
+<Button size="small" variant="secondary" />
+```
+
+#### 5. JavaScript String Methods
+```tsx
+// ❌ WRONG - trim() doesn't accept arguments
+.trim('-')
+
+// ✅ CORRECT - Use regex for trimming specific characters
+.replace(/^-+|-+$/g, '')
+```
+
+#### 6. TypeScript Type Assertions for Database Results
+**When using generic database queries, use type assertions:**
+```tsx
+// Database query returns generic type
+const result = await getContentPageById(id);
+
+// ❌ WRONG - TypeScript doesn't know the shape
+if (result.slug) { }
+
+// ✅ CORRECT - Use type assertion when you know the structure
+if ((result as any).slug) { }
+```
+
+#### 7. MinIO/S3 Metadata Must Be Strings
+```tsx
+// ❌ WRONG - Numbers in metadata
+metadata: {
+  width: imageMetadata.width,  // number
+  height: imageMetadata.height  // number
+}
+
+// ✅ CORRECT - Convert to strings
+metadata: {
+  width: String(imageMetadata.width),
+  height: String(imageMetadata.height)
+}
+```
+
+#### 8. MySQL RowDataPacket Interface
+**Always extend RowDataPacket for MySQL type definitions:**
+```tsx
+// ❌ WRONG
+interface MigrationRecord {
+  id: number;
+  filename: string;
+}
+
+// ✅ CORRECT
+import type { RowDataPacket } from 'mysql2';
+
+interface MigrationRecord extends RowDataPacket {
+  id: number;
+  filename: string;
+}
+```
+
+#### 9. React Hook Dependencies
+**Include all dependencies or wrap in useCallback:**
+```tsx
+// ❌ WRONG - Missing dependencies
+useEffect(() => {
+  fetchData();
+}, [searchTerm]);
+
+// ✅ CORRECT - Include all dependencies
+useEffect(() => {
+  fetchData();
+}, [searchTerm, fetchData]);
+
+// ✅ BETTER - Wrap function in useCallback
+const fetchData = useCallback(async () => {
+  // fetch logic
+}, [dependency1, dependency2]);
+```
+
+#### 10. Image Elements and ESLint
+**For actual img elements (not Icon components):**
+```tsx
+// ❌ Will trigger ESLint warning
+<img src={url} />
+
+// ✅ CORRECT - Add alt attribute
+<img src={url} alt="Description" />
+
+// ✅ OR - Disable for specific line if justified
+{/* eslint-disable-next-line @next/next/no-img-element */}
+<img src={url} alt="" />
+```
+
+### Build Command Best Practices
+
+1. **Always run `npm run build` before deployment**
+2. **Fix all TypeScript errors - no `@ts-ignore` in production**
+3. **Address ESLint warnings or disable with justification**
+4. **Test build locally before pushing to CI/CD**
+
+### Component Prop Validation Checklist
+
+Before using any UI component, verify:
+- [ ] Size prop values (small, medium, large, NOT sm, md, lg)
+- [ ] Variant prop values (check exact strings in component definition)
+- [ ] Required vs optional props
+- [ ] Prop type compatibility (string vs number vs boolean)
+
 ## Production Deployment Best Practices & Lessons Learned
 
 ### Critical Configuration Points
