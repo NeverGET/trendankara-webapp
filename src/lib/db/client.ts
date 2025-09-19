@@ -237,7 +237,8 @@ class MySQLClient implements DatabaseClient {
     }
 
     try {
-      const [rows, fields] = await this.pool.execute<T[]>(sql, params);
+      // Use query instead of execute for better parameter handling
+      const [rows, fields] = await this.pool.query<T[]>(sql, params);
 
       return {
         rows,
@@ -265,7 +266,8 @@ class MySQLClient implements DatabaseClient {
     }
 
     try {
-      const [result] = await this.pool.execute<mysql.ResultSetHeader>(sql, params);
+      // Use query instead of execute for better parameter handling
+      const [result] = await this.pool.query<mysql.ResultSetHeader>(sql, params);
 
       return {
         insertId: result.insertId,
@@ -290,7 +292,8 @@ class MySQLClient implements DatabaseClient {
     }
 
     try {
-      const [result] = await this.pool.execute<mysql.ResultSetHeader>(sql, params);
+      // Use query instead of execute for better parameter handling
+      const [result] = await this.pool.query<mysql.ResultSetHeader>(sql, params);
 
       return {
         affectedRows: result.affectedRows,
@@ -315,7 +318,8 @@ class MySQLClient implements DatabaseClient {
     }
 
     try {
-      const [result] = await this.pool.execute<mysql.ResultSetHeader>(sql, params);
+      // Use query instead of execute for better parameter handling
+      const [result] = await this.pool.query<mysql.ResultSetHeader>(sql, params);
 
       return {
         affectedRows: result.affectedRows,

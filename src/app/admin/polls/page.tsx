@@ -1,18 +1,181 @@
-import { Card } from '@/components/ui/Card';
+'use client';
+
+import { useState } from 'react';
+import { PollCard } from '@/components/admin/PollCard';
+import { StatsCard } from '@/components/admin/StatsCard';
 import { Button } from '@/components/ui/Button';
-import { FiPlus, FiEdit, FiTrash2, FiBarChart } from 'react-icons/fi';
+import { Badge } from '@/components/ui/Badge';
+import {
+  FiPlus,
+  FiBarChart2,
+  FiUsers,
+  FiActivity,
+  FiClock,
+  FiFilter,
+  FiSearch,
+  FiGrid,
+  FiList,
+  FiTrendingUp,
+  FiCheckCircle,
+  FiCalendar,
+  FiAward,
+  FiEdit,
+  FiTrash2
+} from 'react-icons/fi';
+
+// Mock data - replace with API call
+const mockPolls = [
+  {
+    id: 1,
+    title: 'Haftanın En İyi Şarkısı',
+    description: 'Bu hafta en çok dinlenen ve beğenilen şarkıları oylayın',
+    type: 'TOP_50' as const,
+    totalVotes: 3456,
+    uniqueVoters: 1234,
+    options: [
+      { id: 1, name: 'Şarkı 1 - Sanatçı A', votes: 1234, percentage: 35.7, imageUrl: '/api/placeholder/50/50' },
+      { id: 2, name: 'Şarkı 2 - Sanatçı B', votes: 987, percentage: 28.6, imageUrl: '/api/placeholder/50/50' },
+      { id: 3, name: 'Şarkı 3 - Sanatçı C', votes: 678, percentage: 19.6, imageUrl: '/api/placeholder/50/50' },
+      { id: 4, name: 'Şarkı 4 - Sanatçı D', votes: 557, percentage: 16.1, imageUrl: '/api/placeholder/50/50' }
+    ],
+    startDate: '15 Eyl',
+    endDate: '22 Eyl',
+    status: 'active' as const,
+    daysRemaining: 4
+  },
+  {
+    id: 2,
+    title: 'Ayın En İyi Albümü',
+    description: 'Eylül ayının en başarılı albümünü seçiyoruz',
+    type: 'TOP_10' as const,
+    totalVotes: 2145,
+    uniqueVoters: 892,
+    options: [
+      { id: 1, name: 'Albüm X', votes: 856, percentage: 39.9, imageUrl: '/api/placeholder/50/50' },
+      { id: 2, name: 'Albüm Y', votes: 645, percentage: 30.1, imageUrl: '/api/placeholder/50/50' },
+      { id: 3, name: 'Albüm Z', votes: 644, percentage: 30.0, imageUrl: '/api/placeholder/50/50' }
+    ],
+    startDate: '1 Eyl',
+    endDate: '30 Eyl',
+    status: 'active' as const,
+    daysRemaining: 12
+  },
+  {
+    id: 3,
+    title: 'En İyi Yeni Çıkan',
+    description: 'Bu ay çıkan şarkılar arasından en iyisini seçin',
+    type: 'BEST_OF_MONTH' as const,
+    totalVotes: 567,
+    uniqueVoters: 234,
+    options: [
+      { id: 1, name: 'Yeni Şarkı 1', votes: 234, percentage: 41.3 },
+      { id: 2, name: 'Yeni Şarkı 2', votes: 200, percentage: 35.3 },
+      { id: 3, name: 'Yeni Şarkı 3', votes: 133, percentage: 23.4 }
+    ],
+    startDate: '10 Eyl',
+    endDate: '25 Eyl',
+    status: 'scheduled' as const,
+    daysRemaining: undefined
+  },
+  {
+    id: 4,
+    title: 'Dinleyici Tercihi - Rock',
+    description: 'Rock severler için özel anket',
+    type: 'LISTENER_CHOICE' as const,
+    totalVotes: 8912,
+    uniqueVoters: 3456,
+    options: [
+      { id: 1, name: 'Rock Band A', votes: 3456, percentage: 38.8 },
+      { id: 2, name: 'Rock Band B', votes: 2890, percentage: 32.4 },
+      { id: 3, name: 'Rock Band C', votes: 2566, percentage: 28.8 }
+    ],
+    startDate: '1 Ağu',
+    endDate: '31 Ağu',
+    status: 'ended' as const,
+    daysRemaining: undefined
+  },
+  {
+    id: 5,
+    title: 'Yaz Festivali Anketi',
+    description: 'En iyi festival performansını oylayın',
+    type: 'SPECIAL' as const,
+    totalVotes: 0,
+    uniqueVoters: 0,
+    options: [],
+    startDate: '1 Tem',
+    endDate: '15 Tem',
+    status: 'draft' as const,
+    daysRemaining: undefined
+  },
+  {
+    id: 6,
+    title: 'Nostaljik Şarkılar',
+    description: '90\'ların en iyi şarkısı hangisi?',
+    type: 'SPECIAL' as const,
+    totalVotes: 12345,
+    uniqueVoters: 4567,
+    options: [
+      { id: 1, name: '90\'lar Hit 1', votes: 5432, percentage: 44.0 },
+      { id: 2, name: '90\'lar Hit 2', votes: 3912, percentage: 31.7 },
+      { id: 3, name: '90\'lar Hit 3', votes: 3001, percentage: 24.3 }
+    ],
+    startDate: '1 Haz',
+    endDate: '30 Haz',
+    status: 'ended' as const,
+    daysRemaining: undefined
+  }
+];
+
+// Mock stats
+const pollStats = {
+  totalPolls: 24,
+  activePolls: 3,
+  totalVotes: 45678,
+  uniqueVoters: 8912,
+  avgParticipation: 72
+};
+
+const pollTypes = [
+  { value: 'all', label: 'Tümü' },
+  { value: 'TOP_50', label: 'Top 50' },
+  { value: 'TOP_10', label: 'Top 10' },
+  { value: 'BEST_OF_MONTH', label: 'Ayın En İyisi' },
+  { value: 'LISTENER_CHOICE', label: 'Dinleyici Seçimi' },
+  { value: 'SPECIAL', label: 'Özel' }
+];
+
+const pollStatuses = [
+  { value: 'all', label: 'Tümü' },
+  { value: 'active', label: 'Aktif', color: 'success' },
+  { value: 'scheduled', label: 'Planlandı', color: 'warning' },
+  { value: 'ended', label: 'Bitti', color: 'error' },
+  { value: 'draft', label: 'Taslak', color: 'default' }
+];
 
 export default function AdminPollsPage() {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredPolls = mockPolls.filter(poll => {
+    const matchesType = filterType === 'all' || poll.type === filterType;
+    const matchesStatus = filterStatus === 'all' || poll.status === filterStatus;
+    const matchesSearch = poll.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          poll.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesStatus && matchesSearch;
+  });
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-dark-text-primary">
             Anket Yönetimi
           </h1>
           <p className="text-dark-text-secondary mt-1">
-            Anketleri oluşturun ve yönetin
+            Anketleri yönetin, sonuçları görüntüleyin
           </p>
         </div>
         <Button variant="primary" size="medium">
@@ -21,89 +184,281 @@ export default function AdminPollsPage() {
         </Button>
       </div>
 
-      {/* Active Polls */}
-      <Card title="Aktif Anketler">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-dark-surface-secondary rounded-lg">
-            <div className="flex justify-between items-start mb-3">
-              <h3 className="font-medium text-dark-text-primary">
-                {"Haftanın Top 50'si"}
-              </h3>
-              <span className="px-2 py-1 bg-green-900/30 text-green-400 text-xs rounded">
-                Aktif
-              </span>
-            </div>
-            <p className="text-sm text-dark-text-secondary mb-3">
-              25 Aday • 1,234 Oy
-            </p>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="small">
-                <FiBarChart className="w-4 h-4 mr-1" />
-                Sonuçlar
-              </Button>
-              <Button variant="ghost" size="small">
-                <FiEdit className="w-4 h-4 mr-1" />
-                Düzenle
-              </Button>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatsCard
+          title="Toplam Anket"
+          value={pollStats.totalPolls}
+          icon={<FiBarChart2 className="w-5 h-5" />}
+          badge={{ text: 'Tümü', variant: 'info' }}
+        />
+        <StatsCard
+          title="Aktif Anket"
+          value={pollStats.activePolls}
+          icon={<FiActivity className="w-5 h-5" />}
+          badge={{ text: 'Canlı', variant: 'success' }}
+        />
+        <StatsCard
+          title="Toplam Oy"
+          value={`${(pollStats.totalVotes / 1000).toFixed(1)}K`}
+          icon={<FiCheckCircle className="w-5 h-5" />}
+          trend={{ value: 15, isPositive: true }}
+        />
+        <StatsCard
+          title="Katılımcı"
+          value={`${(pollStats.uniqueVoters / 1000).toFixed(1)}K`}
+          icon={<FiUsers className="w-5 h-5" />}
+          badge={{ text: 'Benzersiz', variant: 'purple' }}
+        />
+        <StatsCard
+          title="Katılım Oranı"
+          value={`${pollStats.avgParticipation}%`}
+          icon={<FiTrendingUp className="w-5 h-5" />}
+          trend={{ value: 8, isPositive: true }}
+        />
+      </div>
+
+      {/* Filters and Search */}
+      <div className="bg-gradient-to-br from-dark-surface-primary to-dark-surface-secondary/50 rounded-xl border border-dark-border-primary/50 p-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-dark-text-secondary" />
+            <input
+              type="text"
+              placeholder="Anket ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-dark-surface-secondary/50 border border-dark-border-primary/50 rounded-lg text-dark-text-primary placeholder-dark-text-secondary focus:outline-none focus:border-red-500 transition-colors"
+            />
+          </div>
+
+          {/* Type Filter */}
+          <div className="flex gap-2 items-center">
+            <FiAward className="text-dark-text-secondary" />
+            <div className="flex gap-2 flex-wrap">
+              {pollTypes.map(type => (
+                <button
+                  key={type.value}
+                  onClick={() => setFilterType(type.value)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                    filterType === type.value
+                      ? "bg-purple-500 text-white shadow-lg shadow-purple-900/30"
+                      : "bg-dark-surface-secondary/50 text-dark-text-secondary hover:bg-dark-surface-tertiary"
+                  )}
+                >
+                  {type.label}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-      </Card>
 
-      {/* Past Polls */}
-      <Card title="Geçmiş Anketler">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-dark-border-primary">
-                <th className="text-left py-3 px-4 text-dark-text-secondary text-sm font-medium">
-                  Anket Adı
-                </th>
-                <th className="text-left py-3 px-4 text-dark-text-secondary text-sm font-medium">
-                  Tarih Aralığı
-                </th>
-                <th className="text-left py-3 px-4 text-dark-text-secondary text-sm font-medium">
-                  Toplam Oy
-                </th>
-                <th className="text-left py-3 px-4 text-dark-text-secondary text-sm font-medium">
-                  Durum
-                </th>
-                <th className="text-right py-3 px-4 text-dark-text-secondary text-sm font-medium">
-                  İşlemler
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-dark-border-primary hover:bg-dark-surface-secondary">
-                <td className="py-3 px-4">
-                  <p className="text-dark-text-primary">{"Ayın Top 10'u"}</p>
-                </td>
-                <td className="py-3 px-4 text-dark-text-secondary text-sm">
-                  01.08.2025 - 31.08.2025
-                </td>
-                <td className="py-3 px-4 text-dark-text-secondary">
-                  5,432
-                </td>
-                <td className="py-3 px-4">
-                  <span className="px-2 py-1 bg-gray-900/30 text-gray-400 text-xs rounded">
-                    Tamamlandı
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex justify-end gap-2">
-                    <button className="p-1 hover:bg-dark-surface-tertiary rounded">
-                      <FiBarChart className="w-4 h-4 text-dark-text-secondary" />
-                    </button>
-                    <button className="p-1 hover:bg-dark-surface-tertiary rounded">
-                      <FiTrash2 className="w-4 h-4 text-red-500" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Status Filter */}
+          <div className="flex gap-2 items-center">
+            <FiFilter className="text-dark-text-secondary" />
+            <div className="flex gap-2">
+              {pollStatuses.map(status => (
+                <button
+                  key={status.value}
+                  onClick={() => setFilterStatus(status.value)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                    filterStatus === status.value
+                      ? "bg-red-500 text-white shadow-lg shadow-red-900/30"
+                      : "bg-dark-surface-secondary/50 text-dark-text-secondary hover:bg-dark-surface-tertiary"
+                  )}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                "p-2 rounded-lg transition-all duration-200",
+                viewMode === 'grid'
+                  ? "bg-red-500 text-white shadow-lg shadow-red-900/30"
+                  : "bg-dark-surface-secondary/50 text-dark-text-secondary hover:bg-dark-surface-tertiary"
+              )}
+            >
+              <FiGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn(
+                "p-2 rounded-lg transition-all duration-200",
+                viewMode === 'list'
+                  ? "bg-red-500 text-white shadow-lg shadow-red-900/30"
+                  : "bg-dark-surface-secondary/50 text-dark-text-secondary hover:bg-dark-surface-tertiary"
+              )}
+            >
+              <FiList className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </Card>
+      </div>
+
+      {/* Active Polls Highlight */}
+      {filteredPolls.filter(p => p.status === 'active').length > 0 && filterStatus === 'all' && (
+        <div className="bg-gradient-to-r from-green-900/20 to-transparent rounded-xl border border-green-900/30 p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-green-600/20 rounded-lg">
+              <FiActivity className="w-5 h-5 text-green-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-dark-text-primary">Aktif Anketler</h2>
+            <Badge variant="success" size="small" pill animated>
+              {filteredPolls.filter(p => p.status === 'active').length} Adet
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {filteredPolls.filter(p => p.status === 'active').map(poll => (
+              <div key={poll.id} className="bg-dark-surface-secondary/30 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-dark-text-primary">{poll.title}</span>
+                  {poll.daysRemaining !== undefined && (
+                    <Badge
+                      variant={poll.daysRemaining <= 3 ? 'error' : 'warning'}
+                      size="small"
+                      animated={poll.daysRemaining <= 3}
+                    >
+                      {poll.daysRemaining} gün
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-4 text-xs text-dark-text-secondary">
+                  <span>{poll.totalVotes} oy</span>
+                  <span>{poll.uniqueVoters} katılımcı</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Polls Grid/List */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredPolls.map(poll => (
+            <PollCard
+              key={poll.id}
+              {...poll}
+              onEdit={(id) => console.log('Edit', id)}
+              onDelete={(id) => console.log('Delete', id)}
+              onView={(id) => console.log('View', id)}
+              onToggleStatus={(id) => console.log('Toggle', id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredPolls.map(poll => {
+            const config = pollTypeConfig[poll.type];
+            return (
+              <div
+                key={poll.id}
+                className="bg-gradient-to-r from-dark-surface-primary to-dark-surface-secondary/50 rounded-xl border border-dark-border-primary/50 p-4 hover:shadow-lg transition-all duration-200"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-dark-text-primary">
+                        {poll.title}
+                      </h3>
+                      <Badge
+                        variant={config.color as any}
+                        size="small"
+                        pill
+                      >
+                        {config.label}
+                      </Badge>
+                      <Badge
+                        variant={
+                          poll.status === 'active' ? 'success' :
+                          poll.status === 'scheduled' ? 'warning' :
+                          poll.status === 'ended' ? 'error' :
+                          'default'
+                        }
+                        size="small"
+                        pill
+                        animated={poll.status === 'active'}
+                      >
+                        {poll.status === 'active' ? 'Aktif' :
+                         poll.status === 'scheduled' ? 'Planlandı' :
+                         poll.status === 'ended' ? 'Bitti' :
+                         'Taslak'}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-dark-text-secondary mb-2">
+                      {poll.description}
+                    </p>
+                    <div className="flex items-center gap-6 text-xs text-dark-text-secondary">
+                      <div className="flex items-center gap-1">
+                        <FiBarChart2 className="w-3 h-3" />
+                        <span>{poll.totalVotes} oy</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <FiUsers className="w-3 h-3" />
+                        <span>{poll.uniqueVoters} katılımcı</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <FiCalendar className="w-3 h-3" />
+                        <span>{poll.startDate} - {poll.endDate}</span>
+                      </div>
+                      {poll.daysRemaining !== undefined && (
+                        <Badge
+                          variant={poll.daysRemaining <= 3 ? 'error' : 'warning'}
+                          size="small"
+                        >
+                          {poll.daysRemaining} gün kaldı
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="small">
+                      <FiBarChart2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="small">
+                      <FiEdit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="small">
+                      <FiTrash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* No Results */}
+      {filteredPolls.length === 0 && (
+        <div className="text-center py-12">
+          <FiBarChart2 className="w-12 h-12 mx-auto text-dark-text-secondary mb-4" />
+          <p className="text-dark-text-secondary">
+            Anket bulunamadı
+          </p>
+        </div>
+      )}
     </div>
   );
 }
+
+// Helper function
+function cn(...classes: string[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+const pollTypeConfig: Record<string, { label: string; color: string }> = {
+  'TOP_50': { label: 'Top 50', color: 'purple' },
+  'TOP_10': { label: 'Top 10', color: 'pink' },
+  'BEST_OF_MONTH': { label: 'Ayın En İyisi', color: 'info' },
+  'LISTENER_CHOICE': { label: 'Dinleyici Seçimi', color: 'success' },
+  'SPECIAL': { label: 'Özel', color: 'warning' }
+};

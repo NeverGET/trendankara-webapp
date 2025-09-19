@@ -156,6 +156,31 @@ export async function recalculateVoteCounts(pollId: number): Promise<void> {
 
 // Admin CRUD Operations
 
+// Pagination and filtering interfaces
+export interface PaginationOptions {
+  offset?: number;
+  limit?: number;
+}
+
+export interface PollFilters {
+  search?: string;
+  poll_type?: 'weekly' | 'monthly' | 'custom';
+  is_active?: boolean;
+  show_on_homepage?: boolean;
+  created_by?: number;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface PaginatedPollResult {
+  data: any[];
+  total: number;
+  offset: number;
+  limit: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export interface PollData {
   title: string;
   description?: string;
@@ -176,9 +201,77 @@ export interface PollItemData {
 }
 
 /**
- * Get all polls for admin (includes inactive and deleted)
+ * Get all polls for admin with pagination and filtering support
  */
-export async function getAllPolls() {
+export async function getAllPolls(
+  pagination: PaginationOptions = {},
+  filters: PollFilters = {}
+): Promise<PaginatedPollResult> {
+  const { offset = 0, limit = 20 } = pagination;
+  const {
+    search,
+    poll_type,
+    is_active,
+    show_on_homepage,
+    created_by,
+    start_date,
+    end_date
+  } = filters;
+
+  // Build WHERE conditions
+  const conditions: string[] = ['p.deleted_at IS NULL'];
+  const params: any[] = [];
+
+  if (search) {
+    conditions.push('(p.title LIKE ? OR p.description LIKE ?)');
+    const searchPattern = `%${search}%`;
+    params.push(searchPattern, searchPattern);
+  }
+
+  if (poll_type) {
+    conditions.push('p.poll_type = ?');
+    params.push(poll_type);
+  }
+
+  if (is_active !== undefined) {
+    conditions.push('p.is_active = ?');
+    params.push(is_active ? 1 : 0);
+  }
+
+  if (show_on_homepage !== undefined) {
+    conditions.push('p.show_on_homepage = ?');
+    params.push(show_on_homepage ? 1 : 0);
+  }
+
+  if (created_by !== undefined) {
+    conditions.push('p.created_by = ?');
+    params.push(created_by);
+  }
+
+  if (start_date) {
+    conditions.push('p.start_date >= ?');
+    params.push(start_date);
+  }
+
+  if (end_date) {
+    conditions.push('p.end_date <= ?');
+    params.push(end_date);
+  }
+
+  const whereClause = conditions.join(' AND ');
+
+  // Get total count for pagination
+  const countResult = await db.query<RowDataPacket>(
+    `SELECT COUNT(*) as total
+     FROM polls p
+     LEFT JOIN users u ON p.created_by = u.id
+     WHERE ${whereClause}`,
+    params
+  );
+  const total = countResult.rows[0].total;
+
+  // Get paginated data
+  const dataParams = [...params, limit, offset];
   const result = await db.query<RowDataPacket>(
     `SELECT p.*,
             u.name as creator_name,
@@ -186,10 +279,31 @@ export async function getAllPolls() {
             (SELECT COUNT(*) FROM poll_items WHERE poll_id = p.id AND is_active = true) as item_count
      FROM polls p
      LEFT JOIN users u ON p.created_by = u.id
-     WHERE p.deleted_at IS NULL
-     ORDER BY p.created_at DESC`
+     WHERE ${whereClause}
+     ORDER BY p.created_at DESC
+     LIMIT ? OFFSET ?`,
+    dataParams
   );
-  return result.rows;
+
+  return {
+    data: result.rows,
+    total,
+    offset,
+    limit,
+    hasNext: offset + limit < total,
+    hasPrev: offset > 0
+  };
+}
+
+/**
+ * Get all polls (simple version for backward compatibility)
+ */
+export async function getAllPollsSimple(
+  pagination: PaginationOptions = {},
+  filters: PollFilters = {}
+): Promise<any[]> {
+  const result = await getAllPolls(pagination, filters);
+  return result.data;
 }
 
 /**

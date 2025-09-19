@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 
 interface StatsCardProps {
   title: string;
@@ -9,6 +10,10 @@ interface StatsCardProps {
   trend?: {
     value: number;
     isPositive: boolean;
+  };
+  badge?: {
+    text: string;
+    variant?: 'success' | 'warning' | 'error' | 'info' | 'purple' | 'pink';
   };
   loading?: boolean;
   className?: string;
@@ -19,6 +24,7 @@ export function StatsCard({
   value,
   icon,
   trend,
+  badge,
   loading = false,
   className
 }: StatsCardProps) {
@@ -40,31 +46,57 @@ export function StatsCard({
   }
 
   return (
-    <Card className={cn('p-6 transition-all duration-200 hover:shadow-lg', className)}>
-      <div className="flex items-start justify-between mb-4">
-        {icon && (
-          <div className="p-2 bg-dark-surface-primary rounded-lg text-brand-red-600">
-            {icon}
-          </div>
-        )}
-        {trend && (
-          <span className={cn(
-            'text-sm font-medium flex items-center gap-1',
-            trend.isPositive ? 'text-green-500' : 'text-red-500'
-          )}>
-            {trend.isPositive ? '↑' : '↓'}
-            {Math.abs(trend.value)}%
-          </span>
-        )}
-      </div>
+    <Card className={cn(
+      'p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1',
+      'bg-gradient-to-br from-dark-surface-primary to-dark-surface-secondary/30',
+      'group relative overflow-hidden',
+      className
+    )}>
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-brand-red-600/5 to-transparent rounded-full blur-2xl group-hover:from-brand-red-600/10 transition-colors duration-500" />
 
-      <div>
-        <p className="text-sm text-dark-text-secondary mb-1">
-          {title}
-        </p>
-        <p className="text-2xl font-bold text-dark-text-primary">
-          {value}
-        </p>
+      <div className="relative z-10">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            {icon && (
+              <div className="p-3 bg-gradient-to-br from-brand-red-600/20 to-brand-red-700/10 rounded-xl text-brand-red-500 shadow-lg shadow-brand-red-900/20 group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+                {icon}
+              </div>
+            )}
+            {badge && (
+              <Badge
+                variant={badge.variant || 'info'}
+                size="small"
+                pill
+                animated
+              >
+                {badge.text}
+              </Badge>
+            )}
+          </div>
+          {trend && (
+            <div className={cn(
+              'flex items-center gap-1 px-2 py-1 rounded-lg font-medium text-sm',
+              trend.isPositive
+                ? 'bg-gradient-to-r from-green-600/20 to-green-700/10 text-green-400'
+                : 'bg-gradient-to-r from-red-600/20 to-red-700/10 text-red-400'
+            )}>
+              <span className="text-lg">
+                {trend.isPositive ? '↑' : '↓'}
+              </span>
+              {Math.abs(trend.value)}%
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="text-sm text-dark-text-secondary mb-2 font-medium uppercase tracking-wider">
+            {title}
+          </p>
+          <p className="text-3xl font-bold text-white">
+            {value}
+          </p>
+        </div>
       </div>
     </Card>
   );

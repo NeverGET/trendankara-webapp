@@ -11,10 +11,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses = {
-  primary: 'bg-brand-red-600 text-white hover:bg-brand-red-700 active:bg-brand-red-800 focus:ring-2 focus:ring-brand-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg-primary',
-  secondary: 'bg-dark-surface-secondary text-dark-text-primary hover:bg-dark-surface-tertiary active:bg-dark-surface-primary border border-dark-border-primary',
-  danger: 'bg-red-900 text-white hover:bg-red-800 active:bg-red-950',
-  ghost: 'bg-transparent text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary active:bg-dark-surface-secondary'
+  primary: 'bg-gradient-to-r from-brand-red-600 to-brand-red-700 text-white hover:from-brand-red-700 hover:to-brand-red-800 active:from-brand-red-800 active:to-brand-red-900 shadow-lg shadow-brand-red-900/30 hover:shadow-xl hover:shadow-brand-red-900/40 focus:ring-2 focus:ring-brand-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg-primary transform hover:-translate-y-0.5 active:translate-y-0',
+  secondary: 'bg-dark-surface-secondary text-dark-text-primary hover:bg-dark-surface-tertiary active:bg-dark-surface-primary border border-dark-border-primary shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0',
+  danger: 'bg-gradient-to-r from-red-900 to-red-800 text-white hover:from-red-800 hover:to-red-700 active:from-red-950 active:to-red-900 shadow-lg shadow-red-950/30 hover:shadow-xl hover:shadow-red-950/40 transform hover:-translate-y-0.5 active:translate-y-0',
+  ghost: 'bg-transparent text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary/50 active:bg-dark-surface-secondary backdrop-blur-sm'
 };
 
 const sizeClasses = {
@@ -41,9 +41,10 @@ export function Button({
       onClick={onClick}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-300 relative overflow-hidden',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none',
         'focus:outline-none',
+        'before:absolute before:inset-0 before:bg-white/10 before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-500',
         variantClasses[variant],
         sizeClasses[size],
         fullWidth && 'w-full',

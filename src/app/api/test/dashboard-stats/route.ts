@@ -1,18 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/config';
+import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/client';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Check authentication
-    const session = await auth();
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Fetch statistics from database
     const newsResult = await db.query(
       'SELECT COUNT(*) as count FROM news WHERE deleted_at IS NULL'
@@ -45,6 +35,8 @@ export async function GET(request: NextRequest) {
         cache: 'no-store'
       });
 
+      console.log('Radio fetch response status:', radioResponse.status);
+
       if (radioResponse.ok) {
         const radioData = await radioResponse.json();
         radioStats = {
@@ -52,9 +44,7 @@ export async function GET(request: NextRequest) {
           peakListeners: radioData.peaklisteners || 0,
           streamStatus: radioData.streamstatus === 1
         };
-        console.log('Radio stats fetched:', radioStats);
-      } else {
-        console.error('Radio response not ok:', radioResponse.status);
+        console.log('Radio data fetched successfully:', radioStats);
       }
     } catch (radioError) {
       console.error('Failed to fetch radio stats:', radioError);
@@ -68,17 +58,21 @@ export async function GET(request: NextRequest) {
       totalMedia: mediaResult.rows[0]?.count || 0,
       currentListeners: radioStats.currentListeners,
       peakListeners: radioStats.peakListeners,
-      streamStatus: radioStats.streamStatus,
-      recentActivity: [],
-      storageUsed: 0,
-      lastBackup: null
+      streamStatus: radioStats.streamStatus
     };
 
-    return NextResponse.json(stats);
+    return NextResponse.json({
+      success: true,
+      stats,
+      radioStats,
+      debug: {
+        radioFetched: radioStats.currentListeners > 0 || radioStats.peakListeners > 0
+      }
+    });
   } catch (error) {
     console.error('Dashboard stats error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch dashboard statistics' },
+      { error: 'Failed to fetch dashboard statistics', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

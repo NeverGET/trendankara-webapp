@@ -209,7 +209,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
 
 ### Phase 7: User Management API
 
-- [ ] 20. Create user list API endpoint
+- [x] 20. Create user list API endpoint
   - File: src/app/api/admin/users/route.ts
   - Implement GET handler for listing users
   - Add pagination and filtering
@@ -218,7 +218,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/lib/db/client.ts, src/lib/auth/utils.ts_
   - _Requirements: 2.3, 7.1_
 
-- [ ] 21. Add create user to API
+- [x] 21. Add create user to API
   - File: src/app/api/admin/users/route.ts (modify)
   - Implement POST handler for creating users
   - Hash password before storing
@@ -227,7 +227,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/lib/auth/password.ts_
   - _Requirements: 3.1, 3.2, 7.2_
 
-- [ ] 22. Create user update API endpoint
+- [x] 22. Create user update API endpoint
   - File: src/app/api/admin/users/[id]/route.ts
   - Implement PUT handler for updating users
   - Handle password updates with re-hashing
@@ -236,7 +236,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/lib/auth/password.ts_
   - _Requirements: 3.4, 7.3_
 
-- [ ] 23. Add soft delete to user API
+- [x] 23. Add soft delete to user API
   - File: src/app/api/admin/users/[id]/route.ts (modify)
   - Implement DELETE handler
   - Set deleted_at timestamp
@@ -256,7 +256,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - _Leverage: src/lib/db/client.ts_
   - _Requirements: 1.1, 5.1_
 
-- [ ] 25. Add session cleanup query
+- [x] 25. Add session cleanup query
   - File: src/lib/db/auth.ts (modify)
   - Create cleanupExpiredSessions function
   - Add query to delete expired sessions
@@ -328,7 +328,7 @@ All tasks follow the project structure defined in structure.md, use existing pat
   - Purpose: Consolidate to single auth page
   - _Requirements: 6.1, 6.2_
 
-- [ ] 33. Create session cleanup API endpoint
+- [x] 33. Create session cleanup API endpoint
   - File: src/app/api/admin/sessions/cleanup/route.ts
   - Implement POST handler for manual cleanup
   - Call cleanupExpiredSessions function

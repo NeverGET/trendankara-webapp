@@ -223,3 +223,37 @@ export async function userExists(email: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Clean up expired sessions from the database
+ * Removes all sessions that have passed their expiration time
+ * This function should be called periodically to maintain database hygiene
+ *
+ * @returns Promise<number> - Number of expired sessions removed
+ */
+export async function cleanupExpiredSessions(): Promise<number> {
+  try {
+    logInfo('Starting cleanup of expired sessions', { prefix: 'Auth DB' });
+
+    const result = await db.delete(
+      `DELETE FROM sessions
+       WHERE expires < NOW()`,
+      []
+    );
+
+    const deletedCount = result.affectedRows;
+
+    if (deletedCount > 0) {
+      logInfo(`Cleaned up ${deletedCount} expired sessions`, { prefix: 'Auth DB' });
+    } else {
+      logInfo('No expired sessions found to clean up', { prefix: 'Auth DB' });
+    }
+
+    return deletedCount;
+
+  } catch (error) {
+    const dbError = error as Error;
+    logError(`Failed to cleanup expired sessions: ${dbError.message}`, { prefix: 'Auth DB' });
+    throw dbError;
+  }
+}
