@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/opt/homebrew/opt/mysql-client/bin/mysql -h 82.29.169.180 -P 3307 -u root -pradiopass123 radio_db -e \"SELECT COUNT(*) as count FROM audit_log;\")",
+      "Bash(/opt/homebrew/opt/mysql-client/bin/mysql:*)",
+      "Bash(npm run build:*)",
+      "Bash(claude-code-spec-workflow bug-create image-picker-issues)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "spinnerTipsEnabled": false
+}

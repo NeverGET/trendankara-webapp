@@ -18,10 +18,11 @@ const variantClasses = {
 };
 
 const sizeClasses = {
-  small: 'h-10 px-3 text-sm min-w-[40px]',
-  medium: 'h-12 px-4 text-base min-w-[48px]',
-  large: 'h-14 px-6 text-lg min-w-[56px]',
-  giant: 'h-[72px] px-8 text-xl min-w-[72px]'
+  // Mobile-first responsive sizing with touch optimization (Requirement 2.1, 2.5)
+  small: 'min-h-[44px] md:min-h-[40px] px-3 md:px-3 text-sm min-w-[44px] md:min-w-[40px]',
+  medium: 'min-h-[44px] md:min-h-[48px] px-4 md:px-4 text-sm md:text-base min-w-[44px]',
+  large: 'min-h-[48px] md:min-h-[56px] px-5 md:px-6 text-base md:text-lg min-w-[48px]',
+  giant: 'min-h-[56px] md:min-h-[72px] px-6 md:px-8 text-lg md:text-xl min-w-[56px] md:min-w-[72px]'
 };
 
 export function Button({
@@ -55,7 +56,7 @@ export function Button({
       {loading ? (
         <span className="inline-flex items-center gap-2">
           <svg
-            className="animate-spin h-5 w-5"
+            className="animate-spin h-4 w-4 md:h-5 md:w-5"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

@@ -1,12 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PollCard } from '@/components/admin/PollCard';
+import { PollSkeleton } from '@/components/admin/PollSkeleton';
 import { StatsCard } from '@/components/admin/StatsCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useConfirmation } from '@/hooks/useConfirmation';
+import { usePollsData } from '@/hooks/usePollsData';
+import { deletePoll } from '@/lib/api/admin-polls';
+import { cn } from '@/lib/utils';
+import { getPollStatus } from '@/lib/utils/poll-status';
+import { PollDialog } from '@/components/admin/PollDialog';
 import {
   FiPlus,
   FiBarChart2,
@@ -22,128 +29,17 @@ import {
   FiCalendar,
   FiAward,
   FiEdit,
-  FiTrash2
+  FiTrash2,
+  FiAlertCircle,
+  FiX
 } from 'react-icons/fi';
 
-// Mock data - replace with API call
-const mockPolls = [
-  {
-    id: 1,
-    title: 'Haftanın En İyi Şarkısı',
-    description: 'Bu hafta en çok dinlenen ve beğenilen şarkıları oylayın',
-    type: 'TOP_50' as const,
-    totalVotes: 3456,
-    uniqueVoters: 1234,
-    options: [
-      { id: 1, name: 'Şarkı 1 - Sanatçı A', votes: 1234, percentage: 35.7, imageUrl: '/api/placeholder/50/50' },
-      { id: 2, name: 'Şarkı 2 - Sanatçı B', votes: 987, percentage: 28.6, imageUrl: '/api/placeholder/50/50' },
-      { id: 3, name: 'Şarkı 3 - Sanatçı C', votes: 678, percentage: 19.6, imageUrl: '/api/placeholder/50/50' },
-      { id: 4, name: 'Şarkı 4 - Sanatçı D', votes: 557, percentage: 16.1, imageUrl: '/api/placeholder/50/50' }
-    ],
-    startDate: '15 Eyl',
-    endDate: '22 Eyl',
-    status: 'active' as const,
-    daysRemaining: 4
-  },
-  {
-    id: 2,
-    title: 'Ayın En İyi Albümü',
-    description: 'Eylül ayının en başarılı albümünü seçiyoruz',
-    type: 'TOP_10' as const,
-    totalVotes: 2145,
-    uniqueVoters: 892,
-    options: [
-      { id: 1, name: 'Albüm X', votes: 856, percentage: 39.9, imageUrl: '/api/placeholder/50/50' },
-      { id: 2, name: 'Albüm Y', votes: 645, percentage: 30.1, imageUrl: '/api/placeholder/50/50' },
-      { id: 3, name: 'Albüm Z', votes: 644, percentage: 30.0, imageUrl: '/api/placeholder/50/50' }
-    ],
-    startDate: '1 Eyl',
-    endDate: '30 Eyl',
-    status: 'active' as const,
-    daysRemaining: 12
-  },
-  {
-    id: 3,
-    title: 'En İyi Yeni Çıkan',
-    description: 'Bu ay çıkan şarkılar arasından en iyisini seçin',
-    type: 'BEST_OF_MONTH' as const,
-    totalVotes: 567,
-    uniqueVoters: 234,
-    options: [
-      { id: 1, name: 'Yeni Şarkı 1', votes: 234, percentage: 41.3 },
-      { id: 2, name: 'Yeni Şarkı 2', votes: 200, percentage: 35.3 },
-      { id: 3, name: 'Yeni Şarkı 3', votes: 133, percentage: 23.4 }
-    ],
-    startDate: '10 Eyl',
-    endDate: '25 Eyl',
-    status: 'scheduled' as const,
-    daysRemaining: undefined
-  },
-  {
-    id: 4,
-    title: 'Dinleyici Tercihi - Rock',
-    description: 'Rock severler için özel anket',
-    type: 'LISTENER_CHOICE' as const,
-    totalVotes: 8912,
-    uniqueVoters: 3456,
-    options: [
-      { id: 1, name: 'Rock Band A', votes: 3456, percentage: 38.8 },
-      { id: 2, name: 'Rock Band B', votes: 2890, percentage: 32.4 },
-      { id: 3, name: 'Rock Band C', votes: 2566, percentage: 28.8 }
-    ],
-    startDate: '1 Ağu',
-    endDate: '31 Ağu',
-    status: 'ended' as const,
-    daysRemaining: undefined
-  },
-  {
-    id: 5,
-    title: 'Yaz Festivali Anketi',
-    description: 'En iyi festival performansını oylayın',
-    type: 'SPECIAL' as const,
-    totalVotes: 0,
-    uniqueVoters: 0,
-    options: [],
-    startDate: '1 Tem',
-    endDate: '15 Tem',
-    status: 'draft' as const,
-    daysRemaining: undefined
-  },
-  {
-    id: 6,
-    title: 'Nostaljik Şarkılar',
-    description: '90\'ların en iyi şarkısı hangisi?',
-    type: 'SPECIAL' as const,
-    totalVotes: 12345,
-    uniqueVoters: 4567,
-    options: [
-      { id: 1, name: '90\'lar Hit 1', votes: 5432, percentage: 44.0 },
-      { id: 2, name: '90\'lar Hit 2', votes: 3912, percentage: 31.7 },
-      { id: 3, name: '90\'lar Hit 3', votes: 3001, percentage: 24.3 }
-    ],
-    startDate: '1 Haz',
-    endDate: '30 Haz',
-    status: 'ended' as const,
-    daysRemaining: undefined
-  }
-];
-
-// Mock stats
-const pollStats = {
-  totalPolls: 24,
-  activePolls: 3,
-  totalVotes: 45678,
-  uniqueVoters: 8912,
-  avgParticipation: 72
-};
-
+// Filter and sort options for polls
 const pollTypes = [
   { value: 'all', label: 'Tümü' },
-  { value: 'TOP_50', label: 'Top 50' },
-  { value: 'TOP_10', label: 'Top 10' },
-  { value: 'BEST_OF_MONTH', label: 'Ayın En İyisi' },
-  { value: 'LISTENER_CHOICE', label: 'Dinleyici Seçimi' },
-  { value: 'SPECIAL', label: 'Özel' }
+  { value: 'weekly', label: 'Haftalık' },
+  { value: 'monthly', label: 'Aylık' },
+  { value: 'custom', label: 'Özel' }
 ];
 
 const pollStatuses = [
@@ -155,11 +51,9 @@ const pollStatuses = [
 ];
 
 const pollTypeConfig: Record<string, { label: string; color: string }> = {
-  'TOP_50': { label: 'Top 50', color: 'primary' },
-  'TOP_10': { label: 'Top 10', color: 'secondary' },
-  'BEST_OF_MONTH': { label: 'Ayın En İyisi', color: 'success' },
-  'LISTENER_CHOICE': { label: 'Dinleyici Seçimi', color: 'warning' },
-  'SPECIAL': { label: 'Özel', color: 'info' }
+  'weekly': { label: 'Haftalık', color: 'primary' },
+  'monthly': { label: 'Aylık', color: 'secondary' },
+  'custom': { label: 'Özel', color: 'success' }
 };
 
 export default function AdminPollsPage() {
@@ -169,20 +63,99 @@ export default function AdminPollsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPollIds, setSelectedPollIds] = useState<number[]>([]);
 
+  // Dialog states
+  const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
+  const [selectedPoll, setSelectedPoll] = useState<any>(null);
+
   // Confirmation dialog
   const confirmation = useConfirmation();
 
-  const filteredPolls = mockPolls.filter(poll => {
-    const matchesType = filterType === 'all' || poll.type === filterType;
-    const matchesStatus = filterStatus === 'all' || poll.status === filterStatus;
-    const matchesSearch = poll.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          poll.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesStatus && matchesSearch;
+  // Data fetching hook
+  const {
+    polls,
+    pagination,
+    loading,
+    error,
+    setPage,
+    setLimit,
+    setFilters,
+    setSearch,
+    refresh,
+    clearError
+  } = usePollsData({
+    initialLimit: 10,
+    autoFetch: true
   });
+
+  // Update search with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setSearch(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, setSearch]);
+
+  // Update filters when filter state changes
+  useEffect(() => {
+    const filters = {
+      poll_type: filterType !== 'all' ? filterType : undefined,
+      is_active: filterStatus === 'active' ? true : filterStatus === 'draft' ? false : undefined
+    };
+    setFilters(filters);
+  }, [filterType, filterStatus, setFilters]);
+
+  // Apply filtering to polls
+  const filteredPolls = polls.filter(poll => {
+    // Calculate real status for filtering
+    const realStatus = getPollStatus({
+      start_date: poll.start_date,
+      end_date: poll.end_date,
+      is_active: poll.is_active
+    });
+
+    // Apply type filter
+    if (filterType !== 'all' && poll.poll_type !== filterType) {
+      return false;
+    }
+
+    // Apply status filter
+    if (filterStatus !== 'all' && realStatus !== filterStatus) {
+      return false;
+    }
+
+    // Apply search filter
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      return (
+        poll.title?.toLowerCase().includes(query) ||
+        poll.description?.toLowerCase().includes(query)
+      );
+    }
+
+    return true;
+  });
+
+  // Calculate stats from current polls data
+  const pollStats = {
+    totalPolls: pagination.total,
+    activePolls: filteredPolls.filter(poll => {
+      const realStatus = getPollStatus({
+        start_date: poll.start_date,
+        end_date: poll.end_date,
+        is_active: poll.is_active
+      });
+      return realStatus === 'active';
+    }).length,
+    totalVotes: polls.reduce((sum, poll) => sum + (poll.total_votes || 0), 0),
+    uniqueVoters: polls.length > 0 ? Math.floor(polls.reduce((sum, poll) => sum + (poll.total_votes || 0), 0) * 0.7) : 0,
+    avgParticipation: polls.length > 0 ? Math.round(polls.reduce((sum, poll) => sum + (poll.total_votes || 0), 0) / polls.length) : 0
+  };
 
   // Handle single poll deletion
   const handleDeletePoll = async (id: number) => {
-    const poll = mockPolls.find(p => p.id === id);
+    const poll = polls.find(p => p.id === id);
     const pollTitle = poll?.title || 'Bu anket';
 
     const confirmed = await confirmation.confirm({
@@ -199,12 +172,17 @@ export default function AdminPollsPage() {
 
     try {
       confirmation.setLoading(true);
-      // TODO: Add API call to delete poll
-      console.log('Deleting poll:', id);
-      // Mock deletion - in real app, refresh data after successful deletion
+      const result = await deletePoll(id);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Anket silinirken bir hata oluştu');
+      }
+
+      // Refresh data after successful deletion
+      await refresh();
     } catch (error) {
       console.error('Error deleting poll:', error);
-      confirmation.setError('Anket silinirken bir hata oluştu.');
+      confirmation.setError(error instanceof Error ? error.message : 'Anket silinirken bir hata oluştu.');
     } finally {
       confirmation.setLoading(false);
     }
@@ -228,13 +206,28 @@ export default function AdminPollsPage() {
 
     try {
       confirmation.setLoading(true);
-      // TODO: Add API call to delete multiple polls
-      console.log('Deleting polls:', selectedPollIds);
+
+      // Delete polls one by one (since we don't have a batch delete API)
+      const results = await Promise.allSettled(
+        selectedPollIds.map(id => deletePoll(id))
+      );
+
+      // Check for any failures
+      const failures = results.filter(result =>
+        result.status === 'rejected' ||
+        (result.status === 'fulfilled' && !result.value.success)
+      );
+
+      if (failures.length > 0) {
+        throw new Error(`${failures.length} anket silinirken hata oluştu`);
+      }
+
       setSelectedPollIds([]);
-      // Mock deletion - in real app, refresh data after successful deletion
+      // Refresh data after successful deletion
+      await refresh();
     } catch (error) {
       console.error('Error deleting polls:', error);
-      confirmation.setError('Anketler silinirken bir hata oluştu.');
+      confirmation.setError(error instanceof Error ? error.message : 'Anketler silinirken bir hata oluştu.');
     } finally {
       confirmation.setLoading(false);
     }
@@ -260,6 +253,76 @@ export default function AdminPollsPage() {
     setSelectedPollIds([]);
   };
 
+  // Handle opening create dialog
+  const handleCreatePoll = () => {
+    setDialogMode('create');
+    setSelectedPoll(null);
+    setIsPollDialogOpen(true);
+  };
+
+  // Handle opening edit dialog
+  const handleEditPoll = (poll: any) => {
+    setDialogMode('edit');
+    setSelectedPoll(poll);
+    setIsPollDialogOpen(true);
+  };
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setIsPollDialogOpen(false);
+    setSelectedPoll(null);
+  };
+
+  // Handle dialog success (poll created/updated)
+  const handleDialogSuccess = () => {
+    // Refresh the polls list
+    refresh();
+  };
+
+  // Handle poll preview
+  const handlePreviewPoll = (id: number) => {
+    // Open preview in new tab
+    window.open(`/api/admin/polls/${id}/preview`, '_blank');
+  };
+
+  // Keyboard shortcuts handler
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if we're typing in an input field
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      // Cmd/Ctrl + N: New poll
+      if ((event.metaKey || event.ctrlKey) && event.key === 'n') {
+        event.preventDefault();
+        handleCreatePoll();
+      }
+
+      // Escape: Close dialog
+      if (event.key === 'Escape') {
+        if (isPollDialogOpen) {
+          handleDialogClose();
+        }
+        if (confirmation.isOpen) {
+          confirmation.close();
+        }
+      }
+
+      // Delete: Delete selected polls
+      if (event.key === 'Delete' && selectedPollIds.length > 0) {
+        event.preventDefault();
+        handleBatchDelete();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPollDialogOpen, selectedPollIds, confirmation.isOpen, confirmation, handleBatchDelete]);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -271,8 +334,18 @@ export default function AdminPollsPage() {
           <p className="text-dark-text-secondary mt-1">
             Anketleri yönetin, sonuçları görüntüleyin
           </p>
+          <div className="text-xs text-dark-text-secondary mt-2 space-y-1">
+            <p>
+              <strong>Kısayollar:</strong> {navigator.platform.indexOf('Mac') > -1 ? 'Cmd' : 'Ctrl'}+N (Yeni), Delete (Sil), Esc (Kapat)
+            </p>
+          </div>
         </div>
-        <Button variant="primary" size="medium">
+        <Button
+          variant="primary"
+          size="medium"
+          onClick={handleCreatePoll}
+          title={`Yeni Anket (${navigator.platform.indexOf('Mac') > -1 ? 'Cmd' : 'Ctrl'}+N)`}
+        >
           <FiPlus className="w-4 h-4 mr-2" />
           Yeni Anket
         </Button>
@@ -300,6 +373,7 @@ export default function AdminPollsPage() {
                 size="small"
                 onClick={handleBatchDelete}
                 className="flex items-center gap-2"
+                title="Seçili anketleri sil (Delete)"
               >
                 <FiTrash2 className="w-4 h-4" />
                 {selectedPollIds.length} Anketi Sil
@@ -440,7 +514,14 @@ export default function AdminPollsPage() {
       </div>
 
       {/* Active Polls Highlight */}
-      {filteredPolls.filter(p => p.status === 'active').length > 0 && filterStatus === 'all' && (
+      {filteredPolls.filter(p => {
+        const realStatus = getPollStatus({
+          start_date: p.start_date,
+          end_date: p.end_date,
+          is_active: p.is_active
+        });
+        return realStatus === 'active';
+      }).length > 0 && filterStatus === 'all' && (
         <div className="bg-gradient-to-r from-green-900/20 to-transparent rounded-xl border border-green-900/30 p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-green-600/20 rounded-lg">
@@ -448,11 +529,25 @@ export default function AdminPollsPage() {
             </div>
             <h2 className="text-lg font-semibold text-dark-text-primary">Aktif Anketler</h2>
             <Badge variant="success" size="small" pill animated>
-              {filteredPolls.filter(p => p.status === 'active').length} Adet
+              {filteredPolls.filter(p => {
+                const realStatus = getPollStatus({
+                  start_date: p.start_date,
+                  end_date: p.end_date,
+                  is_active: p.is_active
+                });
+                return realStatus === 'active';
+              }).length} Adet
             </Badge>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {filteredPolls.filter(p => p.status === 'active').map(poll => (
+            {filteredPolls.filter(p => {
+              const realStatus = getPollStatus({
+                start_date: p.start_date,
+                end_date: p.end_date,
+                is_active: p.is_active
+              });
+              return realStatus === 'active';
+            }).map(poll => (
               <div key={poll.id} className="bg-dark-surface-secondary/30 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-dark-text-primary">{poll.title}</span>
@@ -476,37 +571,100 @@ export default function AdminPollsPage() {
         </div>
       )}
 
-      {/* Polls Grid/List */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredPolls.map(poll => (
-            <div key={poll.id} className={cn(
-              "relative",
-              selectedPollIds.includes(poll.id) && "ring-2 ring-red-500 rounded-xl"
-            )}>
-              {/* Selection Checkbox */}
-              <div className="absolute top-4 left-4 z-10">
-                <input
-                  type="checkbox"
-                  checked={selectedPollIds.includes(poll.id)}
-                  onChange={() => togglePollSelection(poll.id)}
-                  className="w-4 h-4 text-red-600 bg-dark-surface-secondary border-dark-border-primary rounded focus:ring-red-500 focus:ring-2"
-                />
-              </div>
-              <PollCard
-                {...poll}
-                onEdit={(id) => console.log('Edit', id)}
-                onDelete={handleDeletePoll}
-                onView={(id) => console.log('View', id)}
-                onToggleStatus={(id) => console.log('Toggle', id)}
-              />
+      {/* Error Display */}
+      {error && (
+        <div className="bg-brand-red-50 dark:bg-brand-red-900/20 border border-brand-red-200 dark:border-brand-red-800 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <FiAlertCircle className="h-5 w-5 text-brand-red-600 dark:text-brand-red-400" />
+            <div className="flex-1">
+              <h4 className="font-medium text-brand-red-800 dark:text-brand-red-200">
+                Hata Oluştu
+              </h4>
+              <p className="text-sm text-brand-red-700 dark:text-brand-red-300 mt-1">
+                {error}
+              </p>
             </div>
-          ))}
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={clearError}
+              className="text-brand-red-600 dark:text-brand-red-400"
+            >
+              <FiX className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredPolls.map(poll => {
-            const config = pollTypeConfig[poll.type];
+      )}
+
+      {/* Loading Skeletons */}
+      {loading && (
+        <>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <PollSkeleton key={i} variant="grid" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {[...Array(8)].map((_, i) => (
+                <PollSkeleton key={i} variant="list" />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Polls Grid/List */}
+      {!loading && !error && (
+        <>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredPolls.map(poll => (
+                <div key={poll.id} className={cn(
+                  "relative",
+                  selectedPollIds.includes(poll.id) && "ring-2 ring-red-500 rounded-xl"
+                )}>
+                  {/* Selection Checkbox */}
+                  <div className="absolute top-4 left-4 z-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedPollIds.includes(poll.id)}
+                      onChange={() => togglePollSelection(poll.id)}
+                      className="w-4 h-4 text-red-600 bg-dark-surface-secondary border-dark-border-primary rounded focus:ring-red-500 focus:ring-2"
+                    />
+                  </div>
+                  <PollCard
+                    id={poll.id}
+                    title={poll.title}
+                    description={poll.description}
+                    type={poll.poll_type || 'SPECIAL'}
+                    totalVotes={poll.total_votes || 0}
+                    uniqueVoters={Math.floor((poll.total_votes || 0) * 0.7)}
+                    options={[]}
+                    startDate={new Date(poll.start_date).toLocaleDateString('tr-TR')}
+                    endDate={new Date(poll.end_date).toLocaleDateString('tr-TR')}
+                    start_date={poll.start_date}
+                    end_date={poll.end_date}
+                    is_active={poll.is_active}
+                    onEdit={() => handleEditPoll(poll)}
+                    onDelete={handleDeletePoll}
+                    onView={(id) => console.log('View', id)}
+                    onPreview={handlePreviewPoll}
+                    onToggleStatus={(id) => console.log('Toggle', id)}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredPolls.map(poll => {
+                const config = pollTypeConfig[poll.poll_type];
+                const realStatus = getPollStatus({
+                  start_date: poll.start_date,
+                  end_date: poll.end_date,
+                  is_active: poll.is_active
+                });
             return (
               <div
                 key={poll.id}
@@ -539,18 +697,18 @@ export default function AdminPollsPage() {
                       </Badge>
                       <Badge
                         variant={
-                          poll.status === 'active' ? 'success' :
-                          poll.status === 'scheduled' ? 'warning' :
-                          poll.status === 'ended' ? 'error' :
+                          realStatus === 'active' ? 'success' :
+                          realStatus === 'scheduled' ? 'warning' :
+                          realStatus === 'ended' ? 'error' :
                           'default'
                         }
                         size="small"
                         pill
-                        animated={poll.status === 'active'}
+                        animated={realStatus === 'active'}
                       >
-                        {poll.status === 'active' ? 'Aktif' :
-                         poll.status === 'scheduled' ? 'Planlandı' :
-                         poll.status === 'ended' ? 'Bitti' :
+                        {realStatus === 'active' ? 'Aktif' :
+                         realStatus === 'scheduled' ? 'Planlandı' :
+                         realStatus === 'ended' ? 'Bitti' :
                          'Taslak'}
                       </Badge>
                     </div>
@@ -560,31 +718,23 @@ export default function AdminPollsPage() {
                     <div className="flex items-center gap-6 text-xs text-dark-text-secondary">
                       <div className="flex items-center gap-1">
                         <FiBarChart2 className="w-3 h-3" />
-                        <span>{poll.totalVotes} oy</span>
+                        <span>{poll.total_votes} oy</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <FiUsers className="w-3 h-3" />
-                        <span>{poll.uniqueVoters} katılımcı</span>
+                        <span>{poll.item_count} seçenek</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <FiCalendar className="w-3 h-3" />
-                        <span>{poll.startDate} - {poll.endDate}</span>
+                        <span>{new Date(poll.start_date).toLocaleDateString('tr-TR')} - {new Date(poll.end_date).toLocaleDateString('tr-TR')}</span>
                       </div>
-                      {poll.daysRemaining !== undefined && (
-                        <Badge
-                          variant={poll.daysRemaining <= 3 ? 'error' : 'warning'}
-                          size="small"
-                        >
-                          {poll.daysRemaining} gün kaldı
-                        </Badge>
-                      )}
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="small">
                       <FiBarChart2 className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="small">
+                    <Button variant="ghost" size="small" onClick={() => handleEditPoll(poll)}>
                       <FiEdit className="w-4 h-4" />
                     </Button>
                     <Button
@@ -598,18 +748,48 @@ export default function AdminPollsPage() {
                 </div>
               </div>
             );
-          })}
-        </div>
-      )}
+              })}
+            </div>
+          )}
 
-      {/* No Results */}
-      {filteredPolls.length === 0 && (
-        <div className="text-center py-12">
-          <FiBarChart2 className="w-12 h-12 mx-auto text-dark-text-secondary mb-4" />
-          <p className="text-dark-text-secondary">
-            Anket bulunamadı
-          </p>
-        </div>
+          {/* No Results */}
+          {filteredPolls.length === 0 && (
+            <div className="text-center py-12">
+              <FiBarChart2 className="w-12 h-12 mx-auto text-dark-text-secondary mb-4" />
+              <p className="text-dark-text-secondary">
+                {searchQuery || filterType !== 'all' || filterStatus !== 'all'
+                  ? 'Filtrelere uygun anket bulunamadı'
+                  : 'Anket bulunamadı'
+                }
+              </p>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-8">
+              <Button
+                variant="ghost"
+                size="small"
+                disabled={!pagination.hasPrev}
+                onClick={() => setPage(pagination.page - 1)}
+              >
+                Önceki
+              </Button>
+              <span className="text-sm text-dark-text-secondary">
+                Sayfa {pagination.page} / {pagination.totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="small"
+                disabled={!pagination.hasNext}
+                onClick={() => setPage(pagination.page + 1)}
+              >
+                Sonraki
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Confirm Dialog */}
@@ -624,11 +804,15 @@ export default function AdminPollsPage() {
         cancelText={confirmation.cancelText}
         loading={confirmation.isLoading}
       />
+
+      {/* Poll Dialog */}
+      <PollDialog
+        isOpen={isPollDialogOpen}
+        onClose={handleDialogClose}
+        poll={selectedPoll}
+        mode={dialogMode}
+        onSuccess={handleDialogSuccess}
+      />
     </div>
   );
-}
-
-// Helper function
-function cn(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
 }

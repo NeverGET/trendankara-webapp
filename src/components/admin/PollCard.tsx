@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { getPollStatus, getDaysRemaining, getDaysUntilStart, getTimeRemainingText, isPollEndingSoon } from '@/lib/utils/poll-status';
 import {
   FiEdit,
   FiTrash2,
@@ -13,7 +14,8 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiTrendingUp,
-  FiAward
+  FiAward,
+  FiExternalLink
 } from 'react-icons/fi';
 
 interface PollOption {
@@ -34,15 +36,22 @@ interface PollCardProps {
   options: PollOption[];
   startDate: string;
   endDate: string;
-  status: 'active' | 'scheduled' | 'ended' | 'draft';
+  status?: 'active' | 'scheduled' | 'ended' | 'draft'; // Made optional as we'll calculate it
+  start_date: string; // Raw dates for calculation
+  end_date: string;
+  is_active?: boolean;
   daysRemaining?: number;
   onEdit?: (id: number) => void;
   onDelete?: (id: number) => void;
   onView?: (id: number) => void;
+  onPreview?: (id: number) => void;
   onToggleStatus?: (id: number) => void;
 }
 
 const pollTypeConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  'weekly': { label: 'Haftalık', color: 'purple', icon: <FiAward /> },
+  'monthly': { label: 'Aylık', color: 'pink', icon: <FiTrendingUp /> },
+  'custom': { label: 'Özel', color: 'info', icon: <FiBarChart2 /> },
   'TOP_50': { label: 'Haftanın Top 50', color: 'purple', icon: <FiAward /> },
   'TOP_10': { label: 'Ayın Top 10', color: 'pink', icon: <FiTrendingUp /> },
   'BEST_OF_MONTH': { label: 'Ayın En İyisi', color: 'info', icon: <FiAward /> },
@@ -50,7 +59,7 @@ const pollTypeConfig: Record<string, { label: string; color: string; icon: React
   'SPECIAL': { label: 'Özel Anket', color: 'warning', icon: <FiBarChart2 /> }
 };
 
-export function PollCard({
+export const PollCard = React.memo(function PollCard({
   id,
   title,
   description,
@@ -61,15 +70,25 @@ export function PollCard({
   startDate,
   endDate,
   status,
+  start_date,
+  end_date,
+  is_active,
   daysRemaining,
   onEdit,
   onDelete,
   onView,
+  onPreview,
   onToggleStatus
 }: PollCardProps) {
-  const config = pollTypeConfig[type];
-  const topOptions = options.slice(0, 3);
+  const config = pollTypeConfig[type] || pollTypeConfig['custom'];
+  const topOptions = (options || []).slice(0, 3);
   const participationRate = totalVotes > 0 ? Math.round((uniqueVoters / totalVotes) * 100) : 0;
+
+  // Calculate real status from dates
+  const realStatus = getPollStatus({ start_date, end_date, is_active });
+  const actualDaysRemaining = getDaysRemaining(end_date);
+  const timeRemainingText = getTimeRemainingText(end_date);
+  const isEndingSoon = isPollEndingSoon(end_date);
 
   return (
     <div className={cn(
@@ -85,9 +104,9 @@ export function PollCard({
           <div className="flex items-center gap-2">
             <div className={cn(
               "p-2 rounded-lg",
-              status === 'active' ? "bg-green-600/20 text-green-500" :
-              status === 'scheduled' ? "bg-yellow-600/20 text-yellow-500" :
-              status === 'ended' ? "bg-red-600/20 text-red-500" :
+              realStatus === 'active' ? "bg-green-600/20 text-green-500" :
+              realStatus === 'scheduled' ? "bg-yellow-600/20 text-yellow-500" :
+              realStatus === 'ended' ? "bg-red-600/20 text-red-500" :
               "bg-gray-600/20 text-gray-500"
             )}>
               {config.icon}
@@ -104,18 +123,18 @@ export function PollCard({
           {/* Status Badge */}
           <Badge
             variant={
-              status === 'active' ? 'success' :
-              status === 'scheduled' ? 'warning' :
-              status === 'ended' ? 'error' :
+              realStatus === 'active' ? 'success' :
+              realStatus === 'scheduled' ? 'warning' :
+              realStatus === 'ended' ? 'error' :
               'default'
             }
             size="small"
             pill
-            animated={status === 'active'}
+            animated={realStatus === 'active'}
           >
-            {status === 'active' ? '🟢 Aktif' :
-             status === 'scheduled' ? '🕐 Planlandı' :
-             status === 'ended' ? '🔴 Sona Erdi' :
+            {realStatus === 'active' ? '🟢 Aktif' :
+             realStatus === 'scheduled' ? '🕐 Planlandı' :
+             realStatus === 'ended' ? '🔴 Sona Erdi' :
              '📝 Taslak'}
           </Badge>
         </div>
@@ -199,13 +218,21 @@ export function PollCard({
               <span>{endDate}</span>
             </div>
           </div>
-          {status === 'active' && daysRemaining !== undefined && (
+          {realStatus === 'active' && (
             <Badge
-              variant={daysRemaining <= 3 ? 'error' : daysRemaining <= 7 ? 'warning' : 'success'}
+              variant={isEndingSoon ? 'error' : actualDaysRemaining <= 7 ? 'warning' : 'success'}
               size="small"
-              animated={daysRemaining <= 3}
+              animated={isEndingSoon}
             >
-              {daysRemaining === 0 ? 'Son Gün!' : `${daysRemaining} gün kaldı`}
+              {timeRemainingText}
+            </Badge>
+          )}
+          {realStatus === 'scheduled' && (
+            <Badge
+              variant="info"
+              size="small"
+            >
+              {getDaysUntilStart(start_date)} gün sonra başlayacak
             </Badge>
           )}
         </div>
@@ -240,6 +267,15 @@ export function PollCard({
         <Button
           variant="ghost"
           size="small"
+          onClick={() => onPreview?.(id)}
+          className="flex-1"
+          title="Önizleme"
+        >
+          <FiExternalLink className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="small"
           onClick={() => onEdit?.(id)}
           className="flex-1"
         >
@@ -251,7 +287,7 @@ export function PollCard({
           onClick={() => onToggleStatus?.(id)}
           className="flex-1"
         >
-          {status === 'active' ? (
+          {realStatus === 'active' ? (
             <FiXCircle className="w-4 h-4 text-orange-500" />
           ) : (
             <FiCheckCircle className="w-4 h-4 text-green-500" />
@@ -268,4 +304,22 @@ export function PollCard({
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  // Only re-render if essential props have changed
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.title === nextProps.title &&
+    prevProps.description === nextProps.description &&
+    prevProps.type === nextProps.type &&
+    prevProps.totalVotes === nextProps.totalVotes &&
+    prevProps.uniqueVoters === nextProps.uniqueVoters &&
+    prevProps.startDate === nextProps.startDate &&
+    prevProps.endDate === nextProps.endDate &&
+    prevProps.start_date === nextProps.start_date &&
+    prevProps.end_date === nextProps.end_date &&
+    prevProps.is_active === nextProps.is_active &&
+    prevProps.daysRemaining === nextProps.daysRemaining &&
+    JSON.stringify(prevProps.options) === JSON.stringify(nextProps.options)
+  );
+});

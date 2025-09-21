@@ -1,5 +1,6 @@
 import { StatsCard } from '@/components/admin/StatsCard';
 import { RadioStatsCard } from '@/components/admin/RadioStatsCard';
+import { AdminDashboardGrid, ResponsiveGrid } from '@/components/layout/ResponsiveGrid';
 import {
   FiFileText,
   FiBarChart2,
@@ -46,13 +47,13 @@ export default async function AdminDashboardPage() {
   const stats = await fetchDashboardStats();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-dark-text-primary">
+        <h1 className="text-2xl md:text-3xl font-bold text-dark-text-primary">
           Yönetim Paneli
         </h1>
-        <p className="text-dark-text-secondary mt-1">
+        <p className="text-sm md:text-base text-dark-text-secondary mt-1">
           Site yönetimine genel bakış
         </p>
       </div>
@@ -66,25 +67,25 @@ export default async function AdminDashboardPage() {
       />
 
       {/* Other Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <AdminDashboardGrid gap="md">
         <StatsCard
           title="Toplam Haber"
           value={stats.totalNews}
-          icon={<FiFileText className="w-5 h-5" />}
+          icon={<FiFileText className="w-4 h-4 md:w-5 md:h-5" />}
           badge={stats.totalNews > 100 ? { text: 'Popüler', variant: 'purple' } : stats.totalNews > 50 ? { text: 'Aktif', variant: 'success' } : undefined}
         />
 
         <StatsCard
           title="Toplam Anket"
           value={stats.totalPolls}
-          icon={<FiBarChart2 className="w-5 h-5" />}
+          icon={<FiBarChart2 className="w-4 h-4 md:w-5 md:h-5" />}
           badge={stats.totalPolls > 0 ? { text: `${stats.totalPolls} Anket`, variant: 'info' } : undefined}
         />
 
         <StatsCard
           title="Aktif Anket"
           value={stats.activePolls}
-          icon={<FiActivity className="w-5 h-5" />}
+          icon={<FiActivity className="w-4 h-4 md:w-5 md:h-5" />}
           trend={stats.activePolls > 0 ? { value: 100, isPositive: true } : undefined}
           badge={stats.activePolls > 0 ? { text: 'Canlı', variant: 'success' } : { text: 'Pasif', variant: 'warning' }}
         />
@@ -92,17 +93,24 @@ export default async function AdminDashboardPage() {
         <StatsCard
           title="Medya Dosyaları"
           value={stats.totalMedia}
-          icon={<FiImage className="w-5 h-5" />}
+          icon={<FiImage className="w-4 h-4 md:w-5 md:h-5" />}
           badge={stats.totalMedia > 500 ? { text: 'Yüksek', variant: 'pink' } : stats.totalMedia > 100 ? { text: 'Orta', variant: 'purple' } : undefined}
         />
-      </div>
+      </AdminDashboardGrid>
 
       {/* Quick Actions */}
       <div className="bg-gradient-to-br from-dark-surface-primary to-dark-surface-secondary/50 rounded-xl border border-dark-border-primary/50 p-6 backdrop-blur-sm">
         <h2 className="text-xl font-semibold bg-gradient-to-r from-dark-text-primary to-dark-text-secondary bg-clip-text text-transparent mb-6">
           Hızlı İşlemler
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <ResponsiveGrid
+          cols={{
+            base: 1,
+            sm: 2,
+            lg: 4
+          }}
+          gap="md"
+        >
           <a
             href="/admin/news"
             className="group p-6 bg-gradient-to-br from-dark-surface-secondary/80 to-dark-surface-primary/50 rounded-xl hover:from-dark-surface-tertiary hover:to-dark-surface-secondary transition-all duration-300 text-center border border-dark-border-primary/30 hover:border-brand-red-900/30 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-1"
@@ -142,7 +150,7 @@ export default async function AdminDashboardPage() {
             </div>
             <span className="block text-sm font-medium text-dark-text-primary">Ayarlar</span>
           </a>
-        </div>
+        </ResponsiveGrid>
       </div>
     </div>
   );

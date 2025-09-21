@@ -26,12 +26,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full px-4 py-2 rounded-lg',
+            'w-full px-3 py-3 md:px-4 md:py-2 rounded-lg',
             'bg-dark-surface-secondary border border-dark-border-primary',
-            'text-dark-text-primary placeholder-dark-text-tertiary',
+            // Use 16px on mobile to prevent zoom, 16px on desktop (Requirements 8.1, 8.2, 8.3)
+            'text-base text-dark-text-primary placeholder-dark-text-tertiary',
             'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             'transition-all duration-200',
+            'min-h-[44px] md:min-h-[40px]', // Touch-optimized height
+            // Special handling for datetime-local inputs
+            props.type === 'datetime-local' && '[&::-webkit-datetime-edit]:pr-1',
             error && 'border-red-600 focus:ring-red-600',
             className
           )}

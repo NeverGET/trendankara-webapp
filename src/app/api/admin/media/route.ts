@@ -6,10 +6,10 @@ import { RowDataPacket } from 'mysql2';
 interface MediaItem extends RowDataPacket {
   id: number;
   filename: string;
-  mimetype: string;
+  mime_type: string;
   size: number;
-  path: string;
-  uploaded_by: number;
+  url: string;
+  created_by: number;
   created_at: Date;
   updated_at: Date;
   usage_count?: number;
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Build query conditions
-    const conditions: string[] = ['1=1'];
+    const conditions: string[] = ['deleted_at IS NULL'];
     const params: any[] = [];
 
     // Add search condition
@@ -55,15 +55,15 @@ export async function GET(request: NextRequest) {
     if (type !== 'all') {
       switch (type) {
         case 'image':
-          conditions.push('mimetype LIKE ?');
+          conditions.push('mime_type LIKE ?');
           params.push('image/%');
           break;
         case 'audio':
-          conditions.push('mimetype LIKE ?');
+          conditions.push('mime_type LIKE ?');
           params.push('audio/%');
           break;
         case 'video':
-          conditions.push('mimetype LIKE ?');
+          conditions.push('mime_type LIKE ?');
           params.push('video/%');
           break;
       }
@@ -96,35 +96,103 @@ export async function GET(request: NextRequest) {
       WHERE ${conditions.join(' AND ')}
     `;
 
-    const [countResult] = await db.execute<RowDataPacket[]>(countQuery, params);
-    const total = countResult[0].total;
+    const countResultParams = [...params];
+    const countQueryResult = await db.query<RowDataPacket>(countQuery, countResultParams);
+    const total = countQueryResult.rows[0].total;
 
     // Get media items
-    const query = `
+    // Note: Using direct interpolation for LIMIT/OFFSET due to mysql2 execute limitations
+    const selectQuery = `
       SELECT *
       FROM media
       WHERE ${conditions.join(' AND ')}
       ORDER BY ${orderBy}
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    params.push(limit, offset);
+    const mediaResult = await db.query<MediaItem>(selectQuery, params);
+    const media = mediaResult.rows;
 
-    const [media] = await db.execute<MediaItem[]>(query, params);
+    // Transform data to match frontend expectations
+    const transformedMedia = media.map(item => ({
+      id: item.id.toString(),
+      filename: item.filename,
+      url: item.url,
+      thumbnailUrl: item.thumbnail_url,
+      thumbnails: item.thumbnails ? JSON.parse(item.thumbnails as any) : undefined,
+      size: item.size,
+      mimeType: item.mime_type,
+      width: item.width,
+      height: item.height,
+      uploadedAt: item.created_at,
+      title: item.original_name,
+      alt_text: item.alt_text,
+      usageCount: item.usage_count || 0
+    }));
 
     return NextResponse.json({
-      media,
+      success: true,
+      data: transformedMedia,
       pagination: {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit)
       }
     });
   } catch (error) {
     console.error('Error fetching media:', error);
     return NextResponse.json(
       { error: 'Failed to fetch media' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/admin/media
+ * Delete media files
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // Check authentication
+    const session = await auth();
+    if (!session?.user || session.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Get IDs from request body
+    const { ids } = await request.json();
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        { error: 'No media IDs provided' },
+        { status: 400 }
+      );
+    }
+
+    // Delete from database
+    const placeholders = ids.map(() => '?').join(',');
+    const deleteQuery = `
+      UPDATE media
+      SET deleted_at = NOW()
+      WHERE id IN (${placeholders})
+    `;
+
+    await db.query(deleteQuery, ids);
+
+    return NextResponse.json({
+      success: true,
+      message: `${ids.length} media files deleted successfully`
+    });
+  } catch (error) {
+    console.error('Error deleting media:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete media' },
       { status: 500 }
     );
   }

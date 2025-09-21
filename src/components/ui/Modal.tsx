@@ -13,10 +13,17 @@ interface ModalProps {
 }
 
 const sizeClasses = {
-  small: 'max-w-md',
-  medium: 'max-w-2xl',
-  large: 'max-w-4xl',
+  small: 'max-w-full md:max-w-md',
+  medium: 'max-w-full md:max-w-2xl',
+  large: 'max-w-full md:max-w-4xl',
   fullscreen: 'max-w-full h-full'
+};
+
+const marginClasses = {
+  small: 'm-4 md:mx-auto',
+  medium: 'm-4 md:mx-auto',
+  large: 'm-4 md:mx-auto',
+  fullscreen: 'm-0'
 };
 
 export function Modal({
@@ -60,7 +67,7 @@ export function Modal({
   if (typeof window === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto">
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
@@ -71,29 +78,30 @@ export function Modal({
         ref={modalRef}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full mx-4 animate-slide-up',
+          'relative z-10 w-full animate-slide-up my-8',
           'bg-dark-surface-primary rounded-lg border border-dark-border-primary',
           'shadow-2xl shadow-black/50',
           sizeClasses[size],
-          size === 'fullscreen' && 'm-0 rounded-none'
+          marginClasses[size],
+          size === 'fullscreen' && 'rounded-none my-0'
         )}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-dark-border-primary">
-            <h2 id="modal-title" className="text-xl font-semibold text-dark-text-primary">
+          <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-dark-border-primary">
+            <h2 id="modal-title" className="text-lg md:text-xl font-semibold text-dark-text-primary">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-secondary transition-all"
+              className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-secondary transition-all flex items-center justify-center"
               aria-label="Kapat"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
+                className="h-5 w-5 md:h-6 md:w-6"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -110,8 +118,11 @@ export function Modal({
         )}
 
         <div className={cn(
-          'p-6',
-          size === 'fullscreen' && 'h-[calc(100vh-80px)] overflow-auto'
+          'p-4 md:p-6',
+          size === 'fullscreen' && 'h-[calc(100vh-80px)]',
+          size === 'large' && 'max-h-[calc(100vh-200px)] overflow-y-auto',
+          size === 'medium' && 'max-h-[calc(100vh-200px)] overflow-y-auto',
+          size === 'small' && 'max-h-[calc(100vh-200px)] overflow-y-auto'
         )}>
           {children}
         </div>

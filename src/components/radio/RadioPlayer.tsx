@@ -78,14 +78,14 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
   if (variant === 'mobile') {
     return (
       <div className={cn(
-        'flex items-center gap-3 px-4 py-2 bg-dark-surface-primary',
+        'flex items-center gap-3 px-4 py-3 md:py-2 bg-dark-surface-primary',
         className
       )}>
         <Button
           onClick={handlePlayPause}
           variant="primary"
           size="medium"
-          className="min-w-[48px] h-12 w-12 p-0 rounded-full"
+          className="min-w-[44px] h-11 w-11 md:min-w-[48px] md:h-12 md:w-12 p-0 rounded-full"
           aria-label={isPlaying ? 'Duraklat' : 'Oynat'}
         >
           {isLoading ? (
@@ -103,7 +103,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
         </Button>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-dark-text-primary truncate">
+          <p className="text-sm md:text-base text-dark-text-primary truncate">
             {currentSong}
           </p>
           <p className={cn(
@@ -132,7 +132,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
 
   return (
     <div className={cn(
-      'flex items-center gap-4 px-6 py-3 bg-dark-surface-primary rounded-lg',
+      'flex items-center gap-3 md:gap-4 px-4 md:px-6 py-3 bg-dark-surface-primary rounded-lg',
       className
     )}>
       {/* Play/Pause Button */}
@@ -140,7 +140,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
         onClick={handlePlayPause}
         variant="primary"
         size="large"
-        className="min-w-[60px] h-[60px] w-[60px] p-0 rounded-full"
+        className="min-w-[52px] h-[52px] w-[52px] md:min-w-[60px] md:h-[60px] md:w-[60px] p-0 rounded-full"
         aria-label={isPlaying ? 'Radyoyu duraklat' : 'Radyoyu başlat'}
       >
         {isLoading ? (
@@ -159,7 +159,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
 
       {/* Song Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-base font-medium text-dark-text-primary truncate">
+        <p className="text-sm md:text-base font-medium text-dark-text-primary truncate">
           {currentSong}
         </p>
         <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
           step="0.01"
           value={volume}
           onChange={handleVolumeChange}
-          className="w-24 h-1 bg-dark-surface-secondary rounded-lg appearance-none cursor-pointer slider"
+          className="w-20 md:w-24 h-1 bg-dark-surface-secondary rounded-lg appearance-none cursor-pointer slider"
           aria-label="Ses seviyesi"
         />
         <style jsx>{`

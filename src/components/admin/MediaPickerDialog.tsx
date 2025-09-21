@@ -7,21 +7,16 @@ import { Input } from '@/components/ui/Input';
 import {
   Search,
   Upload,
-  Grid,
-  List,
   Check,
-  X,
   Image as ImageIcon,
   Film,
   Music,
   File,
   Loader2,
-  Filter,
-  Calendar,
   FolderOpen
 } from 'lucide-react';
 
-interface MediaItem {
+export interface MediaItem {
   id: number;
   url: string;
   thumbnails?: {
@@ -46,8 +41,8 @@ interface MediaPickerDialogProps {
   onSelect: (media: MediaItem | MediaItem[]) => void;
   multiple?: boolean;
   accept?: string;
-  category?: string;
   maxSelection?: number;
+  hideUpload?: boolean;
 }
 
 export function MediaPickerDialog({
@@ -56,15 +51,14 @@ export function MediaPickerDialog({
   onSelect,
   multiple = false,
   accept,
-  category,
-  maxSelection = 10
+  maxSelection = 10,
+  hideUpload = false
 }: MediaPickerDialogProps) {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [filterType, setFilterType] = useState<'all' | 'image' | 'video' | 'audio' | 'document'>('all');
+  const [filterType] = useState<'all' | 'image' | 'video' | 'audio' | 'document'>('image');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name' | 'size'>('newest');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -82,19 +76,35 @@ export function MediaPickerDialog({
         sort: sortBy
       });
 
-      if (category) {
-        params.append('category', category);
-      }
-
       const response = await fetch(`/api/admin/media?${params}`);
       const data = await response.json();
 
       if (data.success) {
+        // Transform API response to match MediaItem interface
+        const transformedItems = data.data.map((item: any) => ({
+          id: item.id,
+          filename: item.filename,
+          url: item.url,
+          thumbnails: item.thumbnailUrl ? {
+            small: item.thumbnailUrl,
+            medium: item.thumbnailUrl,
+            large: item.thumbnailUrl
+          } : undefined,
+          size: item.size,
+          mime_type: item.mimeType || item.mime_type,
+          width: item.width,
+          height: item.height,
+          created_at: item.uploadedAt || item.created_at,
+          title: item.title,
+          alt_text: item.alt_text,
+          category: item.category
+        }));
+
         if (reset) {
-          setMediaItems(data.data);
+          setMediaItems(transformedItems);
           setPage(1);
         } else {
-          setMediaItems(prev => [...prev, ...data.data]);
+          setMediaItems(prev => [...prev, ...transformedItems]);
         }
         setHasMore(data.pagination?.hasNext || false);
       }
@@ -103,7 +113,7 @@ export function MediaPickerDialog({
     } finally {
       setIsLoading(false);
     }
-  }, [page, searchTerm, filterType, sortBy, category]);
+  }, [page, searchTerm, filterType, sortBy]);
 
   useEffect(() => {
     if (isOpen) {
@@ -143,10 +153,6 @@ export function MediaPickerDialog({
       formData.append('files', files[i]);
     }
 
-    if (category) {
-      formData.append('category', category);
-    }
-
     try {
       const response = await fetch('/api/admin/media/upload', {
         method: 'POST',
@@ -164,7 +170,8 @@ export function MediaPickerDialog({
     }
   };
 
-  const getFileIcon = (mimeType: string) => {
+  const getFileIcon = (mimeType?: string) => {
+    if (!mimeType) return <File className="h-4 w-4" />;
     if (mimeType.startsWith('image/')) return <ImageIcon className="h-4 w-4" />;
     if (mimeType.startsWith('video/')) return <Film className="h-4 w-4" />;
     if (mimeType.startsWith('audio/')) return <Music className="h-4 w-4" />;
@@ -177,12 +184,6 @@ export function MediaPickerDialog({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const getThumbnailUrl = (item: MediaItem) => {
-    if (item.thumbnails?.medium) return item.thumbnails.medium;
-    if (item.thumbnails?.small) return item.thumbnails.small;
-    if (item.mime_type.startsWith('image/')) return item.url;
-    return null;
-  };
 
   return (
     <Modal
@@ -202,74 +203,48 @@ export function MediaPickerDialog({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
+              style={{ paddingLeft: '2.5rem' }}
             />
           </div>
 
           <div className="flex gap-2">
-            {/* Filter Type */}
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as any)}
-              className="px-3 py-2 border rounded-lg text-sm"
-            >
-              <option value="all">Tümü</option>
-              <option value="image">Resimler</option>
-              <option value="video">Videolar</option>
-              <option value="audio">Ses Dosyaları</option>
-              <option value="document">Belgeler</option>
-            </select>
 
             {/* Sort */}
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 border rounded-lg text-sm"
+              className="px-2 md:px-3 py-1.5 md:py-2 border rounded-lg text-xs md:text-sm min-h-[40px]"
             >
               <option value="newest">En Yeni</option>
               <option value="oldest">En Eski</option>
-              <option value="name">İsme Göre</option>
-              <option value="size">Boyuta Göre</option>
             </select>
 
-            {/* View Mode */}
-            <div className="flex gap-1 border rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-gray-200' : ''}`}
-              >
-                <Grid className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-gray-200' : ''}`}
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
 
             {/* Upload Button */}
-            <label className="cursor-pointer">
-              <Button
-                variant="primary"
-                size="small"
-                disabled={isUploading}
-                className="flex items-center gap-2"
-              >
-                {isUploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4" />
-                )}
-                Yükle
-              </Button>
-              <input
-                type="file"
-                multiple
-                accept={accept}
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
+            {!hideUpload && (
+              <label className="cursor-pointer">
+                <Button
+                  variant="primary"
+                  size="small"
+                  disabled={isUploading}
+                  className="flex items-center gap-2"
+                >
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  Yükle
+                </Button>
+                <input
+                  type="file"
+                  multiple
+                  accept={accept}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
         </div>
 
@@ -277,50 +252,59 @@ export function MediaPickerDialog({
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading && mediaItems.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-dark-text-tertiary" />
             </div>
           ) : mediaItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <FolderOpen className="h-12 w-12 mb-2" />
+            <div className="flex flex-col items-center justify-center h-full text-dark-text-secondary">
+              <FolderOpen className="h-8 w-8 md:h-12 md:w-12 mb-2" />
               <p>Medya bulunamadı</p>
             </div>
           ) : (
             <>
-              {viewMode === 'grid' ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
                   {mediaItems.map((item) => {
                     const isSelected = selectedItems.some(i => i.id === item.id);
-                    const thumbnailUrl = getThumbnailUrl(item);
 
                     return (
                       <div
                         key={item.id}
                         onClick={() => handleSelect(item)}
                         className={`relative group cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
-                          isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-400'
+                          isSelected ? 'border-brand-red-600 ring-2 ring-brand-red-600/20' : 'border-dark-border-secondary hover:border-dark-border-primary'
                         }`}
                       >
                         {/* Thumbnail */}
-                        <div className="aspect-square bg-gray-100">
-                          {thumbnailUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={thumbnailUrl}
-                              alt={item.alt_text || item.filename}
-                              className="w-full h-full object-cover"
-                            />
+                        <div className="aspect-square bg-dark-surface-secondary relative overflow-hidden">
+                          {item.mime_type?.startsWith('image/') ? (
+                            <>
+                              <img
+                                src={item.url}
+                                alt={item.alt_text || item.filename}
+                                className="absolute inset-0 w-full h-full object-cover"
+                                loading="lazy"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const fallback = target.nextElementSibling;
+                                  if (fallback) {
+                                    (fallback as HTMLElement).style.display = 'flex';
+                                  }
+                                }}
+                              />
+                              <div className="absolute inset-0 w-full h-full flex items-center justify-center text-dark-text-tertiary bg-dark-surface-secondary" style={{ display: 'none' }}>
+                                {getFileIcon(item.mime_type)}
+                              </div>
+                            </>
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center">
+                            <div className="absolute inset-0 w-full h-full flex items-center justify-center text-dark-text-tertiary bg-dark-surface-secondary">
                               {getFileIcon(item.mime_type)}
                             </div>
                           )}
-                        </div>
 
-                        {/* Info Overlay */}
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity">
-                          <div className="absolute bottom-0 left-0 right-0 p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                            <p className="text-xs truncate">{item.filename}</p>
-                            <p className="text-xs">{formatFileSize(item.size)}</p>
+                          {/* Info Overlay - Inside the thumbnail div */}
+                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                            <p className="text-xs text-white truncate">{item.filename}</p>
+                            <p className="text-xs text-gray-300">{formatFileSize(item.size)}</p>
                           </div>
                         </div>
 
@@ -334,54 +318,6 @@ export function MediaPickerDialog({
                     );
                   })}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {mediaItems.map((item) => {
-                    const isSelected = selectedItems.some(i => i.id === item.id);
-                    const thumbnailUrl = getThumbnailUrl(item);
-
-                    return (
-                      <div
-                        key={item.id}
-                        onClick={() => handleSelect(item)}
-                        className={`flex items-center gap-4 p-3 border rounded-lg cursor-pointer transition-all ${
-                          isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        {/* Thumbnail */}
-                        <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0">
-                          {thumbnailUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={thumbnailUrl}
-                              alt={item.alt_text || item.filename}
-                              className="w-full h-full object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              {getFileIcon(item.mime_type)}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{item.title || item.filename}</p>
-                          <p className="text-sm text-gray-500">
-                            {formatFileSize(item.size)} • {item.width && item.height && `${item.width}×${item.height}px • `}
-                            {new Date(item.created_at).toLocaleDateString('tr-TR')}
-                          </p>
-                        </div>
-
-                        {/* Selection Indicator */}
-                        {isSelected && (
-                          <Check className="h-5 w-5 text-blue-500" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
 
               {/* Load More */}
               {hasMore && (

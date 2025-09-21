@@ -91,7 +91,7 @@ export function MobileNavigation({ isOpen, onClose }: MobileNavigationProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary transition-all"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary transition-all flex items-center justify-center"
             aria-label="Kapat"
           >
             <svg
@@ -111,14 +111,14 @@ export function MobileNavigation({ isOpen, onClose }: MobileNavigationProps) {
         </div>
 
         {/* Navigation Links */}
-        <nav className="p-4">
+        <nav className="p-4 space-y-2">
           {navigationItems.map((item) => (
             <Link
               key={item.path}
               href={item.path}
               onClick={onClose}
               className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all mb-2',
+                'flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all min-h-[44px]',
                 pathname === item.path
                   ? 'bg-brand-red-600 text-white'
                   : 'text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary'

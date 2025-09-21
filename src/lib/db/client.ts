@@ -368,6 +368,31 @@ class MySQLClient implements DatabaseClient {
   }
 
   /**
+   * Execute a query with mysql2 execute method (prepared statement)
+   * This method provides compatibility for APIs expecting the execute method
+   */
+  public async execute<T extends mysql.RowDataPacket | mysql.ResultSetHeader = mysql.RowDataPacket>(
+    sql: string,
+    params: any[] = []
+  ): Promise<[T[], mysql.FieldPacket[]]> {
+    await this.ensureInitialized();
+
+    if (!this.pool) {
+      throw new Error('Database pool not available');
+    }
+
+    try {
+      // Use execute for prepared statements
+      const result = await this.pool.execute(sql, params);
+      return result as any;
+    } catch (error) {
+      const dbError = error as DatabaseError;
+      logError(`Execute failed: ${dbError.message}`, { prefix: 'MySQL' });
+      throw dbError;
+    }
+  }
+
+  /**
    * Get a connection from the pool
    */
   public async getConnection(): Promise<mysql.PoolConnection> {

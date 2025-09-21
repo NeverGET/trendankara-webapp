@@ -6,6 +6,7 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: 'small' | 'medium' | 'large';
   pill?: boolean;
   animated?: boolean;
+  interactive?: boolean;
   children: React.ReactNode;
 }
 
@@ -20,9 +21,15 @@ const variantClasses = {
 };
 
 const sizeClasses = {
-  small: 'text-xs px-2 py-0.5',
-  medium: 'text-sm px-2.5 py-1',
-  large: 'text-base px-3 py-1.5'
+  small: 'text-xs px-2 py-1 md:px-2.5 md:py-1',
+  medium: 'text-sm px-3 py-1.5 md:px-3 md:py-2',
+  large: 'text-base px-4 py-2 md:px-4 md:py-2.5'
+};
+
+const interactiveSizeClasses = {
+  small: 'min-h-[32px] text-xs px-3 py-1.5',
+  medium: 'min-h-[40px] text-sm px-4 py-2',
+  large: 'min-h-[44px] text-base px-5 py-2.5'
 };
 
 export function Badge({
@@ -30,6 +37,7 @@ export function Badge({
   size = 'medium',
   pill = false,
   animated = false,
+  interactive = false,
   children,
   className,
   ...props
@@ -40,7 +48,8 @@ export function Badge({
         'inline-flex items-center font-medium border shadow-sm',
         pill ? 'rounded-full' : 'rounded-md',
         variantClasses[variant],
-        sizeClasses[size],
+        interactive ? interactiveSizeClasses[size] : sizeClasses[size],
+        interactive && 'cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105',
         animated && 'animate-pulse',
         className
       )}

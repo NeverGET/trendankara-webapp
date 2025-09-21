@@ -18,6 +18,7 @@ export interface Poll {
   totalVotes: number;
   allowMultiple: boolean;
   showResults: boolean;
+  show_results?: 'never' | 'after_voting' | 'always' | 'when_ended';
 }
 
 export interface PollVote {
@@ -37,6 +38,7 @@ export interface PollCardProps {
   endDate: Date | string;
   totalVotes: number;
   hasVoted: boolean;
+  show_results?: 'never' | 'after_voting' | 'always' | 'when_ended';
   onVote?: (pollId: number, optionId: number) => Promise<void>;
 }
 

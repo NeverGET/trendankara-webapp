@@ -4,7 +4,25 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
-import { Trash2, Plus, GripVertical, Upload, X } from 'lucide-react';
+import { SimplifiedImagePicker } from '@/components/ui/SimplifiedImagePicker';
+import { Trash2, Plus, GripVertical, Image as ImageIcon } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface PollItem {
   id?: number;
@@ -25,20 +43,151 @@ interface PollItemsManagerProps {
   readOnly?: boolean;
 }
 
+interface SortableItemProps {
+  item: PollItem;
+  index: number;
+  onItemChange: (index: number, field: keyof PollItem, value: any) => void;
+  onRemoveItem: (index: number) => void;
+  itemsLength: number;
+  readOnly: boolean;
+}
+
+function SortableItem({
+  item,
+  index,
+  onItemChange,
+  onRemoveItem,
+  itemsLength,
+  readOnly
+}: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: item.id || item.tempId || `item-${index}`,
+    disabled: readOnly
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Card className={`p-4 ${isDragging ? 'shadow-lg' : ''}`}>
+        <div className="flex gap-4">
+          {/* Drag Handle */}
+          {!readOnly && (
+            <div
+              className="flex items-start pt-2 cursor-grab active:cursor-grabbing"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-5 w-5 text-gray-400" />
+            </div>
+          )}
+
+          {/* Image Section - Larger and more prominent */}
+          <div className="flex-shrink-0">
+            <SimplifiedImagePicker
+              value={item.image_url || ''}
+              onChange={(url) => onItemChange(index, 'image_url', url)}
+              disabled={readOnly}
+              imageClassName="w-32 h-32 md:w-40 md:h-40"
+            />
+          </div>
+
+          {/* Item Details - Better spacing */}
+          <div className="flex-1 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-dark-text-secondary mb-1">
+                Seçenek Başlığı *
+              </label>
+              <Input
+                value={item.title}
+                onChange={(e) => onItemChange(index, 'title', e.target.value)}
+                placeholder="Örn: Evet, Hayır, Kararsızım..."
+                disabled={readOnly}
+                className={item.title.trim() === '' ? 'border-red-500' : ''}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-dark-text-secondary mb-1">
+                Açıklama (Opsiyonel)
+              </label>
+              <Input
+                value={item.description || ''}
+                onChange={(e) => onItemChange(index, 'description', e.target.value)}
+                placeholder="Seçenek hakkında ek bilgi..."
+                disabled={readOnly}
+              />
+            </div>
+
+            {/* Metadata Row */}
+            <div className="flex items-center gap-4 text-sm">
+              <div className="text-dark-text-tertiary">
+                Sıra: <span className="font-medium text-dark-text-secondary">{index + 1}</span>
+              </div>
+              {item.vote_count !== undefined && (
+                <div className="text-dark-text-tertiary">
+                  Oy: <span className="font-medium text-dark-text-secondary">{item.vote_count}</span>
+                </div>
+              )}
+              {item.image_url && (
+                <div className="text-dark-text-tertiary">
+                  <span className="inline-flex items-center gap-1">
+                    <ImageIcon className="h-3 w-3" />
+                    Resim mevcut
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions - Better aligned */}
+          {!readOnly && (
+            <div className="flex items-start pt-2">
+              <Button
+                onClick={() => onRemoveItem(index)}
+                size="small"
+                variant="ghost"
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                disabled={itemsLength <= 2}
+                title={itemsLength <= 2 ? 'En az 2 seçenek gereklidir' : 'Seçeneği sil'}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function PollItemsManager({
   pollId,
-  items: initialItems,
+  items,
   onChange,
   onSave,
   readOnly = false
 }: PollItemsManagerProps) {
-  const [items, setItems] = useState<PollItem[]>(initialItems || []);
-  const [draggedItem, setDraggedItem] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    setItems(initialItems || []);
-  }, [initialItems]);
+  // Setup sensors for dnd-kit
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   const handleAddItem = () => {
     const newItem: PollItem = {
@@ -50,17 +199,18 @@ export function PollItemsManager({
       is_active: true
     };
     const updatedItems = [...items, newItem];
-    setItems(updatedItems);
     onChange(updatedItems);
   };
 
   const handleRemoveItem = (index: number) => {
+    // Prevent removal if only 2 items left (minimum requirement)
+    if (items.length <= 2) return;
+
     const updatedItems = items.filter((_, i) => i !== index);
     // Reorder display_order
     updatedItems.forEach((item, i) => {
       item.display_order = i;
     });
-    setItems(updatedItems);
     onChange(updatedItems);
   };
 
@@ -70,48 +220,31 @@ export function PollItemsManager({
       ...updatedItems[index],
       [field]: value
     };
-    setItems(updatedItems);
     onChange(updatedItems);
   };
 
-  const handleImageUpload = async (index: number, file: File) => {
-    // TODO: Implement actual image upload to MinIO
-    // For now, just create a local URL
-    const imageUrl = URL.createObjectURL(file);
-    handleItemChange(index, 'image_url', imageUrl);
-  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedItem(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
+    if (over && active.id !== over.id) {
+      const oldIndex = items.findIndex(item =>
+        (item.id || item.tempId || `item-${items.indexOf(item)}`) === active.id
+      );
+      const newIndex = items.findIndex(item =>
+        (item.id || item.tempId || `item-${items.indexOf(item)}`) === over.id
+      );
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const updatedItems = arrayMove(items, oldIndex, newIndex);
 
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    if (draggedItem === null || draggedItem === dropIndex) return;
+        // Update display_order
+        updatedItems.forEach((item, i) => {
+          item.display_order = i;
+        });
 
-    const draggedContent = items[draggedItem];
-    const updatedItems = [...items];
-
-    // Remove dragged item
-    updatedItems.splice(draggedItem, 1);
-
-    // Insert at new position
-    updatedItems.splice(dropIndex, 0, draggedContent);
-
-    // Update display_order
-    updatedItems.forEach((item, i) => {
-      item.display_order = i;
-    });
-
-    setItems(updatedItems);
-    onChange(updatedItems);
-    setDraggedItem(null);
+        onChange(updatedItems);
+      }
+    }
   };
 
   const handleSaveAll = async () => {
@@ -144,99 +277,30 @@ export function PollItemsManager({
         )}
       </div>
 
-      <div className="space-y-3">
-        {items.map((item, index) => (
-          <Card
-            key={item.id || item.tempId}
-            className={`p-4 ${!readOnly ? 'cursor-move' : ''}`}
-            draggable={!readOnly}
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, index)}
-          >
-            <div className="flex gap-4">
-              {!readOnly && (
-                <div className="flex items-center">
-                  <GripVertical className="h-5 w-5 text-gray-400" />
-                </div>
-              )}
-
-              {/* Image Upload */}
-              <div className="flex-shrink-0">
-                {item.image_url ? (
-                  <div className="relative w-20 h-20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="w-full h-full object-cover rounded"
-                    />
-                    {!readOnly && (
-                      <button
-                        onClick={() => handleItemChange(index, 'image_url', '')}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
-                ) : !readOnly ? (
-                  <label className="w-20 h-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center cursor-pointer hover:border-gray-400">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(index, file);
-                      }}
-                    />
-                    <Upload className="h-6 w-6 text-gray-400" />
-                  </label>
-                ) : (
-                  <div className="w-20 h-20 bg-gray-100 rounded" />
-                )}
-              </div>
-
-              {/* Item Details */}
-              <div className="flex-1 space-y-2">
-                <Input
-                  value={item.title}
-                  onChange={(e) => handleItemChange(index, 'title', e.target.value)}
-                  placeholder="Seçenek başlığı *"
-                  disabled={readOnly}
-                  className={item.title.trim() === '' ? 'border-red-500' : ''}
-                />
-                <Input
-                  value={item.description || ''}
-                  onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                  placeholder="Açıklama (opsiyonel)"
-                  disabled={readOnly}
-                />
-                {item.vote_count !== undefined && (
-                  <div className="text-sm text-gray-500">
-                    Oy sayısı: {item.vote_count}
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              {!readOnly && (
-                <div className="flex items-center">
-                  <Button
-                    onClick={() => handleRemoveItem(index)}
-                    size="small"
-                    variant="ghost"
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={items.map(item => item.id || item.tempId || `item-${items.indexOf(item)}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <SortableItem
+                key={item.id || item.tempId}
+                item={item}
+                index={index}
+                onItemChange={handleItemChange}
+                onRemoveItem={handleRemoveItem}
+                itemsLength={items.length}
+                readOnly={readOnly}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {items.length === 0 && (
         <div className="text-center py-8 text-gray-500">

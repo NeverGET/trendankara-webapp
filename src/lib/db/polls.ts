@@ -167,6 +167,7 @@ export interface PollFilters {
   poll_type?: 'weekly' | 'monthly' | 'custom';
   is_active?: boolean;
   show_on_homepage?: boolean;
+  show_results?: 'never' | 'after_voting' | 'always';
   created_by?: number;
   start_date?: string;
   end_date?: string;
@@ -189,6 +190,7 @@ export interface PollData {
   end_date: string;
   is_active?: boolean;
   show_on_homepage?: boolean;
+  show_results?: 'never' | 'after_voting' | 'always';
   created_by: number;
 }
 
@@ -213,6 +215,7 @@ export async function getAllPolls(
     poll_type,
     is_active,
     show_on_homepage,
+    show_results,
     created_by,
     start_date,
     end_date
@@ -241,6 +244,11 @@ export async function getAllPolls(
   if (show_on_homepage !== undefined) {
     conditions.push('p.show_on_homepage = ?');
     params.push(show_on_homepage ? 1 : 0);
+  }
+
+  if (show_results) {
+    conditions.push('p.show_results = ?');
+    params.push(show_results);
   }
 
   if (created_by !== undefined) {
@@ -311,8 +319,8 @@ export async function getAllPollsSimple(
  */
 export async function createPoll(data: PollData) {
   const result = await db.insert(
-    `INSERT INTO polls (title, description, poll_type, start_date, end_date, is_active, show_on_homepage, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO polls (title, description, poll_type, start_date, end_date, is_active, show_on_homepage, show_results, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.title,
       data.description || null,
@@ -321,6 +329,7 @@ export async function createPoll(data: PollData) {
       data.end_date,
       data.is_active !== false ? 1 : 0,
       data.show_on_homepage !== false ? 1 : 0,
+      data.show_results || 'after_voting',
       data.created_by
     ]
   );
@@ -361,6 +370,10 @@ export async function updatePoll(pollId: number, data: Partial<PollData>) {
   if (data.show_on_homepage !== undefined) {
     fields.push('show_on_homepage = ?');
     values.push(data.show_on_homepage ? 1 : 0);
+  }
+  if (data.show_results !== undefined) {
+    fields.push('show_results = ?');
+    values.push(data.show_results);
   }
 
   if (fields.length === 0) {

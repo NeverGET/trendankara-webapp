@@ -31,32 +31,32 @@ const navigationItems: NavigationItem[] = [
   {
     label: 'Panel',
     href: '/admin',
-    icon: <FiGrid className="w-5 h-5" />
+    icon: <FiGrid className="w-4 h-4 md:w-5 md:h-5" />
   },
   {
     label: 'Haberler',
     href: '/admin/news',
-    icon: <RiNewspaperLine className="w-5 h-5" />
+    icon: <RiNewspaperLine className="w-4 h-4 md:w-5 md:h-5" />
   },
   {
     label: 'Anketler',
     href: '/admin/polls',
-    icon: <RiBarChartBoxLine className="w-5 h-5" />
+    icon: <RiBarChartBoxLine className="w-4 h-4 md:w-5 md:h-5" />
   },
   {
     label: 'Medya',
     href: '/admin/media',
-    icon: <HiOutlinePhotograph className="w-5 h-5" />
+    icon: <HiOutlinePhotograph className="w-4 h-4 md:w-5 md:h-5" />
   },
   {
     label: 'Mobil Uygulama',
     href: '/admin/content',
-    icon: <HiOutlineTemplate className="w-5 h-5" />
+    icon: <HiOutlineTemplate className="w-4 h-4 md:w-5 md:h-5" />
   },
   {
     label: 'Ayarlar',
     href: '/admin/settings',
-    icon: <IoSettingsOutline className="w-5 h-5" />
+    icon: <IoSettingsOutline className="w-4 h-4 md:w-5 md:h-5" />
   }
 ];
 
@@ -76,13 +76,13 @@ export function AdminSidebar() {
       {/* Mobile Menu Toggle */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-lg bg-dark-surface-primary text-dark-text-primary hover:bg-dark-surface-secondary transition-colors"
+        className="fixed top-3 left-3 z-50 md:hidden p-1.5 rounded-lg bg-dark-surface-primary text-dark-text-primary hover:bg-dark-surface-secondary transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
         aria-label="Menu"
       >
         {isMobileOpen ? (
-          <FiX className="w-6 h-6" />
+          <FiX className="w-5 h-5" />
         ) : (
-          <FiMenu className="w-6 h-6" />
+          <FiMenu className="w-5 h-5" />
         )}
       </button>
 
@@ -97,23 +97,23 @@ export function AdminSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-gradient-to-b from-dark-bg-secondary to-dark-bg-primary border-r border-dark-border-primary/50 transition-transform duration-300',
+          'fixed top-0 left-0 z-40 h-full w-56 md:w-60 bg-gradient-to-b from-dark-bg-secondary to-dark-bg-primary border-r border-dark-border-primary/50 transition-transform duration-300',
           'md:translate-x-0 backdrop-blur-lg',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo/Header */}
-          <div className="p-6 border-b border-dark-border-primary/50 bg-gradient-to-r from-brand-red-900/20 to-transparent">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-brand-red-600 to-brand-red-700 rounded-lg shadow-lg shadow-brand-red-900/50">
-                <FiRadio className="w-6 h-6 text-white" />
+          <div className="p-4 md:p-6 border-b border-dark-border-primary/50 bg-gradient-to-r from-brand-red-900/20 to-transparent">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-gradient-to-br from-brand-red-600 to-brand-red-700 rounded-lg shadow-lg shadow-brand-red-900/50">
+                <FiRadio className="w-4 h-4 md:w-6 md:h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-brand-red-600 to-brand-red-500 bg-clip-text text-transparent">
+                <h2 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-brand-red-600 to-brand-red-500 bg-clip-text text-transparent">
                   Trend Ankara
                 </h2>
-                <p className="text-xs text-dark-text-secondary mt-0.5">
+                <p className="text-[10px] md:text-xs text-dark-text-secondary mt-0.5">
                   Yönetim Paneli
                 </p>
               </div>
@@ -121,14 +121,14 @@ export function AdminSidebar() {
           </div>
 
           {/* Navigation Items */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-3 md:p-4 space-y-1 overflow-y-auto">
             {navigationItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMobileOpen(false)}
                 className={cn(
-                  'group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden',
+                  'group flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all duration-300 relative overflow-hidden min-h-[44px]',
                   'hover:bg-gradient-to-r hover:from-dark-surface-primary/80 hover:to-dark-surface-secondary/50',
                   'hover:shadow-lg hover:shadow-black/20',
                   isActive(item.href)
@@ -137,14 +137,14 @@ export function AdminSidebar() {
                 )}
               >
                 <span className={cn(
-                  'transition-all duration-300 p-2 rounded-lg',
+                  'transition-all duration-300 p-1.5 md:p-2 rounded-lg',
                   isActive(item.href)
                     ? 'bg-gradient-to-br from-brand-red-600/20 to-brand-red-700/10 text-brand-red-500 shadow-lg shadow-brand-red-900/20'
                     : 'bg-dark-surface-primary/50 group-hover:bg-dark-surface-secondary group-hover:shadow-md'
                 )}>
                   {item.icon}
                 </span>
-                <span className="font-medium">{item.label}</span>
+                <span className="text-sm md:text-base font-medium">{item.label}</span>
                 {isActive(item.href) && (
                   <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-brand-red-600 to-brand-red-700 rounded-r-full" />
                 )}

@@ -61,10 +61,10 @@ export function PollResults({
             </div>
 
             {/* Content */}
-            <div className="relative flex items-center gap-3 p-3">
+            <div className="relative flex items-center gap-2 md:gap-3 p-2.5 md:p-3">
               {option.imageUrl && (
                 <div
-                  className="w-12 h-12 rounded-lg bg-cover bg-center bg-dark-surface-secondary flex-shrink-0"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-cover bg-center bg-dark-surface-secondary flex-shrink-0"
                   style={{ backgroundImage: `url(${option.imageUrl})` }}
                 />
               )}
@@ -72,19 +72,19 @@ export function PollResults({
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className={cn(
-                    'text-sm font-medium',
+                    'text-xs md:text-sm font-medium',
                     isWinning ? 'text-brand-red-600' : 'text-dark-text-primary'
                   )}>
                     {option.title}
                   </span>
                   {isSelected && (
-                    <span className="px-2 py-0.5 bg-brand-red-600 text-white text-xs rounded-full">
+                    <span className="px-1.5 py-0.5 md:px-2 bg-brand-red-600 text-white text-[10px] md:text-xs rounded-full">
                       Oyunuz
                     </span>
                   )}
                   {isWinning && (
                     <svg
-                      className="w-4 h-4 text-brand-red-600"
+                      className="w-3.5 h-3.5 md:w-4 md:h-4 text-brand-red-600"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -92,14 +92,14 @@ export function PollResults({
                     </svg>
                   )}
                 </div>
-                <div className="text-xs text-dark-text-secondary mt-1">
+                <div className="text-[10px] md:text-xs text-dark-text-secondary mt-0.5 md:mt-1">
                   {option.voteCount} oy
                 </div>
               </div>
 
               <div className="text-right">
                 <span className={cn(
-                  'text-lg font-bold',
+                  'text-base md:text-lg font-bold',
                   isWinning ? 'text-brand-red-600' : 'text-dark-text-primary'
                 )}>
                   {percentage.toFixed(1)}%
@@ -112,7 +112,7 @@ export function PollResults({
 
       {/* Total votes summary */}
       <div className="text-center text-sm text-dark-text-secondary pt-2 border-t border-dark-border-primary">
-        Toplam {totalVotes} oy kullan1ld1
+        Toplam {totalVotes} oy kullanıldı
       </div>
     </div>
   );

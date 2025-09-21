@@ -207,7 +207,6 @@ export function ConfirmDialog({
         {/* Icon */}
         <div className={cn(
           'flex items-center justify-center w-12 h-12 rounded-full',
-          variant === 'default' && 'bg-gray-500/10',
           variant === 'danger' && 'bg-red-500/10',
           variant === 'warning' && 'bg-yellow-500/10',
           variant === 'info' && 'bg-blue-500/10'

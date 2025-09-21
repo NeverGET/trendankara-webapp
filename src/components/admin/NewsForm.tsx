@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { ImagePickerField } from '@/components/ui/ImagePicker';
 import { cn } from '@/lib/utils';
 import { NewsCategory, NewsArticle } from '@/types/news';
 
@@ -13,7 +14,7 @@ interface NewsFormData {
   summary: string;
   content: string;
   category: NewsCategory;
-  featured_image?: File | string;
+  featured_image?: string;
   featured: boolean;
   breaking: boolean;
   hot: boolean;
@@ -40,13 +41,6 @@ export function NewsForm({
   isLoading = false,
   mode = 'create'
 }: NewsFormProps) {
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    initialData?.thumbnail && typeof initialData.thumbnail === 'string'
-      ? initialData.thumbnail
-      : null
-  );
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const {
     register,
     handleSubmit,
@@ -61,6 +55,7 @@ export function NewsForm({
       summary: initialData?.summary || '',
       content: initialData?.content || '',
       category: initialData?.category || 'MAGAZINE',
+      featured_image: typeof initialData?.thumbnail === 'string' ? initialData.thumbnail : initialData?.thumbnail?.url || '',
       featured: false,
       breaking: initialData?.isBreaking || false,
       hot: initialData?.isHot || false,
@@ -83,25 +78,6 @@ export function NewsForm({
     }
   }, [titleValue, setValue, mode]);
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      setValue('featured_image', file);
-    }
-  };
-
-  const removeImage = () => {
-    setImagePreview(null);
-    setValue('featured_image', undefined);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
   const handleFormSubmit = async (data: NewsFormData) => {
     try {
@@ -178,7 +154,7 @@ export function NewsForm({
               }
             })}
             className={cn(
-              'w-full px-4 py-2 rounded-lg min-h-[100px] resize-y',
+              'w-full px-3 py-2 md:px-4 rounded-lg min-h-[80px] md:min-h-[100px] resize-y text-sm md:text-base',
               'bg-dark-surface-secondary border border-dark-border-primary',
               'text-dark-text-primary placeholder-dark-text-tertiary',
               'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
@@ -207,7 +183,7 @@ export function NewsForm({
               }
             })}
             className={cn(
-              'w-full px-4 py-2 rounded-lg min-h-[300px] resize-y',
+              'w-full px-3 py-2 md:px-4 rounded-lg min-h-[200px] md:min-h-[300px] resize-y text-sm md:text-base',
               'bg-dark-surface-secondary border border-dark-border-primary',
               'text-dark-text-primary placeholder-dark-text-tertiary',
               'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
@@ -235,7 +211,7 @@ export function NewsForm({
               <select
                 {...field}
                 className={cn(
-                  'w-full px-4 py-2 rounded-lg',
+                  'w-full px-3 py-2 md:px-4 rounded-lg min-h-[44px] text-sm md:text-base',
                   'bg-dark-surface-secondary border border-dark-border-primary',
                   'text-dark-text-primary',
                   'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
@@ -258,49 +234,24 @@ export function NewsForm({
         </div>
 
         {/* Featured Image */}
-        <div className="w-full">
-          <label className="block text-sm font-medium text-dark-text-primary mb-2">
-            Öne Çıkan Görsel
-          </label>
-
-          <div className="space-y-4">
-            {/* Image Preview */}
-            {imagePreview && (
-              <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full max-w-md h-48 object-cover rounded-lg border border-dark-border-primary"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-700 transition-colors"
-                >
-                  ×
-                </button>
-              </div>
-            )}
-
-            {/* File Input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {imagePreview ? 'Görseli Değiştir' : 'Görsel Seç'}
-            </Button>
-          </div>
-        </div>
+        <ImagePickerField
+          control={control}
+          name="featured_image"
+          label="Öne Çıkan Görsel"
+          placeholder="Galeriyi açmak için tıklayın veya URL girin..."
+          sizePreference="large"
+          showPreview={true}
+          enableSearch={true}
+          validate={(value) => {
+            if (value && typeof value === 'string' && value.length > 0) {
+              const urlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
+              if (!urlPattern.test(value)) {
+                return 'Geçerli bir resim URL\'i girin';
+              }
+            }
+            return undefined;
+          }}
+        />
 
         {/* Status Flags */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

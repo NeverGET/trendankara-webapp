@@ -50,14 +50,14 @@ export function NewsCard({
 
         {/* Hot/Breaking Badge */}
         {(isHot || isBreaking) && (
-          <div className="absolute top-3 left-3 flex gap-2">
+          <div className="absolute top-2 left-2 md:top-3 md:left-3 flex gap-1 md:gap-2">
             {isBreaking && (
-              <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full animate-pulse">
+              <span className="px-2 py-0.5 md:px-3 md:py-1 bg-red-600 text-white text-[10px] md:text-xs font-bold rounded-full animate-pulse">
                 SON DAK0KA
               </span>
             )}
             {isHot && (
-              <span className="px-3 py-1 bg-brand-red-600 text-white text-xs font-bold rounded-full">
+              <span className="px-2 py-0.5 md:px-3 md:py-1 bg-brand-red-600 text-white text-[10px] md:text-xs font-bold rounded-full">
                 HOT
               </span>
             )}
@@ -65,9 +65,9 @@ export function NewsCard({
         )}
 
         {/* Category Badge */}
-        <div className="absolute bottom-3 right-3">
+        <div className="absolute bottom-2 right-2 md:bottom-3 md:right-3">
           <span className={cn(
-            'px-3 py-1 text-xs font-medium rounded-full',
+            'px-2 py-0.5 md:px-3 md:py-1 text-[10px] md:text-xs font-medium rounded-full',
             categoryColors[category] || 'bg-dark-surface-tertiary text-dark-text-primary'
           )}>
             {category}
@@ -75,14 +75,14 @@ export function NewsCard({
         </div>
       </div>
 
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-dark-text-primary mb-2 line-clamp-2 group-hover:text-brand-red-600 transition-colors">
+      <div className="p-3 md:p-4">
+        <h3 className="text-base md:text-lg font-semibold text-dark-text-primary mb-1.5 md:mb-2 line-clamp-2 group-hover:text-brand-red-600 transition-colors">
           {title}
         </h3>
-        <p className="text-sm text-dark-text-secondary line-clamp-3 mb-3">
+        <p className="text-xs md:text-sm text-dark-text-secondary line-clamp-3 mb-2 md:mb-3">
           {summary}
         </p>
-        <p className="text-xs text-dark-text-tertiary">
+        <p className="text-[10px] md:text-xs text-dark-text-tertiary">
           {formattedDate}
         </p>
       </div>

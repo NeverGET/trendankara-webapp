@@ -46,25 +46,27 @@ export async function POST(request: NextRequest) {
         );
 
         // Save to database
-        const [result] = await db.execute<ResultSetHeader>(
-          `INSERT INTO media (filename, mimetype, size, path, uploaded_by, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+        const result = await db.execute(
+          `INSERT INTO media (filename, original_name, mime_type, size, url, created_by, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
           [
+            uploadResult.key || file.name,
             file.name,
             file.type,
             file.size,
             uploadResult.url,
             session.user.id || 1
           ]
-        );
+        ) as unknown as [ResultSetHeader, any];
 
         uploadedMedia.push({
-          id: result.insertId,
-          filename: file.name,
-          mimetype: file.type,
+          id: result[0].insertId,
+          filename: uploadResult.key || file.name,
+          original_name: file.name,
+          mime_type: file.type,
           size: file.size,
-          path: uploadResult.url,
-          uploaded_by: session.user.id || 1,
+          url: uploadResult.url,
+          created_by: session.user.id || 1,
           created_at: new Date(),
           updated_at: new Date()
         });
