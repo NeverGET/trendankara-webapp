@@ -3,6 +3,9 @@
 import React from 'react';
 import { Control, Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
+import { Checkbox } from '@/components/ui-adapters/CheckboxAdapter';
+import { Textarea } from '@/components/ui-adapters/TextareaAdapter';
+import { Select } from '@/components/ui-adapters/SelectAdapter';
 import { FileText, Settings, Eye, Home } from 'lucide-react';
 import { PollFormData } from '@/hooks/usePollForm';
 
@@ -83,35 +86,18 @@ export function PollFormFields({
             }}
             render={({ field }) => (
               <div>
-                <label className="block text-xs font-medium text-dark-text-primary mb-1">
-                  Açıklama
-                </label>
-                <textarea
+                <Textarea
                   {...field}
                   value={field.value || ''}
+                  label="Açıklama"
                   placeholder="Anket hakkında açıklama yazın... (opsiyonel)"
                   disabled={disabled}
                   maxLength={2000}
                   rows={4}
-                  className={`
-                    w-full px-3 py-2 border rounded-lg
-                    bg-dark-surface-primary border-dark-border-primary
-                    text-dark-text-primary placeholder-dark-text-tertiary
-                    focus:border-brand-red-500 focus:ring-1 focus:ring-brand-red-500
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                    resize-vertical min-h-[100px] max-h-[200px]
-                    ${errors.description ? 'border-brand-red-500' : ''}
-                  `}
-                  aria-describedby={errors.description ? 'description-error' : undefined}
+                  error={errors.description?.message}
+                  className="min-h-[100px] max-h-[200px]"
+                  helperText={`${field.value?.length || 0}/2000 karakter`}
                 />
-                {errors.description && (
-                  <div className="mt-1 text-sm text-brand-red-600" id="description-error" role="alert">
-                    {errors.description.message}
-                  </div>
-                )}
-                <div className="mt-1 text-xs text-dark-text-tertiary">
-                  {field.value?.length || 0}/2000 karakter
-                </div>
               </div>
             )}
           />
@@ -134,26 +120,16 @@ export function PollFormFields({
               name="poll_type"
               control={control}
               render={({ field }) => (
-                <div>
-                  <label className="block text-xs font-medium text-dark-text-primary mb-1">
-                    Anket Türü
-                  </label>
-                  <select
-                    {...field}
-                    disabled={disabled}
-                    className={`
-                      w-full px-3 py-2 border rounded-lg
-                      bg-dark-surface-primary border-dark-border-primary
-                      text-dark-text-primary
-                      focus:border-brand-red-500 focus:ring-1 focus:ring-brand-red-500
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                    `}
-                  >
-                    <option value="custom">Özel Anket</option>
-                    <option value="weekly">Haftalık Anket</option>
-                    <option value="monthly">Aylık Anket</option>
-                  </select>
-                </div>
+                <Select
+                  {...field}
+                  label="Anket Türü"
+                  disabled={disabled}
+                  options={[
+                    { value: 'custom', label: 'Özel Anket' },
+                    { value: 'weekly', label: 'Haftalık Anket' },
+                    { value: 'monthly', label: 'Aylık Anket' }
+                  ]}
+                />
               )}
             />
           </div>
@@ -165,25 +141,17 @@ export function PollFormFields({
               control={control}
               render={({ field }) => (
                 <div>
-                  <label className="block text-xs font-medium text-dark-text-primary mb-1">
-                    Sonuçları Göster
-                  </label>
-                  <select
+                  <Select
                     {...field}
+                    label="Sonuçları Göster"
                     disabled={disabled}
-                    className={`
-                      w-full px-3 py-2 border rounded-lg
-                      bg-dark-surface-primary border-dark-border-primary
-                      text-dark-text-primary
-                      focus:border-brand-red-500 focus:ring-1 focus:ring-brand-red-500
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                    `}
-                  >
-                    <option value="never">Hiçbir Zaman</option>
-                    <option value="after_voting">Oy Verdikten Sonra</option>
-                    <option value="always">Her Zaman Göster</option>
-                  </select>
-                  <div className="mt-1 text-xs text-dark-text-tertiary">
+                    options={[
+                      { value: 'never', label: 'Hiçbir Zaman' },
+                      { value: 'after_voting', label: 'Oy Verdikten Sonra' },
+                      { value: 'always', label: 'Her Zaman Göster' }
+                    ]}
+                  />
+                  <div className="mt-1 text-xs text-muted-foreground/70">
                     {field.value === 'never' && 'Sonuçlar hiçbir zaman gösterilmez'}
                     {field.value === 'after_voting' && 'Kullanıcılar oy verdikten sonra sonuçları görebilir'}
                     {field.value === 'always' && 'Sonuçlar her zaman görünür olur'}
@@ -212,29 +180,21 @@ export function PollFormFields({
               control={control}
               render={({ field }) => (
                 <div className="flex items-start gap-3">
-                  <div className="flex items-center h-5">
-                    <input
-                      type="checkbox"
-                      id="show_on_homepage"
-                      checked={field.value}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                      disabled={disabled}
-                      className={`
-                        w-4 h-4 border-2 rounded
-                        border-dark-border-primary bg-dark-surface-primary
-                        text-brand-red-600 focus:ring-brand-red-500 focus:ring-2
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                      `}
-                    />
-                  </div>
+                  <Checkbox
+                    id="show_on_homepage"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={disabled}
+                    className="mt-0.5"
+                  />
                   <div className="flex-1">
-                    <label htmlFor="show_on_homepage" className="text-sm font-medium text-dark-text-primary cursor-pointer">
+                    <label htmlFor="show_on_homepage" className="text-sm font-medium text-foreground cursor-pointer">
                       <div className="flex items-center gap-2">
                         <Home className="h-4 w-4" />
                         Ana Sayfada Göster
                       </div>
                     </label>
-                    <div className="text-xs text-dark-text-tertiary mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       Bu anket ana sayfada öne çıkarılacaktır
                     </div>
                   </div>
@@ -250,29 +210,21 @@ export function PollFormFields({
               control={control}
               render={({ field }) => (
                 <div className="flex items-start gap-3">
-                  <div className="flex items-center h-5">
-                    <input
-                      type="checkbox"
-                      id="is_active"
-                      checked={field.value}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                      disabled={disabled}
-                      className={`
-                        w-4 h-4 border-2 rounded
-                        border-dark-border-primary bg-dark-surface-primary
-                        text-brand-red-600 focus:ring-brand-red-500 focus:ring-2
-                        disabled:opacity-50 disabled:cursor-not-allowed
-                      `}
-                    />
-                  </div>
+                  <Checkbox
+                    id="is_active"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={disabled}
+                    className="mt-0.5"
+                  />
                   <div className="flex-1">
-                    <label htmlFor="is_active" className="text-sm font-medium text-dark-text-primary cursor-pointer">
+                    <label htmlFor="is_active" className="text-sm font-medium text-foreground cursor-pointer">
                       <div className="flex items-center gap-2">
                         <Eye className="h-4 w-4" />
                         Anket Aktif
                       </div>
                     </label>
-                    <div className="text-xs text-dark-text-tertiary mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       Anket kullanıcılara görünür ve oy alabilir
                     </div>
                   </div>

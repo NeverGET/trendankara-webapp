@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Input } from '@/components/ui/Input';
+import { DateTimePicker } from '@/components/ui-adapters/DateTimePickerAdapter';
 import { Calendar, Clock } from 'lucide-react';
 
 interface PollSchedulerProps {
@@ -155,8 +155,8 @@ export function PollScheduler({
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center gap-2 mb-4">
-        <Calendar className="h-5 w-5 text-dark-text-secondary" />
-        <h3 className="text-lg font-semibold text-dark-text-primary">
+        <Calendar className="h-5 w-5 text-muted-foreground" />
+        <h3 className="text-lg font-semibold text-foreground">
           Anket Tarihleri
         </h3>
       </div>
@@ -164,26 +164,17 @@ export function PollScheduler({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Start Date Input */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-dark-text-primary">
+          <label className="block text-sm font-medium text-foreground">
             <Clock className="inline-block h-4 w-4 mr-2" />
             Başlangıç Tarihi ve Saati *
           </label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             value={startDate || ''}
-            onChange={(e) => handleStartDateChange(e.target.value)}
+            onChange={handleStartDateChange}
             min={getMinDate}
             disabled={disabled}
-            className={`w-full px-3 py-3 md:px-4 md:py-2 rounded-lg
-              bg-dark-surface-secondary border border-dark-border-primary
-              text-base text-dark-text-primary placeholder-dark-text-tertiary
-              focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all duration-200
-              min-h-[44px] md:min-h-[40px]
-              ${startDateError ? 'border-red-600 focus:ring-red-600' : ''}`}
-            style={{ colorScheme: 'dark' }}
-            aria-describedby={startDateError ? 'start-date-error' : undefined}
+            error={startDateError}
+            placeholder="Başlangıç tarihini seçin"
           />
           {startDateError && (
             <div className="text-sm text-brand-red-600" id="start-date-error" role="alert">
@@ -191,7 +182,7 @@ export function PollScheduler({
             </div>
           )}
           {startDate && !startDateError && (
-            <div className="text-xs text-dark-text-secondary">
+            <div className="text-xs text-muted-foreground">
               {formatDateForDisplay(startDate)}
             </div>
           )}
@@ -199,26 +190,17 @@ export function PollScheduler({
 
         {/* End Date Input */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-dark-text-primary">
+          <label className="block text-sm font-medium text-foreground">
             <Clock className="inline-block h-4 w-4 mr-2" />
             Bitiş Tarihi ve Saati *
           </label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             value={endDate || ''}
-            onChange={(e) => onEndDateChange(e.target.value)}
+            onChange={onEndDateChange}
             min={getMinEndDate}
             disabled={disabled || !startDate}
-            className={`w-full px-3 py-3 md:px-4 md:py-2 rounded-lg
-              bg-dark-surface-secondary border border-dark-border-primary
-              text-base text-dark-text-primary placeholder-dark-text-tertiary
-              focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all duration-200
-              min-h-[44px] md:min-h-[40px]
-              ${endDateError ? 'border-red-600 focus:ring-red-600' : ''}`}
-            style={{ colorScheme: 'dark' }}
-            aria-describedby={endDateError ? 'end-date-error' : undefined}
+            error={endDateError}
+            placeholder="Bitiş tarihini seçin"
           />
           {endDateError && (
             <div className="text-sm text-brand-red-600" id="end-date-error" role="alert">
@@ -226,12 +208,12 @@ export function PollScheduler({
             </div>
           )}
           {endDate && !endDateError && (
-            <div className="text-xs text-dark-text-secondary">
+            <div className="text-xs text-muted-foreground">
               {formatDateForDisplay(endDate)}
             </div>
           )}
           {!startDate && (
-            <div className="text-xs text-dark-text-tertiary">
+            <div className="text-xs text-muted-foreground/70">
               Önce başlangıç tarihini seçin
             </div>
           )}
@@ -240,13 +222,13 @@ export function PollScheduler({
 
       {/* Duration Display */}
       {getDuration && (
-        <div className="bg-dark-surface-secondary border border-dark-border-secondary rounded-lg p-3">
+        <div className="bg-muted border border-border rounded-lg p-3">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-dark-text-secondary" />
-            <span className="text-sm font-medium text-dark-text-primary">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
               Anket Süresi:
             </span>
-            <span className="text-sm text-dark-text-secondary">
+            <span className="text-sm text-muted-foreground">
               {getDuration}
             </span>
           </div>
@@ -256,7 +238,7 @@ export function PollScheduler({
       {/* Quick Duration Presets */}
       {!disabled && (
         <div className="space-y-2">
-          <div className="text-sm font-medium text-dark-text-primary">
+          <div className="text-sm font-medium text-foreground">
             Hızlı Seçim:
           </div>
           <div className="flex flex-wrap gap-2">
@@ -291,9 +273,9 @@ export function PollScheduler({
                   }
                 }}
                 disabled={!startDate}
-                className="px-3 py-1 text-xs border border-dark-border-secondary rounded-md
-                         text-dark-text-secondary hover:text-dark-text-primary
-                         hover:border-dark-border-primary transition-colors
+                className="px-3 py-1 text-xs border border-border rounded-md
+                         text-muted-foreground hover:text-foreground
+                         hover:border-foreground/50 transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {label}
@@ -301,7 +283,7 @@ export function PollScheduler({
             ))}
           </div>
           {!startDate && (
-            <div className="text-xs text-dark-text-tertiary">
+            <div className="text-xs text-muted-foreground/70">
               Hızlı seçim için önce başlangıç tarihi seçin
             </div>
           )}
@@ -309,7 +291,7 @@ export function PollScheduler({
       )}
 
       {/* Validation Hints */}
-      <div className="text-xs text-dark-text-tertiary space-y-1">
+      <div className="text-xs text-muted-foreground/70 space-y-1">
         <div>• Anket en az 1 saat sürmeli</div>
         <div>• Başlangıç tarihi geçmişte olamaz</div>
         <div>• Bitiş tarihi başlangıç tarihinden sonra olmalı</div>

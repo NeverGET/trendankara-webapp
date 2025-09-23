@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Textarea } from '@/components/ui-adapters/TextareaAdapter';
 import { StreamTestButton } from '@/components/admin/StreamTestButton';
 import { StreamTestResult } from '@/components/admin/StreamTestResult';
 import { StreamPreviewSection } from '@/components/admin/StreamPreviewSection';
@@ -346,37 +347,25 @@ export function RadioSettingsForm({
         />
 
         {/* Description */}
-        <div className="w-full">
-          <label className="block text-sm font-medium text-dark-text-primary mb-2">
-            Açıklama <span className="text-brand-red-600 ml-1">*</span>
-          </label>
-          <textarea
-            {...register('description', {
-              required: 'Açıklama gereklidir',
-              minLength: {
-                value: 10,
-                message: 'Açıklama en az 10 karakter olmalıdır'
-              },
-              maxLength: {
-                value: 500,
-                message: 'Açıklama en fazla 500 karakter olabilir'
-              }
-            })}
-            className={cn(
-              'w-full px-4 py-2 rounded-lg min-h-[100px] resize-y',
-              'bg-dark-surface-secondary border border-dark-border-primary',
-              'text-dark-text-primary placeholder-dark-text-tertiary',
-              'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              'transition-all duration-200',
-              errors.description && 'border-red-600 focus:ring-red-600'
-            )}
-            placeholder="Radyo istasyonu hakkında kısa bir açıklama girin"
-          />
-          {errors.description && (
-            <p className="mt-2 text-sm text-red-600">{errors.description.message}</p>
-          )}
-        </div>
+        <Textarea
+          label="Açıklama"
+          required
+          {...register('description', {
+            required: 'Açıklama gereklidir',
+            minLength: {
+              value: 10,
+              message: 'Açıklama en az 10 karakter olmalıdır'
+            },
+            maxLength: {
+              value: 500,
+              message: 'Açıklama en fazla 500 karakter olabilir'
+            }
+          })}
+          error={errors.description?.message}
+          placeholder="Radyo istasyonu hakkında kısa bir açıklama girin"
+          rows={4}
+          className="min-h-[100px]"
+        />
 
         {/* Stream URL */}
         <div className="w-full">

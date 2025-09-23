@@ -21,15 +21,15 @@ export function Header({ user }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-dark-bg-primary/95 backdrop-blur-md border-b border-dark-border-primary">
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-3 md:px-4">
         <div className="flex items-center justify-between h-14 md:h-[72px]">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 md:gap-3">
             <div className="w-8 h-8 md:w-10 md:h-10 bg-brand-red-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg md:text-xl">T</span>
+              <span className="text-primary-foreground font-bold text-lg md:text-xl">T</span>
             </div>
-            <span className="text-lg md:text-xl font-bold text-dark-text-primary hidden sm:block">
+            <span className="text-lg md:text-xl font-bold text-foreground hidden sm:block">
               Trend Ankara
             </span>
           </Link>
@@ -43,8 +43,8 @@ export function Header({ user }: HeaderProps) {
                 className={cn(
                   'relative py-2 text-sm font-medium transition-colors',
                   pathname === item.path
-                    ? 'text-dark-text-primary'
-                    : 'text-dark-text-secondary hover:text-dark-text-primary'
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {item.label}
@@ -63,7 +63,7 @@ export function Header({ user }: HeaderProps) {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 rounded-lg text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="md:hidden p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Menü"
           >
             <svg
@@ -94,7 +94,7 @@ export function Header({ user }: HeaderProps) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-14 left-0 right-0 bg-dark-bg-primary border-b border-dark-border-primary animate-slide-down">
+        <div className="md:hidden absolute top-14 left-0 right-0 bg-background border-b border-border animate-slide-down">
           <nav className="container mx-auto px-4 py-4">
             {navigationItems.map((item) => (
               <Link
@@ -104,8 +104,8 @@ export function Header({ user }: HeaderProps) {
                 className={cn(
                   'block py-3 px-4 rounded-lg text-base font-medium transition-all',
                   pathname === item.path
-                    ? 'bg-dark-surface-primary text-dark-text-primary'
-                    : 'text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary'
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
                 {item.label}

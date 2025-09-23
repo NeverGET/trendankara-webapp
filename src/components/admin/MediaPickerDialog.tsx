@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui-adapters/SelectAdapter';
 import {
   Search,
   Upload,
@@ -210,14 +211,15 @@ export function MediaPickerDialog({
           <div className="flex gap-1.5">
 
             {/* Sort */}
-            <select
+            <Select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-2 md:px-3 py-1.5 md:py-2 border rounded-lg text-xs md:text-sm min-h-[40px]"
-            >
-              <option value="newest">En Yeni</option>
-              <option value="oldest">En Eski</option>
-            </select>
+              onChange={(value) => setSortBy(value as any)}
+              options={[
+                { value: 'newest', label: 'En Yeni' },
+                { value: 'oldest', label: 'En Eski' }
+              ]}
+              className="text-xs md:text-sm min-h-[40px]"
+            />
 
 
             {/* Upload Button */}

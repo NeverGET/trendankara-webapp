@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Select } from '@/components/ui-adapters/SelectAdapter';
+import { SlidingNumber } from '@/components/ui/sliding-number';
 import { useConfirmation } from '@/hooks/useConfirmation';
 import {
   FiSearch,
@@ -291,7 +293,14 @@ export default function AdminMediaPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Toplam Dosya</p>
-                <p className="text-2xl font-bold">{stats.totalFiles}</p>
+                <SlidingNumber
+                  from={0}
+                  to={stats.totalFiles}
+                  duration={1.5}
+                  startOnView={true}
+                  digitHeight={32}
+                  className="text-2xl font-bold"
+                />
               </div>
               <FiFile className="h-8 w-8 text-gray-400" />
             </div>
@@ -388,29 +397,29 @@ export default function AdminMediaPage() {
           {/* Filters */}
           <div className="flex gap-2">
             {/* Type Filter */}
-            <select
+            <Select
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value as any)}
-              className="px-4 py-2 border rounded-lg"
-            >
-              <option value="all">Tüm Tipler</option>
-              <option value="image">Resimler</option>
-              <option value="video">Videolar</option>
-              <option value="audio">Ses Dosyaları</option>
-              <option value="document">Belgeler</option>
-            </select>
+              onChange={(value) => setFilterType(value as any)}
+              options={[
+                { value: 'all', label: 'Tüm Tipler' },
+                { value: 'image', label: 'Resimler' },
+                { value: 'video', label: 'Videolar' },
+                { value: 'audio', label: 'Ses Dosyaları' },
+                { value: 'document', label: 'Belgeler' }
+              ]}
+            />
 
             {/* Sort */}
-            <select
+            <Select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-4 py-2 border rounded-lg"
-            >
-              <option value="newest">En Yeni</option>
-              <option value="oldest">En Eski</option>
-              <option value="name">İsme Göre</option>
-              <option value="size">Boyuta Göre</option>
-            </select>
+              onChange={(value) => setSortBy(value as any)}
+              options={[
+                { value: 'newest', label: 'En Yeni' },
+                { value: 'oldest', label: 'En Eski' },
+                { value: 'name', label: 'İsme Göre' },
+                { value: 'size', label: 'Boyuta Göre' }
+              ]}
+            />
 
             {/* View Mode */}
             <div className="flex gap-1 border rounded-lg p-1">

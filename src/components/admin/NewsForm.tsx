@@ -4,6 +4,9 @@ import React, { useState, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui-adapters/CheckboxAdapter';
+import { Textarea } from '@/components/ui-adapters/TextareaAdapter';
+import { Select } from '@/components/ui-adapters/SelectAdapter';
 import { ImagePickerField } from '@/components/ui/ImagePicker';
 import { cn } from '@/lib/utils';
 import { NewsCategory, NewsArticle } from '@/types/news';
@@ -88,12 +91,12 @@ export function NewsForm({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-dark-surface-primary rounded-lg border border-dark-border-primary">
+    <div className="max-w-4xl mx-auto p-6 bg-background rounded-lg border border-border">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-dark-text-primary mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           {mode === 'create' ? 'Yeni Haber Oluştur' : 'Haberi Düzenle'}
         </h2>
-        <p className="text-dark-text-secondary">
+        <p className="text-muted-foreground">
           {mode === 'create'
             ? 'Yeni bir haber makalesi oluşturun'
             : 'Mevcut haber makalesini düzenleyin'
@@ -137,101 +140,61 @@ export function NewsForm({
         />
 
         {/* Summary */}
-        <div className="w-full">
-          <label className="block text-xs font-medium text-dark-text-primary mb-1">
-            Özet <span className="text-brand-red-600 ml-1">*</span>
-          </label>
-          <textarea
-            {...register('summary', {
-              required: 'Özet gereklidir',
-              minLength: {
-                value: 10,
-                message: 'Özet en az 10 karakter olmalıdır'
-              },
-              maxLength: {
-                value: 500,
-                message: 'Özet en fazla 500 karakter olabilir'
-              }
-            })}
-            className={cn(
-              'w-full px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg min-h-[80px] md:min-h-[100px] resize-y text-base',
-              'bg-dark-surface-secondary border border-dark-border-primary',
-              'text-dark-text-primary placeholder-dark-text-tertiary',
-              'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              'transition-all duration-200',
-              errors.summary && 'border-red-600 focus:ring-red-600'
-            )}
-            placeholder="Haber özetini girin"
-          />
-          {errors.summary && (
-            <p className="mt-1 text-xs text-red-600">{errors.summary.message}</p>
-          )}
-        </div>
+        <Textarea
+          label="Özet"
+          required
+          {...register('summary', {
+            required: 'Özet gereklidir',
+            minLength: {
+              value: 10,
+              message: 'Özet en az 10 karakter olmalıdır'
+            },
+            maxLength: {
+              value: 500,
+              message: 'Özet en fazla 500 karakter olabilir'
+            }
+          })}
+          error={errors.summary?.message}
+          placeholder="Haber özetini girin"
+          rows={4}
+          className="min-h-[80px] md:min-h-[100px]"
+        />
 
         {/* Content */}
-        <div className="w-full">
-          <label className="block text-xs font-medium text-dark-text-primary mb-1">
-            İçerik <span className="text-brand-red-600 ml-1">*</span>
-          </label>
-          <textarea
-            {...register('content', {
-              required: 'İçerik gereklidir',
-              minLength: {
-                value: 50,
-                message: 'İçerik en az 50 karakter olmalıdır'
-              }
-            })}
-            className={cn(
-              'w-full px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg min-h-[200px] md:min-h-[300px] resize-y text-base',
-              'bg-dark-surface-secondary border border-dark-border-primary',
-              'text-dark-text-primary placeholder-dark-text-tertiary',
-              'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              'transition-all duration-200',
-              errors.content && 'border-red-600 focus:ring-red-600'
-            )}
-            placeholder="Haber içeriğini girin"
-          />
-          {errors.content && (
-            <p className="mt-1 text-xs text-red-600">{errors.content.message}</p>
-          )}
-        </div>
+        <Textarea
+          label="İçerik"
+          required
+          {...register('content', {
+            required: 'İçerik gereklidir',
+            minLength: {
+              value: 50,
+              message: 'İçerik en az 50 karakter olmalıdır'
+            }
+          })}
+          error={errors.content?.message}
+          placeholder="Haber içeriğini girin"
+          rows={8}
+          className="min-h-[200px] md:min-h-[300px]"
+        />
 
         {/* Category */}
-        <div className="w-full">
-          <label className="block text-xs font-medium text-dark-text-primary mb-1">
-            Kategori <span className="text-brand-red-600 ml-1">*</span>
-          </label>
-          <Controller
-            name="category"
-            control={control}
-            rules={{ required: 'Kategori seçimi gereklidir' }}
-            render={({ field }) => (
-              <select
-                {...field}
-                className={cn(
-                  'w-full px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg min-h-[44px] md:min-h-[40px] text-base',
-                  'bg-dark-surface-secondary border border-dark-border-primary',
-                  'text-dark-text-primary',
-                  'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
-                  'disabled:opacity-50 disabled:cursor-not-allowed',
-                  'transition-all duration-200',
-                  errors.category && 'border-red-600 focus:ring-red-600'
-                )}
-              >
-                {NEWS_CATEGORIES.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          />
-          {errors.category && (
-            <p className="mt-1 text-xs text-red-600">{errors.category.message}</p>
+        <Controller
+          name="category"
+          control={control}
+          rules={{ required: 'Kategori seçimi gereklidir' }}
+          render={({ field }) => (
+            <Select
+              {...field}
+              label="Kategori"
+              required
+              error={errors.category?.message}
+              options={NEWS_CATEGORIES.map(cat => ({
+                value: cat.value,
+                label: cat.label
+              }))}
+            />
           )}
-        </div>
+        />
 
         {/* Featured Image */}
         <ImagePickerField
@@ -256,48 +219,80 @@ export function NewsForm({
         {/* Status Flags */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Featured */}
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              {...register('featured')}
-              className="w-4 h-4 text-brand-red-600 bg-dark-surface-secondary border-dark-border-primary rounded focus:ring-brand-red-600 focus:ring-2"
-            />
-            <span className="text-sm text-dark-text-primary">Öne Çıkan</span>
-          </label>
+          <Controller
+            name="featured"
+            control={control}
+            render={({ field }) => (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="featured"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                <label htmlFor="featured" className="text-sm text-foreground cursor-pointer">
+                  Öne Çıkan
+                </label>
+              </div>
+            )}
+          />
 
           {/* Breaking */}
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              {...register('breaking')}
-              className="w-4 h-4 text-brand-red-600 bg-dark-surface-secondary border-dark-border-primary rounded focus:ring-brand-red-600 focus:ring-2"
-            />
-            <span className="text-sm text-dark-text-primary">Son Dakika</span>
-          </label>
+          <Controller
+            name="breaking"
+            control={control}
+            render={({ field }) => (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="breaking"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                <label htmlFor="breaking" className="text-sm text-foreground cursor-pointer">
+                  Son Dakika
+                </label>
+              </div>
+            )}
+          />
 
           {/* Hot */}
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              {...register('hot')}
-              className="w-4 h-4 text-brand-red-600 bg-dark-surface-secondary border-dark-border-primary rounded focus:ring-brand-red-600 focus:ring-2"
-            />
-            <span className="text-sm text-dark-text-primary">Popüler</span>
-          </label>
+          <Controller
+            name="hot"
+            control={control}
+            render={({ field }) => (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="hot"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                <label htmlFor="hot" className="text-sm text-foreground cursor-pointer">
+                  Popüler
+                </label>
+              </div>
+            )}
+          />
 
           {/* Active */}
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              {...register('active')}
-              className="w-4 h-4 text-brand-red-600 bg-dark-surface-secondary border-dark-border-primary rounded focus:ring-brand-red-600 focus:ring-2"
-            />
-            <span className="text-sm text-dark-text-primary">Aktif</span>
-          </label>
+          <Controller
+            name="active"
+            control={control}
+            render={({ field }) => (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="active"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                <label htmlFor="active" className="text-sm text-foreground cursor-pointer">
+                  Aktif
+                </label>
+              </div>
+            )}
+          />
         </div>
 
         {/* Submit Buttons */}
-        <div className="flex justify-end space-x-4 pt-4 border-t border-dark-border-primary">
+        <div className="flex justify-end space-x-4 pt-4 border-t border-border">
           <Button
             type="button"
             variant="secondary"

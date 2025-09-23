@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { SlidingNumber } from '@/components/ui/sliding-number';
 
 interface StatsCardProps {
   title: string;
@@ -95,9 +96,20 @@ export function StatsCard({
           <p className="text-xs text-dark-text-secondary mb-1 font-medium uppercase tracking-wider">
             {title}
           </p>
-          <p className="text-xl md:text-2xl font-bold text-white">
-            {value}
-          </p>
+          {typeof value === 'number' ? (
+            <SlidingNumber
+              from={0}
+              to={value}
+              duration={1.5}
+              startOnView={true}
+              digitHeight={32}
+              className="text-xl md:text-2xl font-bold text-white"
+            />
+          ) : (
+            <p className="text-xl md:text-2xl font-bold text-white">
+              {value}
+            </p>
+          )}
         </div>
       </div>
     </Card>

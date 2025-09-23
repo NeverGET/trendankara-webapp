@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { SlidingNumber } from '@/components/ui/sliding-number';
 import { FiRadio, FiUsers, FiTrendingUp } from 'react-icons/fi';
 
 interface RadioStatsCardProps {
@@ -138,9 +139,15 @@ export function RadioStatsCard({
               <span className="text-sm text-dark-text-secondary">Şu An Dinleyen</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-red-500">
-                {currentListeners}
-              </span>
+              <SlidingNumber
+                from={0}
+                to={currentListeners}
+                duration={1.2}
+                startOnView={false}
+                repeat={false}
+                digitHeight={36}
+                className="text-3xl font-bold text-red-500"
+              />
               <span className="text-sm text-dark-text-secondary">kişi</span>
             </div>
           </div>
@@ -152,9 +159,15 @@ export function RadioStatsCard({
               <span className="text-sm text-dark-text-secondary">Günün Zirvesi</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-purple-500">
-                {peakListeners}
-              </span>
+              <SlidingNumber
+                from={0}
+                to={peakListeners}
+                duration={1.5}
+                startOnView={false}
+                repeat={false}
+                digitHeight={36}
+                className="text-3xl font-bold text-purple-500"
+              />
               <span className="text-sm text-dark-text-secondary">kişi</span>
             </div>
           </div>
