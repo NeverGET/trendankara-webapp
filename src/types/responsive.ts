@@ -78,6 +78,12 @@ export interface SpacingScale {
   scale: number[];      // Multipliers for the base unit
 }
 
+// Compact size configuration with desktop/mobile variants (Requirements 1.1, 1.2, 2.1)
+export interface CompactSizeConfig {
+  mobile: number;       // Mobile size in pixels
+  desktop: number;      // Desktop size in pixels
+}
+
 // Constants for touch targets and common sizes (Requirements 2.1, 2.2)
 export const TOUCH_TARGET_STANDARD = 44;    // 44px standard touch target
 export const TOUCH_TARGET_COMPACT = 40;     // 40px compact touch target
@@ -128,6 +134,31 @@ export const STAT_SIZES = {
 export const INPUT_HEIGHTS = {
   mobile: 44,     // 44px on mobile for touch
   desktop: 40,    // 40-48px on desktop
+} as const;
+
+// Compact button sizes for improved UI density (Requirements 1.1, 1.2, 2.1)
+export const COMPACT_BUTTON_SIZES = {
+  xs: { mobile: 32, desktop: 28 },      // Extra small compact buttons
+  sm: { mobile: 36, desktop: 32 },      // Small compact buttons
+  md: { mobile: 40, desktop: 36 },      // Medium compact buttons (default)
+  lg: { mobile: 44, desktop: 40 },      // Large compact buttons
+} as const;
+
+// Compact input sizes for dense forms (Requirements 1.1, 1.2, 2.1)
+export const COMPACT_INPUT_SIZES = {
+  xs: { mobile: 36, desktop: 32 },      // Extra small compact inputs
+  sm: { mobile: 40, desktop: 36 },      // Small compact inputs
+  md: { mobile: 44, desktop: 40 },      // Medium compact inputs (default)
+  lg: { mobile: 48, desktop: 44 },      // Large compact inputs
+} as const;
+
+// Compact spacing values for dense layouts (Requirements 1.1, 1.2, 2.1)
+export const COMPACT_SPACING = {
+  xs: { mobile: 4, desktop: 4 },        // Extra tight spacing
+  sm: { mobile: 6, desktop: 8 },        // Small spacing
+  md: { mobile: 8, desktop: 12 },       // Medium spacing (default)
+  lg: { mobile: 12, desktop: 16 },      // Large spacing
+  xl: { mobile: 16, desktop: 20 },      // Extra large spacing
 } as const;
 
 // Type guard to check if value is responsive

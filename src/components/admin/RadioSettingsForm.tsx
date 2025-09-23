@@ -1,10 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { StreamTestButton } from '@/components/admin/StreamTestButton';
+import { StreamTestResult } from '@/components/admin/StreamTestResult';
+import { StreamPreviewSection } from '@/components/admin/StreamPreviewSection';
 import { cn } from '@/lib/utils';
+import type { StreamTestResult as StreamTestResultType, StreamTestResponse, StreamMetadata } from '@/types/radioSettings';
 
 interface RadioSettingsFormData {
   stationName: string;
@@ -59,17 +64,14 @@ export function RadioSettingsForm({
   onSubmit,
   isLoading = false
 }: RadioSettingsFormProps) {
-  const [testResult, setTestResult] = useState<{
-    success: boolean;
-    message: string;
-    details?: {
-      statusCode?: number;
-      responseTime?: number;
-      contentType?: string;
-    };
-  } | null>(null);
+  const [testResults, setTestResults] = useState<StreamTestResultType | null>(null);
+  const [streamMetadata, setStreamMetadata] = useState<StreamMetadata | null>(null);
+  const [metadataLoading, setMetadataLoading] = useState(false);
+  const previewCleanupRef = useRef<(() => void) | null>(null);
 
-  const [isTesting, setIsTesting] = useState(false);
+  // Confirmation dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<RadioSettingsFormData | null>(null);
 
   const [inlineValidationErrors, setInlineValidationErrors] = useState<{
     [key: string]: string;
@@ -145,61 +147,63 @@ export function RadioSettingsForm({
     validateUrlField(debouncedSocialUrl, 'socialUrl');
   }, [debouncedSocialUrl, validateUrlField]);
 
-  const handleTestStream = async () => {
-    if (!streamUrlValue) {
-      setTestResult({
-        success: false,
-        message: 'Lütfen test etmek için bir stream URL\'si girin'
-      });
-      return;
-    }
-
-    // Validate URL format before testing
-    if (!isValidUrl(streamUrlValue)) {
-      setTestResult({
-        success: false,
-        message: 'Geçerli bir URL formatı girin'
-      });
-      return;
-    }
-
-    setIsTesting(true);
-    setTestResult(null);
-
-    try {
-      const response = await fetch('/api/admin/settings/radio/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ streamUrl: streamUrlValue }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setTestResult({
-          success: true,
-          message: 'Stream URL başarıyla test edildi',
-          details: data.details
-        });
-      } else {
-        setTestResult({
-          success: false,
-          message: data.message || 'Stream URL\'sine erişilemiyor - önceki çalışan konfigürasyon korunacak',
-          details: data.details
-        });
+  // Cleanup preview on component unmount
+  useEffect(() => {
+    return () => {
+      if (previewCleanupRef.current) {
+        previewCleanupRef.current();
       }
-    } catch (error) {
-      console.error('Stream test error:', error);
-      setTestResult({
-        success: false,
-        message: 'Test sırasında bir hata oluştu - önceki çalışan konfigürasyon korunacak'
-      });
-    } finally {
-      setIsTesting(false);
+    };
+  }, []);
+
+  // Cleanup preview on URL change (navigation)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (previewCleanupRef.current) {
+        previewCleanupRef.current();
+      }
+    };
+
+    const handlePopState = () => {
+      if (previewCleanupRef.current) {
+        previewCleanupRef.current();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  // Handle test completion from StreamTestButton
+  const handleTestComplete = useCallback((response: StreamTestResponse) => {
+    setTestResults(response.result);
+    if (response.metadata) {
+      setStreamMetadata(response.metadata);
     }
-  };
+  }, []);
+
+  // Handle test error from StreamTestButton
+  const handleTestError = useCallback((error: string) => {
+    setTestResults({
+      success: false,
+      message: error,
+      timestamp: new Date().toISOString()
+    });
+  }, []);
+
+  // Handle retry from StreamTestResult
+  const handleRetry = useCallback(() => {
+    setTestResults(null);
+    setStreamMetadata(null);
+    if (previewCleanupRef.current) {
+      previewCleanupRef.current();
+    }
+  }, []);
 
   const handleFormSubmit = async (data: RadioSettingsFormData) => {
     // Clear any previous inline validation errors
@@ -235,10 +239,32 @@ export function RadioSettingsForm({
       return;
     }
 
+    // Check if stream URL has changed and show confirmation dialog
+    const originalStreamUrl = initialData?.streamUrl || '';
+    const hasStreamUrlChanged = data.streamUrl !== originalStreamUrl;
+
+    if (hasStreamUrlChanged) {
+      setPendingFormData(data);
+      setShowConfirmDialog(true);
+      return;
+    }
+
+    // If no stream URL change, proceed with normal submission
+    await performFormSubmission(data);
+  };
+
+  // Separate function to handle the actual form submission
+  const performFormSubmission = async (data: RadioSettingsFormData) => {
     try {
       await onSubmit(data);
-      setTestResult(null);
+      setTestResults(null);
+      setStreamMetadata(null);
       setInlineValidationErrors({});
+
+      // Cleanup preview on successful save
+      if (previewCleanupRef.current) {
+        previewCleanupRef.current();
+      }
 
       // Dispatch event for real-time sync
       if (typeof window !== 'undefined') {
@@ -246,12 +272,39 @@ export function RadioSettingsForm({
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      setTestResult({
+      setTestResults({
         success: false,
-        message: 'Ayarlar kaydedilirken bir hata oluştu - önceki konfigürasyon korundu'
+        message: 'Ayarlar kaydedilirken bir hata oluştu - önceki konfigürasyon korundu',
+        timestamp: new Date().toISOString()
       });
     }
   };
+
+  // Confirmation dialog callbacks
+  const handleConfirmUrlChange = useCallback(async () => {
+    if (pendingFormData) {
+      setShowConfirmDialog(false);
+      await performFormSubmission(pendingFormData);
+      setPendingFormData(null);
+    }
+  }, [pendingFormData]);
+
+  const handleCancelUrlChange = useCallback(() => {
+    setShowConfirmDialog(false);
+    setPendingFormData(null);
+  }, []);
+
+  // Preview management callbacks
+  const handlePreviewStart = useCallback(() => {
+    // Store cleanup function for later use
+    previewCleanupRef.current = () => {
+      // This will be set by the AudioPreviewPlayer component
+    };
+  }, []);
+
+  const handlePreviewStop = useCallback(() => {
+    previewCleanupRef.current = null;
+  }, []);
 
   // Enhanced URL validation with custom validator
   const urlValidator = {
@@ -338,42 +391,35 @@ export function RadioSettingsForm({
             placeholder="https://stream.example.com:8000/stream"
           />
 
-          {/* Test Button and Result */}
-          <div className="mt-3 space-y-2">
-            <Button
-              type="button"
-              variant="secondary"
+          {/* Stream Test Integration */}
+          <div className="mt-3 space-y-3">
+            <StreamTestButton
+              streamUrl={streamUrlValue}
+              onTestComplete={handleTestComplete}
+              onTestError={handleTestError}
               size="small"
-              onClick={handleTestStream}
-              loading={isTesting}
-              disabled={!streamUrlValue || isTesting}
-            >
-              Stream URL Test Et
-            </Button>
+              variant="secondary"
+              disabled={!streamUrlValue || isLoading}
+            />
 
-            {testResult && (
-              <div className={cn(
-                'p-3 rounded-lg text-sm',
-                testResult.success
-                  ? 'bg-green-900/20 border border-green-600/30 text-green-400'
-                  : 'bg-red-900/20 border border-red-600/30 text-red-400'
-              )}>
-                <div className="font-medium">{testResult.message}</div>
-                {testResult.details && (
-                  <div className="mt-2 text-xs opacity-75 space-y-1">
-                    {testResult.details.statusCode && (
-                      <div>Status Code: {testResult.details.statusCode}</div>
-                    )}
-                    {testResult.details.responseTime && (
-                      <div>Response Time: {testResult.details.responseTime}ms</div>
-                    )}
-                    {testResult.details.contentType && (
-                      <div>Content Type: {testResult.details.contentType}</div>
-                    )}
-                  </div>
-                )}
-              </div>
+            {testResults && (
+              <StreamTestResult
+                testResult={testResults}
+                onRetry={handleRetry}
+                className="mt-3"
+              />
             )}
+
+            {/* Stream Preview Section - only shown after successful test */}
+            <StreamPreviewSection
+              testResult={testResults}
+              streamUrl={streamUrlValue}
+              metadata={streamMetadata}
+              metadataLoading={metadataLoading}
+              onPreviewStart={handlePreviewStart}
+              onPreviewStop={handlePreviewStop}
+              className="mt-4"
+            />
           </div>
         </div>
 
@@ -426,6 +472,22 @@ export function RadioSettingsForm({
           </Button>
         </div>
       </form>
+
+      {/* URL Change Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={handleCancelUrlChange}
+        onConfirm={handleConfirmUrlChange}
+        title="Stream URL Değişikliği"
+        message={`Stream URL'si değiştirilecek, onaylıyor musunuz?
+
+Mevcut URL: ${initialData?.streamUrl || 'Belirlenmemiş'}
+Yeni URL: ${pendingFormData?.streamUrl || ''}`}
+        variant="warning"
+        confirmText="Onayla"
+        cancelText="İptal"
+        loading={isLoading}
+      />
     </div>
   );
 }

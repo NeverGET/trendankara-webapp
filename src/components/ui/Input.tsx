@@ -16,7 +16,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-dark-text-primary mb-2"
+            className="block text-xs font-medium text-dark-text-primary mb-1"
           >
             {label}
             {required && <span className="text-brand-red-600 ml-1">*</span>}
@@ -26,7 +26,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full px-3 py-3 md:px-4 md:py-2 rounded-lg',
+            'w-full px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg',
             'bg-dark-surface-secondary border border-dark-border-primary',
             // Use 16px on mobile to prevent zoom, 16px on desktop (Requirements 8.1, 8.2, 8.3)
             'text-base text-dark-text-primary placeholder-dark-text-tertiary',
@@ -44,7 +44,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {error && (
-          <p id={`${inputId}-error`} className="mt-2 text-sm text-red-600">
+          <p id={`${inputId}-error`} className="text-xs text-red-600 mt-1">
             {error}
           </p>
         )}

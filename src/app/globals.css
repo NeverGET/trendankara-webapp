@@ -114,3 +114,225 @@ body {
   max-width: 100vw;
   overflow-wrap: break-word;
 }
+
+/* Scrollbar utilities */
+.scrollbar-hidden {
+  /* Hide scrollbar for webkit browsers */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* Compact Component Utilities */
+@layer components {
+  /* Compact Form Elements */
+  .compact-form {
+    @apply space-y-3;
+  }
+
+  .compact-form .form-group {
+    @apply space-y-1;
+  }
+
+  .compact-form input,
+  .compact-form textarea,
+  .compact-form select {
+    min-height: var(--touch-target-compact);
+    @apply text-sm px-3 py-2;
+  }
+
+  .compact-form label {
+    @apply text-xs font-medium text-gray-700 dark:text-gray-300;
+  }
+
+  .compact-form .form-error {
+    @apply text-xs text-red-600 dark:text-red-400;
+  }
+
+  /* Compact Card Components */
+  .compact-card {
+    @apply p-3 space-y-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
+    border-radius: var(--border-radius-sm);
+  }
+
+  .compact-card-header {
+    @apply flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-700;
+  }
+
+  .compact-card-title {
+    @apply text-sm font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  .compact-card-content {
+    @apply space-y-2;
+  }
+
+  .compact-card-actions {
+    @apply flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700;
+  }
+
+  /* Compact Button Groups */
+  .compact-button-group {
+    @apply flex gap-2;
+  }
+
+  .compact-button-group button {
+    min-height: var(--touch-target-compact);
+    @apply px-3 py-2 text-sm font-medium rounded-md;
+  }
+
+  .compact-button-group .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+
+  .compact-button-group .btn-secondary {
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+    @apply dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+  }
+
+  .compact-button-group .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+
+  /* Compact Table Components */
+  .compact-table {
+    @apply w-full border-collapse;
+  }
+
+  .compact-table th,
+  .compact-table td {
+    @apply px-3 py-2 text-sm border-b border-gray-200 dark:border-gray-700;
+  }
+
+  .compact-table th {
+    @apply font-semibold text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800;
+  }
+
+  .compact-table td {
+    @apply text-gray-700 dark:text-gray-300;
+  }
+
+  /* Compact List Components */
+  .compact-list {
+    @apply space-y-1;
+  }
+
+  .compact-list-item {
+    @apply flex items-center gap-2 px-3 py-2 text-sm rounded-md;
+    min-height: var(--touch-target-compact);
+  }
+
+  .compact-list-item:hover {
+    @apply bg-gray-50 dark:bg-gray-800;
+  }
+
+  .compact-list-item.active {
+    @apply bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  /* Compact Navigation */
+  .compact-nav {
+    @apply flex gap-1;
+  }
+
+  .compact-nav-item {
+    @apply px-3 py-2 text-sm font-medium rounded-md transition-colors;
+    min-height: var(--touch-target-compact);
+  }
+
+  .compact-nav-item:hover {
+    @apply bg-gray-100 dark:bg-gray-700;
+  }
+
+  .compact-nav-item.active {
+    @apply bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  /* Compact Stats Display */
+  .compact-stats {
+    @apply grid gap-3;
+  }
+
+  .compact-stat-card {
+    @apply p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
+    border-radius: var(--border-radius-sm);
+  }
+
+  .compact-stat-value {
+    @apply text-lg font-bold text-gray-900 dark:text-gray-100;
+  }
+
+  .compact-stat-label {
+    @apply text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide;
+  }
+
+  .compact-stat-change {
+    @apply text-xs font-medium;
+  }
+
+  .compact-stat-change.positive {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .compact-stat-change.negative {
+    @apply text-red-600 dark:text-red-400;
+  }
+
+  /* Compact Badge and Tag Components */
+  .compact-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full;
+  }
+
+  .compact-badge.primary {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  .compact-badge.success {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+  }
+
+  .compact-badge.warning {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300;
+  }
+
+  .compact-badge.danger {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;
+  }
+
+  /* Responsive Compact Utilities */
+  @media (max-width: 640px) {
+    .compact-form {
+      @apply space-y-2;
+    }
+
+    .compact-card {
+      @apply p-2;
+    }
+
+    .compact-button-group {
+      @apply flex-col gap-1;
+    }
+
+    .compact-button-group button {
+      @apply w-full;
+    }
+
+    .compact-stats {
+      @apply grid-cols-2 gap-2;
+    }
+
+    .compact-nav {
+      @apply flex-col gap-0;
+    }
+  }
+
+  @media (min-width: 641px) {
+    .compact-stats {
+      @apply grid-cols-4;
+    }
+  }
+}

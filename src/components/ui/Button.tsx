@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
-  size?: 'small' | 'medium' | 'large' | 'giant';
+  size?: 'compact' | 'small' | 'medium' | 'large' | 'giant';
   fullWidth?: boolean;
   loading?: boolean;
   icon?: React.ReactNode;
@@ -14,11 +14,12 @@ const variantClasses = {
   primary: 'bg-gradient-to-r from-brand-red-600 to-brand-red-700 text-white hover:from-brand-red-700 hover:to-brand-red-800 active:from-brand-red-800 active:to-brand-red-900 shadow-lg shadow-brand-red-900/30 hover:shadow-xl hover:shadow-brand-red-900/40 focus:ring-2 focus:ring-brand-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg-primary transform hover:-translate-y-0.5 active:translate-y-0',
   secondary: 'bg-dark-surface-secondary text-dark-text-primary hover:bg-dark-surface-tertiary active:bg-dark-surface-primary border border-dark-border-primary shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0',
   danger: 'bg-gradient-to-r from-red-900 to-red-800 text-white hover:from-red-800 hover:to-red-700 active:from-red-950 active:to-red-900 shadow-lg shadow-red-950/30 hover:shadow-xl hover:shadow-red-950/40 transform hover:-translate-y-0.5 active:translate-y-0',
-  ghost: 'bg-transparent text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary/50 active:bg-dark-surface-secondary backdrop-blur-sm'
+  ghost: 'bg-dark-surface-secondary/30 text-dark-text-secondary hover:text-dark-text-primary hover:bg-dark-surface-primary/50 active:bg-dark-surface-secondary backdrop-blur-sm'
 };
 
 const sizeClasses = {
   // Mobile-first responsive sizing with touch optimization (Requirement 2.1, 2.5)
+  compact: 'px-3 py-1 text-xs sm:px-3.5 sm:py-1.5 sm:text-sm',
   small: 'min-h-[44px] md:min-h-[40px] px-3 md:px-3 text-sm min-w-[44px] md:min-w-[40px]',
   medium: 'min-h-[44px] md:min-h-[48px] px-4 md:px-4 text-sm md:text-base min-w-[44px]',
   large: 'min-h-[48px] md:min-h-[56px] px-5 md:px-6 text-base md:text-lg min-w-[48px]',

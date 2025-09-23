@@ -101,7 +101,7 @@ export function NewsForm({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-2">
         {/* Title */}
         <Input
           label="Başlık"
@@ -138,7 +138,7 @@ export function NewsForm({
 
         {/* Summary */}
         <div className="w-full">
-          <label className="block text-sm font-medium text-dark-text-primary mb-2">
+          <label className="block text-xs font-medium text-dark-text-primary mb-1">
             Özet <span className="text-brand-red-600 ml-1">*</span>
           </label>
           <textarea
@@ -154,7 +154,7 @@ export function NewsForm({
               }
             })}
             className={cn(
-              'w-full px-3 py-2 md:px-4 rounded-lg min-h-[80px] md:min-h-[100px] resize-y text-sm md:text-base',
+              'w-full px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg min-h-[80px] md:min-h-[100px] resize-y text-base',
               'bg-dark-surface-secondary border border-dark-border-primary',
               'text-dark-text-primary placeholder-dark-text-tertiary',
               'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
@@ -165,13 +165,13 @@ export function NewsForm({
             placeholder="Haber özetini girin"
           />
           {errors.summary && (
-            <p className="mt-2 text-sm text-red-600">{errors.summary.message}</p>
+            <p className="mt-1 text-xs text-red-600">{errors.summary.message}</p>
           )}
         </div>
 
         {/* Content */}
         <div className="w-full">
-          <label className="block text-sm font-medium text-dark-text-primary mb-2">
+          <label className="block text-xs font-medium text-dark-text-primary mb-1">
             İçerik <span className="text-brand-red-600 ml-1">*</span>
           </label>
           <textarea
@@ -183,7 +183,7 @@ export function NewsForm({
               }
             })}
             className={cn(
-              'w-full px-3 py-2 md:px-4 rounded-lg min-h-[200px] md:min-h-[300px] resize-y text-sm md:text-base',
+              'w-full px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg min-h-[200px] md:min-h-[300px] resize-y text-base',
               'bg-dark-surface-secondary border border-dark-border-primary',
               'text-dark-text-primary placeholder-dark-text-tertiary',
               'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
@@ -194,13 +194,13 @@ export function NewsForm({
             placeholder="Haber içeriğini girin"
           />
           {errors.content && (
-            <p className="mt-2 text-sm text-red-600">{errors.content.message}</p>
+            <p className="mt-1 text-xs text-red-600">{errors.content.message}</p>
           )}
         </div>
 
         {/* Category */}
         <div className="w-full">
-          <label className="block text-sm font-medium text-dark-text-primary mb-2">
+          <label className="block text-xs font-medium text-dark-text-primary mb-1">
             Kategori <span className="text-brand-red-600 ml-1">*</span>
           </label>
           <Controller
@@ -211,7 +211,7 @@ export function NewsForm({
               <select
                 {...field}
                 className={cn(
-                  'w-full px-3 py-2 md:px-4 rounded-lg min-h-[44px] text-sm md:text-base',
+                  'w-full px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg min-h-[44px] md:min-h-[40px] text-base',
                   'bg-dark-surface-secondary border border-dark-border-primary',
                   'text-dark-text-primary',
                   'focus:outline-none focus:ring-2 focus:ring-brand-red-600 focus:border-transparent',
@@ -229,7 +229,7 @@ export function NewsForm({
             )}
           />
           {errors.category && (
-            <p className="mt-2 text-sm text-red-600">{errors.category.message}</p>
+            <p className="mt-1 text-xs text-red-600">{errors.category.message}</p>
           )}
         </div>
 
@@ -297,7 +297,7 @@ export function NewsForm({
         </div>
 
         {/* Submit Buttons */}
-        <div className="flex justify-end space-x-4 pt-6 border-t border-dark-border-primary">
+        <div className="flex justify-end space-x-4 pt-4 border-t border-dark-border-primary">
           <Button
             type="button"
             variant="secondary"

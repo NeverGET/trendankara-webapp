@@ -7,6 +7,7 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   pill?: boolean;
   animated?: boolean;
   interactive?: boolean;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -21,8 +22,8 @@ const variantClasses = {
 };
 
 const sizeClasses = {
-  small: 'text-xs px-2 py-1 md:px-2.5 md:py-1',
-  medium: 'text-sm px-3 py-1.5 md:px-3 md:py-2',
+  small: 'text-xs px-2 py-0.5',
+  medium: 'text-xs px-2.5 py-1',
   large: 'text-base px-4 py-2 md:px-4 md:py-2.5'
 };
 
@@ -38,6 +39,7 @@ export function Badge({
   pill = false,
   animated = false,
   interactive = false,
+  icon,
   children,
   className,
   ...props
@@ -55,6 +57,11 @@ export function Badge({
       )}
       {...props}
     >
+      {icon && (
+        <span className="w-3 h-3 flex-shrink-0 mr-1">
+          {icon}
+        </span>
+      )}
       {children}
     </span>
   );

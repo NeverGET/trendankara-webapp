@@ -7,6 +7,15 @@ interface ResponsiveTableProps {
   stickyFirstColumn?: boolean;
   mobileScroll?: boolean;
   density?: 'compact' | 'comfortable' | 'spacious';
+  cardView?: boolean;
+  headers?: string[];
+}
+
+interface TableRowData {
+  id?: string | number;
+  cells: React.ReactNode[];
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
 interface ResponsiveTableHeaderProps {
@@ -51,24 +60,136 @@ export function ResponsiveTable({
   stickyFirstColumn = false,
   mobileScroll = true,
   density = 'comfortable',
+  cardView = true,
+  headers = [],
 }: ResponsiveTableProps) {
   return (
     <div
       className={cn(
         'w-full rounded-lg border border-dark-border-primary bg-dark-surface-primary overflow-hidden',
-        mobileScroll && 'overflow-x-auto',
+        mobileScroll && 'overflow-x-auto md:overflow-x-visible',
         className
       )}
     >
+      {/* Desktop table view - hidden on mobile when cardView is enabled */}
       <table
         className={cn(
           'w-full',
           densityClasses[density],
-          stickyFirstColumn && 'relative'
+          stickyFirstColumn && 'relative',
+          cardView ? 'hidden md:table' : 'table'
         )}
       >
         {children}
       </table>
+
+      {/* Mobile card view - only shown when cardView is enabled and on mobile */}
+      {cardView && (
+        <div className="md:hidden">
+          <ResponsiveTableMobileView density={density}>
+            {children}
+          </ResponsiveTableMobileView>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Mobile card view component
+function ResponsiveTableMobileView({
+  children,
+  density = 'comfortable',
+}: {
+  children: React.ReactNode;
+  density?: 'compact' | 'comfortable' | 'spacious';
+}) {
+  const extractTableData = (children: React.ReactNode): { headers: string[]; rows: TableRowData[] } => {
+    const headers: string[] = [];
+    const rows: TableRowData[] = [];
+
+    React.Children.forEach(children, (child) => {
+      if (React.isValidElement(child)) {
+        if (child.type === ResponsiveTableHeader) {
+          // Extract headers
+          React.Children.forEach(child.props.children, (headerRow) => {
+            if (React.isValidElement(headerRow)) {
+              React.Children.forEach(headerRow.props.children, (headerCell) => {
+                if (React.isValidElement(headerCell)) {
+                  const headerText = typeof headerCell.props.children === 'string'
+                    ? headerCell.props.children
+                    : 'Column';
+                  headers.push(headerText);
+                }
+              });
+            }
+          });
+        } else if (child.type === ResponsiveTableBody) {
+          // Extract rows
+          React.Children.forEach(child.props.children, (row, rowIndex) => {
+            if (React.isValidElement(row)) {
+              const cells: React.ReactNode[] = [];
+              let rowProps = { clickable: false, onClick: undefined };
+
+              if (row.props.clickable) rowProps.clickable = true;
+              if (row.props.onClick) rowProps.onClick = row.props.onClick;
+
+              React.Children.forEach(row.props.children, (cell) => {
+                if (React.isValidElement(cell)) {
+                  cells.push(cell.props.children);
+                }
+              });
+
+              rows.push({
+                id: rowIndex,
+                cells,
+                ...rowProps,
+              });
+            }
+          });
+        }
+      }
+    });
+
+    return { headers, rows };
+  };
+
+  const { headers, rows } = extractTableData(children);
+
+  const cardSpacingClasses = {
+    compact: 'p-3 space-y-2',
+    comfortable: 'p-4 space-y-3',
+    spacious: 'p-5 space-y-4',
+  };
+
+  return (
+    <div className="space-y-3 p-4">
+      {rows.map((row, index) => (
+        <div
+          key={row.id || index}
+          className={cn(
+            'bg-dark-surface-secondary rounded-lg border border-dark-border-primary transition-colors',
+            row.clickable && 'cursor-pointer hover:bg-dark-surface-secondary/80',
+            cardSpacingClasses[density]
+          )}
+          onClick={row.onClick}
+        >
+          {row.cells.map((cell, cellIndex) => (
+            <div key={cellIndex} className="flex flex-col space-y-1">
+              {headers[cellIndex] && (
+                <div className="text-xs font-semibold text-dark-text-secondary uppercase tracking-wider">
+                  {headers[cellIndex]}
+                </div>
+              )}
+              <div className={cn(
+                'text-dark-text-primary',
+                densityClasses[density]
+              )}>
+                {cell}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -178,7 +299,7 @@ export function ResponsiveTableHeaderCell({
   );
 }
 
-// Usage example component
+// Usage example component - demonstrates both table and card views
 export function ResponsiveTableExample() {
   const data = [
     { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin' },
@@ -187,7 +308,12 @@ export function ResponsiveTableExample() {
   ];
 
   return (
-    <ResponsiveTable stickyFirstColumn mobileScroll>
+    <ResponsiveTable
+      stickyFirstColumn
+      mobileScroll
+      cardView={true}
+      density="comfortable"
+    >
       <ResponsiveTableHeader>
         <ResponsiveTableRow>
           <ResponsiveTableHeaderCell isFirstColumn>
@@ -202,7 +328,7 @@ export function ResponsiveTableExample() {
       </ResponsiveTableHeader>
       <ResponsiveTableBody>
         {data.map((item) => (
-          <ResponsiveTableRow key={item.id} clickable>
+          <ResponsiveTableRow key={item.id} clickable onClick={() => console.log('Row clicked:', item)}>
             <ResponsiveTableCell isFirstColumn>
               {item.name}
             </ResponsiveTableCell>

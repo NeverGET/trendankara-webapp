@@ -15,9 +15,9 @@ export default async function AdminLayout({
 
       {/* Main Content Area */}
       <div className="md:ml-56 lg:ml-64 min-h-screen">
-        <div className="p-3 md:p-6">
+        <div className="p-3">
           {/* Top Bar */}
-          <div className="mb-4 md:mb-6 flex justify-between items-center">
+          <div className="mb-3 flex justify-between items-center">
             <div className="md:hidden w-12" /> {/* Spacer for mobile menu button */}
             <div className="text-xs md:text-sm text-dark-text-secondary">
               Hoş geldiniz, <span className="text-dark-text-primary font-medium">

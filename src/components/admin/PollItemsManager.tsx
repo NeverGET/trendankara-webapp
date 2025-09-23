@@ -80,8 +80,8 @@ function SortableItem({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className={`p-4 ${isDragging ? 'shadow-lg' : ''}`}>
-        <div className="flex gap-4">
+      <Card className={`p-3 ${isDragging ? 'shadow-lg' : ''}`}>
+        <div className="flex gap-3">
           {/* Drag Handle */}
           {!readOnly && (
             <div
@@ -104,7 +104,7 @@ function SortableItem({
           </div>
 
           {/* Item Details - Better spacing */}
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 space-y-2">
             <div>
               <label className="block text-xs font-medium text-dark-text-secondary mb-1">
                 Seçenek Başlığı *
@@ -286,7 +286,7 @@ export function PollItemsManager({
           items={items.map(item => item.id || item.tempId || `item-${items.indexOf(item)}`)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-3">
+          <div className="space-y-2">
             {items.map((item, index) => (
               <SortableItem
                 key={item.id || item.tempId}

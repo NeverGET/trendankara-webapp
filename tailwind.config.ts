@@ -167,6 +167,82 @@ const config: Config = {
         '80': '80',
         '90': '90',
         '100': '100',
+      },
+      // Compact component utilities (Task 3: ui-sizing-fix)
+      components: {
+        // Compact button utility
+        '.btn-compact': {
+          minHeight: '40px',              // touch-compact
+          padding: '10px 16px',           // 2.5 vertical, 4 horizontal
+          fontSize: '14px',               // sm
+          lineHeight: '1.5',
+          borderRadius: '6px',            // 1.5
+          fontWeight: '500',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',                     // 1.5
+          transition: 'all 150ms ease-in-out',
+          '&:focus': {
+            outline: '2px solid transparent',
+            outlineOffset: '2px',
+            boxShadow: '0 0 0 2px rgb(239 68 68 / 0.5)', // brand-red-500 with opacity
+          },
+          '&:disabled': {
+            opacity: '0.5',
+            cursor: 'not-allowed',
+          }
+        },
+
+        // Compact input utility
+        '.input-compact': {
+          minHeight: '40px',              // touch-compact
+          padding: '8px 12px',            // 2 vertical, 3 horizontal
+          fontSize: '14px',               // sm
+          lineHeight: '1.5',
+          borderRadius: '6px',            // 1.5
+          border: '1px solid #d1d5db',    // gray-300
+          backgroundColor: '#ffffff',
+          transition: 'all 150ms ease-in-out',
+          '&:focus': {
+            outline: '2px solid transparent',
+            outlineOffset: '2px',
+            borderColor: '#dc2626',       // brand-red-600
+            boxShadow: '0 0 0 1px #dc2626', // brand-red-600
+          },
+          '&:disabled': {
+            backgroundColor: '#f9fafb',   // gray-50
+            color: '#9ca3af',             // gray-400
+            cursor: 'not-allowed',
+          },
+          '&::placeholder': {
+            color: '#9ca3af',             // gray-400
+          }
+        },
+
+        // Compact card utility
+        '.card-compact': {
+          padding: '16px',                // 4
+          borderRadius: '8px',            // 2
+          backgroundColor: '#ffffff',
+          border: '1px solid #e5e7eb',    // gray-200
+          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)', // shadow-sm
+          transition: 'all 150ms ease-in-out',
+          '&:hover': {
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', // shadow-md
+          },
+          // Dark mode support
+          '@media (prefers-color-scheme: dark)': {
+            backgroundColor: '#1a1a1a',   // dark.surface.primary
+            borderColor: '#333333',      // dark.border.primary
+            color: '#ffffff',            // dark.text.primary
+          },
+          '.dark &': {
+            backgroundColor: '#1a1a1a',   // dark.surface.primary
+            borderColor: '#333333',      // dark.border.primary
+            color: '#ffffff',            // dark.text.primary
+          }
+        }
       }
     },
   },

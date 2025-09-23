@@ -12,7 +12,7 @@ const customJestConfig = {
 
   // if using TypeScript with a baseUrl set to the root directory then you need the below for alias' to work
   moduleDirectories: ['node_modules', '<rootDir>/'],
-  testEnvironment: 'jest-environment-node',
+  testEnvironment: 'jsdom',
 
   // Test patterns
   testMatch: [
@@ -20,8 +20,17 @@ const customJestConfig = {
     '<rootDir>/src/**/*.test.{js,jsx,ts,tsx}',
   ],
 
+  // Handle ES modules and Next.js dependencies
+  transformIgnorePatterns: [
+    'node_modules/(?!(next-auth|@auth|jose|oauth4webapi|@panva|preact-render-to-string|preact)/)',
+  ],
+
+  // Extend global setup for Node.js API tests
+  globalSetup: undefined,
+  globalTeardown: undefined,
+
   // Module name mapping for absolute imports
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
 

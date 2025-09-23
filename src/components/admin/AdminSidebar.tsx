@@ -31,32 +31,32 @@ const navigationItems: NavigationItem[] = [
   {
     label: 'Panel',
     href: '/admin',
-    icon: <FiGrid className="w-4 h-4 md:w-5 md:h-5" />
+    icon: <FiGrid className="w-4 h-4 flex-shrink-0" />
   },
   {
     label: 'Haberler',
     href: '/admin/news',
-    icon: <RiNewspaperLine className="w-4 h-4 md:w-5 md:h-5" />
+    icon: <RiNewspaperLine className="w-4 h-4 flex-shrink-0" />
   },
   {
     label: 'Anketler',
     href: '/admin/polls',
-    icon: <RiBarChartBoxLine className="w-4 h-4 md:w-5 md:h-5" />
+    icon: <RiBarChartBoxLine className="w-4 h-4 flex-shrink-0" />
   },
   {
     label: 'Medya',
     href: '/admin/media',
-    icon: <HiOutlinePhotograph className="w-4 h-4 md:w-5 md:h-5" />
+    icon: <HiOutlinePhotograph className="w-4 h-4 flex-shrink-0" />
   },
   {
     label: 'Mobil Uygulama',
     href: '/admin/content',
-    icon: <HiOutlineTemplate className="w-4 h-4 md:w-5 md:h-5" />
+    icon: <HiOutlineTemplate className="w-4 h-4 flex-shrink-0" />
   },
   {
     label: 'Ayarlar',
     href: '/admin/settings',
-    icon: <IoSettingsOutline className="w-4 h-4 md:w-5 md:h-5" />
+    icon: <IoSettingsOutline className="w-4 h-4 flex-shrink-0" />
   }
 ];
 
@@ -76,7 +76,7 @@ export function AdminSidebar() {
       {/* Mobile Menu Toggle */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-3 left-3 z-50 md:hidden p-1.5 rounded-lg bg-dark-surface-primary text-dark-text-primary hover:bg-dark-surface-secondary transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+        className="fixed top-3 left-3 z-50 md:hidden px-2 py-2 rounded-lg bg-dark-surface-primary text-dark-text-primary hover:bg-dark-surface-secondary transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
         aria-label="Menu"
       >
         {isMobileOpen ? (
@@ -128,7 +128,7 @@ export function AdminSidebar() {
                 href={item.href}
                 onClick={() => setIsMobileOpen(false)}
                 className={cn(
-                  'group flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition-all duration-300 relative overflow-hidden min-h-[44px]',
+                  'group flex items-center gap-2 md:gap-3 px-3 py-1 text-xs rounded-xl transition-all duration-300 relative overflow-hidden min-h-[44px]',
                   'hover:bg-gradient-to-r hover:from-dark-surface-primary/80 hover:to-dark-surface-secondary/50',
                   'hover:shadow-lg hover:shadow-black/20',
                   isActive(item.href)
@@ -144,7 +144,7 @@ export function AdminSidebar() {
                 )}>
                   {item.icon}
                 </span>
-                <span className="text-sm md:text-base font-medium">{item.label}</span>
+                <span className="text-xs font-medium">{item.label}</span>
                 {isActive(item.href) && (
                   <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-brand-red-600 to-brand-red-700 rounded-r-full" />
                 )}

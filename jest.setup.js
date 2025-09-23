@@ -1,6 +1,9 @@
 // Jest setup file
 // This file runs before each test file
 
+// Import jest-dom matchers
+import '@testing-library/jest-dom'
+
 // Mock environment variables for testing
 process.env.NODE_ENV = 'test'
 process.env.DATABASE_URL = 'mysql://test:test@localhost:3306/test_db'

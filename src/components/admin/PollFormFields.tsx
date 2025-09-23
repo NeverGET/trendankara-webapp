@@ -30,9 +30,9 @@ export function PollFormFields({
 }: PollFormFieldsProps) {
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-2 ${className}`}>
       {/* Basic Information Section */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="h-5 w-5 text-dark-text-secondary" />
           <h3 className="text-lg font-semibold text-dark-text-primary">
@@ -41,7 +41,7 @@ export function PollFormFields({
         </div>
 
         {/* Title Field */}
-        <div className="space-y-2">
+        <div>
           <Controller
             name="title"
             control={control}
@@ -71,7 +71,7 @@ export function PollFormFields({
         </div>
 
         {/* Description Field */}
-        <div className="space-y-2">
+        <div>
           <Controller
             name="description"
             control={control}
@@ -83,7 +83,7 @@ export function PollFormFields({
             }}
             render={({ field }) => (
               <div>
-                <label className="block text-sm font-medium text-dark-text-primary mb-2">
+                <label className="block text-xs font-medium text-dark-text-primary mb-1">
                   Açıklama
                 </label>
                 <textarea
@@ -119,7 +119,7 @@ export function PollFormFields({
       </div>
 
       {/* Poll Settings Section */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <div className="flex items-center gap-2 mb-4">
           <Settings className="h-5 w-5 text-dark-text-secondary" />
           <h3 className="text-lg font-semibold text-dark-text-primary">
@@ -127,15 +127,15 @@ export function PollFormFields({
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {/* Poll Type Selector */}
-          <div className="space-y-2">
+          <div>
             <Controller
               name="poll_type"
               control={control}
               render={({ field }) => (
                 <div>
-                  <label className="block text-sm font-medium text-dark-text-primary mb-2">
+                  <label className="block text-xs font-medium text-dark-text-primary mb-1">
                     Anket Türü
                   </label>
                   <select
@@ -159,13 +159,13 @@ export function PollFormFields({
           </div>
 
           {/* Show Results Dropdown */}
-          <div className="space-y-2">
+          <div>
             <Controller
               name="show_results"
               control={control}
               render={({ field }) => (
                 <div>
-                  <label className="block text-sm font-medium text-dark-text-primary mb-2">
+                  <label className="block text-xs font-medium text-dark-text-primary mb-1">
                     Sonuçları Göster
                   </label>
                   <select
@@ -196,7 +196,7 @@ export function PollFormFields({
       </div>
 
       {/* Visibility Settings Section */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <div className="flex items-center gap-2 mb-4">
           <Eye className="h-5 w-5 text-dark-text-secondary" />
           <h3 className="text-lg font-semibold text-dark-text-primary">
@@ -204,9 +204,9 @@ export function PollFormFields({
           </h3>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* Homepage Visibility Checkbox */}
-          <div className="space-y-2">
+          <div>
             <Controller
               name="show_on_homepage"
               control={control}
@@ -244,7 +244,7 @@ export function PollFormFields({
           </div>
 
           {/* Active Status Checkbox */}
-          <div className="space-y-2">
+          <div>
             <Controller
               name="is_active"
               control={control}

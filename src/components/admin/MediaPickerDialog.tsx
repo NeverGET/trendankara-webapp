@@ -194,7 +194,7 @@ export function MediaPickerDialog({
     >
       <div className="flex flex-col h-[600px]">
         {/* Header Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 p-4 border-b">
+        <div className="flex flex-col sm:flex-row gap-3 p-3 border-b">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -207,7 +207,7 @@ export function MediaPickerDialog({
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
 
             {/* Sort */}
             <select
@@ -249,7 +249,7 @@ export function MediaPickerDialog({
         </div>
 
         {/* Media Grid/List */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-3">
           {isLoading && mediaItems.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-dark-text-tertiary" />
@@ -261,7 +261,7 @@ export function MediaPickerDialog({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 md:gap-3">
                   {mediaItems.map((item) => {
                     const isSelected = selectedItems.some(i => i.id === item.id);
 
@@ -302,7 +302,7 @@ export function MediaPickerDialog({
                           )}
 
                           {/* Info Overlay - Inside the thumbnail div */}
-                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                          <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                             <p className="text-xs text-white truncate">{item.filename}</p>
                             <p className="text-xs text-gray-300">{formatFileSize(item.size)}</p>
                           </div>
@@ -310,7 +310,7 @@ export function MediaPickerDialog({
 
                         {/* Selection Indicator */}
                         {isSelected && (
-                          <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1">
+                          <div className="absolute top-1.5 right-1.5 bg-blue-500 text-white rounded-full p-1">
                             <Check className="h-3 w-3" />
                           </div>
                         )}
@@ -321,7 +321,7 @@ export function MediaPickerDialog({
 
               {/* Load More */}
               {hasMore && (
-                <div className="flex justify-center mt-4">
+                <div className="flex justify-center mt-3">
                   <Button
                     variant="secondary"
                     onClick={() => {
@@ -344,11 +344,11 @@ export function MediaPickerDialog({
 
         {/* Footer */}
         {multiple && (
-          <div className="flex items-center justify-between p-4 border-t">
+          <div className="flex items-center justify-between p-3 border-t">
             <p className="text-sm text-gray-500">
               {selectedItems.length} / {maxSelection} seçili
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button variant="secondary" onClick={onClose}>
                 İptal
               </Button>
