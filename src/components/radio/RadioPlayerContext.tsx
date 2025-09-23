@@ -1,6 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
+// Client-side component - use API calls instead of direct database imports
+import { createRadioEventManager, RADIO_EVENT_NAMES } from '@/lib/utils/radioEvents';
+import type { StreamConfigurationData } from '@/types/radioSettings';
 
 interface RadioPlayerContextValue {
   // Player state
@@ -49,6 +52,8 @@ export function RadioPlayerProvider({
   // Dynamic URLs for real-time configuration updates
   const [streamUrl, setStreamUrl] = useState(initialStreamUrl);
   const [metadataUrl, setMetadataUrl] = useState(initialMetadataUrl);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
+  const [lastWorkingUrl, setLastWorkingUrl] = useState<string | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -180,21 +185,80 @@ export function RadioPlayerProvider({
     try {
       setIsLoading(true);
       setConnectionStatus('connecting');
+      setLastError(null);
 
-      // iOS needs cache-busting to prevent stale streams
-      const url = isIOS
-        ? `${streamUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}`
-        : streamUrl;
+      // Try primary stream URL first with iOS-compatible cache-busting
+      let urlToTry = streamUrl;
+      let isFallback = false;
 
-      audioRef.current.src = url;
-      audioRef.current.load();
-      await audioRef.current.play();
+      const attemptPlay = async (url: string, fallback: boolean = false) => {
+        console.log(`[RadioPlayer] Attempting to play ${fallback ? 'fallback ' : ''}stream:`, url);
+
+        const cacheBustedUrl = isIOS
+          ? `${url}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}&ios=1${fallback ? '&fallback=1' : ''}`
+          : `${url}?t=${Date.now()}${fallback ? '&fallback=1' : ''}`;
+
+        if (audioRef.current) {
+          audioRef.current.src = cacheBustedUrl;
+          audioRef.current.load();
+          await audioRef.current.play();
+
+          if (!fallback) {
+            setLastWorkingUrl(url);
+          }
+          console.log(`[RadioPlayer] Successfully started playing ${fallback ? 'fallback ' : ''}stream`);
+        }
+      };
+
+      try {
+        await attemptPlay(urlToTry, isFallback);
+      } catch (primaryError) {
+        console.warn('[RadioPlayer] Primary stream failed, trying fallback options:', primaryError);
+        setLastError(new Error(`Primary stream failed: ${primaryError instanceof Error ? primaryError.message : 'Unknown error'}`));
+
+        // Try last working URL if available and different from current
+        if (lastWorkingUrl && lastWorkingUrl !== urlToTry) {
+          try {
+            console.log('[RadioPlayer] Trying last working URL:', lastWorkingUrl);
+            await attemptPlay(lastWorkingUrl, true);
+            urlToTry = lastWorkingUrl;
+            isFallback = true;
+          } catch (lastWorkingError) {
+            console.warn('[RadioPlayer] Last working URL failed:', lastWorkingError);
+          }
+        }
+
+        // Try environment fallback URL if available and different
+        if (!isFallback && fallbackUrl && fallbackUrl !== urlToTry && fallbackUrl !== lastWorkingUrl) {
+          try {
+            console.log('[RadioPlayer] Trying environment fallback URL:', fallbackUrl);
+            await attemptPlay(fallbackUrl, true);
+            urlToTry = fallbackUrl;
+            isFallback = true;
+          } catch (fallbackError) {
+            console.warn('[RadioPlayer] Environment fallback URL failed:', fallbackError);
+          }
+        }
+
+        // If all attempts failed, throw the original error
+        if (!isFallback) {
+          throw primaryError;
+        }
+      }
+
+      // Update streamUrl to reflect what we're actually playing
+      if (isFallback && urlToTry !== streamUrl) {
+        setStreamUrl(urlToTry);
+      }
+
     } catch (error) {
-      console.error('Play error:', error);
+      console.error('[RadioPlayer] All play attempts failed:', error);
+      setLastError(new Error(`Playback failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
       setIsLoading(false);
       setConnectionStatus('disconnected');
+      setIsPlaying(false);
     }
-  }, [streamUrl, isIOS]);
+  }, [streamUrl, lastWorkingUrl, fallbackUrl, isIOS]);
 
   const pause = useCallback(() => {
     if (!audioRef.current) return;
@@ -211,55 +275,184 @@ export function RadioPlayerProvider({
     localStorage.setItem('radioVolume', clampedVolume.toString());
   }, []);
 
-  // Method to reload configuration from API
+  // Enhanced method to reload configuration from database with fallback support
   const reloadConfiguration = useCallback(async () => {
     try {
+      console.log('[RadioPlayer] Reloading configuration from database...');
+
+      // Load active settings from existing API
       const response = await fetch('/api/radio');
+      let newStreamUrl = initialStreamUrl;
+      let newMetadataUrl = initialMetadataUrl;
+
       if (response.ok) {
-        const config = await response.json();
+        const radioConfig = await response.json();
+        if (radioConfig.success && radioConfig.data) {
+          const settings = radioConfig.data;
+          newStreamUrl = settings.stream_url || initialStreamUrl;
+          newMetadataUrl = settings.metadata_url || initialMetadataUrl;
+          console.log('[RadioPlayer] Loaded settings from API:', {
+            streamUrl: newStreamUrl,
+            metadataUrl: newMetadataUrl,
+            stationName: settings.station_name,
+            isFallback: settings.is_fallback_url
+          });
+        } else {
+          console.warn('[RadioPlayer] No active settings found in API response, using defaults');
+        }
+      } else {
+        console.warn('[RadioPlayer] Failed to load settings from API, using defaults');
+      }
 
-        const newStreamUrl = config.streamUrl || initialStreamUrl;
-        const newMetadataUrl = config.metadataUrl || initialMetadataUrl;
-
-        // Update URLs if they changed
-        if (newStreamUrl !== streamUrl || newMetadataUrl !== metadataUrl) {
-          setStreamUrl(newStreamUrl);
-          setMetadataUrl(newMetadataUrl);
-
-          // If currently playing, reconnect with new stream URL
-          if (isPlaying && audioRef.current) {
-            setConnectionStatus('connecting');
-            setIsLoading(true);
-
-            // Pause current stream
-            audioRef.current.pause();
-
-            // Wait a moment for cleanup
-            setTimeout(async () => {
-              try {
-                // Use new URL with cache-busting for iOS
-                const url = isIOS
-                  ? `${newStreamUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}`
-                  : newStreamUrl;
-
-                if (audioRef.current) {
-                  audioRef.current.src = url;
-                  audioRef.current.load();
-                  await audioRef.current.play();
-                }
-              } catch (error) {
-                console.error('Error reconnecting with new stream URL:', error);
-                setConnectionStatus('disconnected');
-                setIsLoading(false);
-              }
-            }, 500);
+      // Load fallback URL from environment via API
+      try {
+        const fallbackResponse = await fetch('/api/radio/fallback');
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          const fallbackStreamUrl = fallbackData.fallbackUrl;
+          if (fallbackStreamUrl && fallbackStreamUrl !== newStreamUrl) {
+            setFallbackUrl(fallbackStreamUrl);
+            console.log('[RadioPlayer] Loaded fallback URL from API:', fallbackStreamUrl);
           }
         }
+      } catch (fallbackError) {
+        console.warn('[RadioPlayer] Failed to load fallback URL from API:', fallbackError);
       }
+
+      // Check if URLs have changed
+      const urlsChanged = newStreamUrl !== streamUrl || newMetadataUrl !== metadataUrl;
+
+      if (urlsChanged) {
+        console.log('[RadioPlayer] URLs changed, updating configuration:', {
+          previousStreamUrl: streamUrl,
+          newStreamUrl,
+          previousMetadataUrl: metadataUrl,
+          newMetadataUrl
+        });
+
+        setStreamUrl(newStreamUrl);
+        setMetadataUrl(newMetadataUrl);
+
+        // If currently playing, seamlessly transition to new stream URL
+        if (isPlaying && audioRef.current && newStreamUrl !== streamUrl) {
+          console.log('[RadioPlayer] Player is active, performing seamless transition...');
+          await performSeamlessTransition(newStreamUrl);
+        }
+      } else {
+        console.log('[RadioPlayer] Configuration unchanged');
+      }
+
     } catch (error) {
-      console.error('Error reloading radio configuration:', error);
+      console.error('[RadioPlayer] Error reloading radio configuration:', error);
+      setLastError(new Error(`Configuration reload failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+
+      // If reload fails and we have a fallback URL, try to use it
+      if (fallbackUrl && fallbackUrl !== streamUrl) {
+        console.log('[RadioPlayer] Attempting to use fallback URL due to reload failure...');
+        try {
+          await performSeamlessTransition(fallbackUrl);
+        } catch (fallbackError) {
+          console.error('[RadioPlayer] Fallback URL also failed:', fallbackError);
+        }
+      }
     }
-  }, [streamUrl, metadataUrl, isPlaying, isIOS, initialStreamUrl, initialMetadataUrl]);
+  }, [streamUrl, metadataUrl, fallbackUrl, isPlaying, isIOS, initialStreamUrl, initialMetadataUrl, performSeamlessTransition]);
+
+  // Helper function to perform seamless stream URL transitions
+  const performSeamlessTransition = useCallback(async (newUrl: string) => {
+    if (!audioRef.current) return;
+
+    const previousUrl = streamUrl;
+    console.log('[RadioPlayer] Starting seamless transition from', previousUrl, 'to', newUrl);
+
+    try {
+      setConnectionStatus('connecting');
+      setIsLoading(true);
+      setLastError(null);
+
+      // Store current playback state
+      const wasPlaying = !audioRef.current.paused;
+
+      // Pause current stream gracefully
+      audioRef.current.pause();
+
+      // Wait a moment for cleanup
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Apply iOS-compatible cache-busting for URL transitions
+      const cacheBustedUrl = isIOS
+        ? `${newUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}&ios=1`
+        : `${newUrl}?t=${Date.now()}`;
+
+      console.log('[RadioPlayer] Transitioning to cache-busted URL:', cacheBustedUrl);
+
+      if (audioRef.current) {
+        audioRef.current.src = cacheBustedUrl;
+        audioRef.current.load();
+
+        if (wasPlaying) {
+          await audioRef.current.play();
+          setLastWorkingUrl(newUrl);
+          console.log('[RadioPlayer] Seamless transition successful');
+        }
+      }
+
+    } catch (error) {
+      console.error('[RadioPlayer] Seamless transition failed:', error);
+      setLastError(new Error(`Stream transition failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      setConnectionStatus('disconnected');
+      setIsLoading(false);
+      setIsPlaying(false);
+
+      // Fall back to previous working URL if available
+      if (lastWorkingUrl && lastWorkingUrl !== newUrl && lastWorkingUrl !== previousUrl) {
+        console.log('[RadioPlayer] Attempting fallback to last working URL:', lastWorkingUrl);
+        try {
+          await performFallbackConnection(lastWorkingUrl);
+        } catch (fallbackError) {
+          console.error('[RadioPlayer] Fallback to last working URL failed:', fallbackError);
+        }
+      }
+      // Or fall back to environment fallback URL
+      else if (fallbackUrl && fallbackUrl !== newUrl && fallbackUrl !== previousUrl) {
+        console.log('[RadioPlayer] Attempting fallback to environment URL:', fallbackUrl);
+        try {
+          await performFallbackConnection(fallbackUrl);
+        } catch (fallbackError) {
+          console.error('[RadioPlayer] Fallback URL connection failed:', fallbackError);
+        }
+      }
+    }
+  }, [streamUrl, isIOS, lastWorkingUrl, fallbackUrl, performFallbackConnection]);
+
+  // Helper function to perform fallback connections
+  const performFallbackConnection = useCallback(async (fallbackStreamUrl: string) => {
+    if (!audioRef.current) return;
+
+    console.log('[RadioPlayer] Attempting fallback connection to:', fallbackStreamUrl);
+
+    try {
+      setConnectionStatus('connecting');
+      setIsLoading(true);
+
+      const cacheBustedUrl = isIOS
+        ? `${fallbackStreamUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}&fallback=1`
+        : `${fallbackStreamUrl}?t=${Date.now()}&fallback=1`;
+
+      audioRef.current.src = cacheBustedUrl;
+      audioRef.current.load();
+      await audioRef.current.play();
+
+      // Update streamUrl to reflect successful fallback
+      setStreamUrl(fallbackStreamUrl);
+      setLastWorkingUrl(fallbackStreamUrl);
+
+      console.log('[RadioPlayer] Fallback connection successful');
+    } catch (error) {
+      console.error('[RadioPlayer] Fallback connection failed:', error);
+      throw error;
+    }
+  }, [isIOS]);
 
   // Fetch now playing text periodically
   useEffect(() => {
@@ -281,18 +474,80 @@ export function RadioPlayerProvider({
     return () => clearInterval(interval);
   }, []);
 
-  // Listen for radio settings update events
+  // Enhanced event system for real-time configuration updates
   useEffect(() => {
-    const handleSettingsUpdate = () => {
+    if (typeof window === 'undefined') return;
+
+    const eventManager = createRadioEventManager('RadioPlayerContext');
+
+    // Listen for general settings updates
+    eventManager.onSettingsUpdate((event) => {
+      console.log('[RadioPlayer] Settings update event received:', event.detail.changedFields);
+      reloadConfiguration();
+    });
+
+    // Listen for specific stream URL changes for immediate response
+    eventManager.onStreamUrlChange((event) => {
+      const { streamUrl: newStreamUrl, previousStreamUrl, requiresReconnection } = event.detail;
+      console.log('[RadioPlayer] Stream URL change event received:', {
+        newUrl: newStreamUrl,
+        previousUrl: previousStreamUrl,
+        requiresReconnection
+      });
+
+      if (requiresReconnection && isPlaying && audioRef.current) {
+        performSeamlessTransition(newStreamUrl).catch(error => {
+          console.error('[RadioPlayer] Failed to handle stream URL change event:', error);
+        });
+      }
+    });
+
+    // Listen for configuration reload requirements
+    eventManager.onConfigurationReload((event) => {
+      const { reason, priority } = event.detail;
+      console.log('[RadioPlayer] Configuration reload requested:', { reason, priority });
+
+      if (priority === 'high') {
+        // High priority reloads should happen immediately
+        reloadConfiguration();
+      } else {
+        // Normal/low priority reloads can be debounced
+        setTimeout(() => reloadConfiguration(), 1000);
+      }
+    });
+
+    // Listen for legacy events for backward compatibility
+    const handleLegacySettingsUpdate = () => {
+      console.log('[RadioPlayer] Legacy settings update event received');
       reloadConfiguration();
     };
 
-    // Listen for custom events from admin when settings are updated
-    window.addEventListener('radioSettingsUpdated', handleSettingsUpdate);
+    window.addEventListener('radioSettingsUpdated', handleLegacySettingsUpdate);
 
     return () => {
-      window.removeEventListener('radioSettingsUpdated', handleSettingsUpdate);
+      eventManager.cleanup();
+      window.removeEventListener('radioSettingsUpdated', handleLegacySettingsUpdate);
     };
+  }, [reloadConfiguration, performSeamlessTransition, isPlaying]);
+
+  // Load initial configuration and fallback URL on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Load initial configuration from database
+    const loadInitialConfiguration = async () => {
+      try {
+        console.log('[RadioPlayer] Loading initial configuration...');
+        await reloadConfiguration();
+      } catch (error) {
+        console.error('[RadioPlayer] Failed to load initial configuration:', error);
+      }
+    };
+
+    // Small delay to ensure component is fully mounted
+    const timeoutId = setTimeout(loadInitialConfiguration, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [reloadConfiguration]);
 
   const value: RadioPlayerContextValue = {

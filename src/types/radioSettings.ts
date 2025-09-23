@@ -4,6 +4,40 @@
  */
 
 /**
+ * Radio stream configuration data interface
+ * Maps to the radio_settings database table structure for admin settings management
+ * Supports requirements 1.1 and 2.1 for stream URL configuration
+ */
+export interface StreamConfigurationData {
+  /** Unique identifier for the configuration */
+  id: number;
+  /** Primary stream URL for radio broadcasting */
+  stream_url: string;
+  /** Optional metadata URL for stream information */
+  metadata_url: string | null;
+  /** Display name of the radio station */
+  station_name: string;
+  /** Optional description of the radio station */
+  station_description: string | null;
+  /** Facebook social media URL */
+  facebook_url: string | null;
+  /** Twitter social media URL */
+  twitter_url: string | null;
+  /** Instagram social media URL */
+  instagram_url: string | null;
+  /** YouTube social media URL */
+  youtube_url: string | null;
+  /** Whether this configuration is currently active */
+  is_active: boolean;
+  /** ID of the user who last updated this configuration */
+  updated_by: number | null;
+  /** When this configuration was created */
+  created_at: Date;
+  /** When this configuration was last updated */
+  updated_at: Date;
+}
+
+/**
  * Result interface for stream connectivity testing
  * Used to track test outcomes with detailed information
  */
@@ -24,6 +58,38 @@ export interface StreamTestResult {
     errorCode?: string;
     /** Technical error message */
     errorMessage?: string;
+  };
+}
+
+/**
+ * URL validation result interface for format validation feedback
+ * Provides detailed validation feedback for stream URL input fields
+ * Supports requirement 2.1 for URL format validation
+ */
+export interface URLValidationResult {
+  /** Whether the URL format is valid */
+  isValid: boolean;
+  /** Human-readable validation message */
+  message: string;
+  /** Specific validation error type if invalid */
+  errorType?: 'format' | 'protocol' | 'length' | 'hostname' | 'unreachable';
+  /** Suggested corrections for invalid URLs */
+  suggestions?: string[];
+  /** Additional validation details */
+  details?: {
+    /** Whether the URL protocol is supported (http/https) */
+    protocolValid?: boolean;
+    /** Whether the URL length is within limits */
+    lengthValid?: boolean;
+    /** Whether the hostname is valid */
+    hostnameValid?: boolean;
+    /** Parsed URL components for debugging */
+    parsedUrl?: {
+      protocol: string;
+      hostname: string;
+      port?: number;
+      pathname: string;
+    };
   };
 }
 

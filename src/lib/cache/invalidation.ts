@@ -14,6 +14,7 @@ export const CACHE_TAGS = {
   POLLS_ACTIVE: 'polls-active',
   RADIO_CONFIG: 'radio-config',
   RADIO_SETTINGS: 'radio-settings',
+  MOBILE_RADIO: 'mobile-radio',
   MEDIA: 'media',
   MEDIA_ITEM: (id: string) => `media-${id}`,
 } as const;
@@ -50,6 +51,9 @@ export async function invalidateEntityCache(entity: CacheEntity, id?: string): P
     case 'radio':
       revalidateTag(CACHE_TAGS.RADIO_CONFIG);
       revalidateTag(CACHE_TAGS.RADIO_SETTINGS);
+      revalidateTag(CACHE_TAGS.MOBILE_RADIO);
+      // Clear mobile radio memory cache
+      clearMobileRadioMemoryCache();
       break;
 
     case 'media':
@@ -98,4 +102,21 @@ export function cacheWithTag<T>(
     tags,
     revalidate: options?.revalidate,
   })();
+}
+
+/**
+ * Clear mobile radio memory cache (for use when radio settings are updated)
+ * This function is imported by the mobile radio API to clear its memory cache
+ */
+export function clearMobileRadioMemoryCache(): void {
+  try {
+    // Access the mobile radio cache if available
+    const { clearMobileRadioCache } = require('@/app/api/mobile/v1/radio/route');
+    if (typeof clearMobileRadioCache === 'function') {
+      clearMobileRadioCache();
+    }
+  } catch (error) {
+    // Silently ignore if the mobile radio route is not available
+    console.debug('Could not clear mobile radio memory cache:', error);
+  }
 }

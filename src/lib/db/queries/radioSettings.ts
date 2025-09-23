@@ -1,4 +1,4 @@
-import { RowDataPacket } from 'mysql2/promise';
+import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import {
   BaseEntity,
   InsertResult,
@@ -12,6 +12,7 @@ import {
   count
 } from './index';
 import { db } from '@/lib/db/client';
+import { StreamConfigurationData } from '@/types/radioSettings';
 
 /**
  * Radio Settings Database Queries
@@ -544,5 +545,123 @@ export async function createSettings(data: Omit<RadioSettingsUpdateData, 'update
   } catch (error) {
     const dbError = error as DatabaseError;
     throw new Error(`Failed to create radio settings: ${dbError.message}`);
+  }
+}
+
+/**
+ * Atomically update stream URL configuration with database transaction
+ * Requirement 6.1: Store stream URL in radio_settings table with is_active flag
+ * Requirement 6.2: Deactivate previous settings and activate new configuration atomically
+ * Requirement 6.5: Record admin user ID and timestamp for audit trail
+ *
+ * This method ensures data consistency by:
+ * 1. Validating the new stream URL before database operations
+ * 2. Using database transactions for atomic operations
+ * 3. Deactivating all existing active configurations
+ * 4. Creating new configuration record with active status
+ * 5. Recording admin user tracking and proper timestamps
+ *
+ * @param streamConfigData - Complete stream configuration data including URL and metadata
+ * @param adminUserId - ID of the admin user making the change for audit trail
+ * @returns Promise resolving to the new configuration record with generated ID
+ * @throws Error if stream URL validation fails or database operations fail
+ */
+export async function updateStreamUrlAtomic(
+  streamConfigData: Omit<StreamConfigurationData, 'id' | 'created_at' | 'updated_at'>,
+  adminUserId: number
+): Promise<StreamConfigurationData> {
+  try {
+    // Pre-validation: Validate stream URL before starting transaction
+    const urlValidation = validateStreamUrl(streamConfigData.stream_url);
+    if (!urlValidation.isValid) {
+      throw new Error(`Invalid stream URL: ${urlValidation.error}`);
+    }
+
+    // Validate required station name
+    if (!streamConfigData.station_name || streamConfigData.station_name.trim().length === 0) {
+      throw new Error('Station name is required for stream configuration');
+    }
+
+    // Validate station name length
+    if (streamConfigData.station_name.length > 255) {
+      throw new Error('Station name cannot exceed 255 characters');
+    }
+
+    // Validate station description length if provided
+    if (streamConfigData.station_description !== null &&
+        streamConfigData.station_description !== undefined &&
+        streamConfigData.station_description.length > 65535) {
+      throw new Error('Station description cannot exceed 65535 characters');
+    }
+
+    // Validate social media URLs if provided
+    const socialUrls = {
+      facebook_url: streamConfigData.facebook_url,
+      twitter_url: streamConfigData.twitter_url,
+      instagram_url: streamConfigData.instagram_url,
+      youtube_url: streamConfigData.youtube_url
+    };
+
+    for (const [key, url] of Object.entries(socialUrls)) {
+      if (url && !validateUrl(url)) {
+        throw new Error(`Invalid ${key.replace('_url', '')} URL: ${url}`);
+      }
+    }
+
+    // Execute atomic database operation using transaction
+    const result = await db.transaction(async (connection) => {
+      const now = new Date();
+
+      // Step 1: Deactivate all existing active radio settings
+      await connection.execute(
+        'UPDATE radio_settings SET is_active = ?, updated_at = ?, updated_by = ? WHERE is_active = ?',
+        [false, now, adminUserId, true]
+      );
+
+      // Step 2: Create new active configuration record
+      const insertData = {
+        stream_url: streamConfigData.stream_url,
+        metadata_url: streamConfigData.metadata_url || null,
+        station_name: streamConfigData.station_name,
+        station_description: streamConfigData.station_description || null,
+        facebook_url: streamConfigData.facebook_url || null,
+        twitter_url: streamConfigData.twitter_url || null,
+        instagram_url: streamConfigData.instagram_url || null,
+        youtube_url: streamConfigData.youtube_url || null,
+        is_active: true, // New configuration is always active
+        updated_by: adminUserId,
+        created_at: now,
+        updated_at: now
+      };
+
+      const columns = Object.keys(insertData);
+      const values: any[] = Object.values(insertData);
+      const placeholders = values.map(() => '?').join(', ');
+
+      const insertSql = `INSERT INTO radio_settings (${columns.join(', ')}) VALUES (${placeholders})`;
+      const [insertResult] = await connection.execute<ResultSetHeader>(insertSql, values);
+
+      // Return the complete configuration data with generated ID
+      return {
+        id: insertResult.insertId,
+        stream_url: streamConfigData.stream_url,
+        metadata_url: streamConfigData.metadata_url,
+        station_name: streamConfigData.station_name,
+        station_description: streamConfigData.station_description,
+        facebook_url: streamConfigData.facebook_url,
+        twitter_url: streamConfigData.twitter_url,
+        instagram_url: streamConfigData.instagram_url,
+        youtube_url: streamConfigData.youtube_url,
+        is_active: true,
+        updated_by: adminUserId,
+        created_at: now,
+        updated_at: now
+      } as StreamConfigurationData;
+    });
+
+    return result;
+  } catch (error) {
+    const dbError = error as DatabaseError;
+    throw new Error(`Failed to atomically update stream URL configuration: ${dbError.message}`);
   }
 }

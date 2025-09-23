@@ -1,6 +1,8 @@
 import { Card } from '@/components/ui/Card';
 import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
+import { StreamUrlConfigForm } from '@/components/admin/StreamUrlConfigForm';
 import { FiLock, FiUser, FiRadio } from 'react-icons/fi';
+import { Suspense } from 'react';
 
 export default function AdminSettingsPage() {
   return (
@@ -69,26 +71,24 @@ export default function AdminSettingsPage() {
           </div>
         }
       >
-        <div className="space-y-4">
-          <div className="p-4 bg-dark-surface-secondary rounded-lg">
-            <p className="text-sm text-dark-text-secondary mb-2">
-              Yayın Durumu
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-dark-text-primary">Aktif</span>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-red-600"></div>
+              <span className="ml-3 text-dark-text-secondary">Stream ayarları yükleniyor...</span>
             </div>
-          </div>
-
-          <div className="p-4 bg-dark-surface-secondary rounded-lg">
-            <p className="text-sm text-dark-text-secondary mb-2">
-              Yayın URL
-            </p>
-            <p className="text-dark-text-primary font-mono text-sm">
-              https://radyo.yayin.com.tr:5132/stream
-            </p>
-          </div>
-        </div>
+          }
+        >
+          <StreamUrlConfigForm
+            initialData={{ stream_url: 'https://radyo.yayin.com.tr:5132/stream' }}
+            onSubmit={async (streamUrl: string) => {
+              // TODO: Implement actual save functionality
+              console.log('Saving stream URL:', streamUrl);
+              // This will be implemented in future tasks for actual API integration
+            }}
+            className="border-0 shadow-none bg-transparent"
+          />
+        </Suspense>
       </Card>
     </div>
   );

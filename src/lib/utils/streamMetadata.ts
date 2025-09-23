@@ -4,7 +4,7 @@
  * Requirements: 4.1, 4.2, 4.3, 4.4
  */
 
-import { StreamMetadata, ServerType, AudioFormat } from '@/types/radioSettings';
+import { StreamMetadata, ServerType, AudioFormat, StreamTestResult } from '@/types/radioSettings';
 
 /**
  * Metadata extraction result interface
@@ -198,6 +198,229 @@ export async function getCurrentSong(
       success: false,
       error: errorMessage,
       responseTime
+    };
+  }
+}
+
+/**
+ * Enhanced stream connectivity testing with detailed feedback
+ * Requirements: 2.1, 2.2, 2.3 - Stream connectivity testing with 10-second timeout
+ * Performs HEAD request to validate connectivity and extract detailed information
+ */
+export async function testStreamConnection(
+  streamUrl: string,
+  timeout: number = 10000
+): Promise<StreamTestResult> {
+  const startTime = Date.now();
+  const timestamp = new Date().toISOString();
+
+  try {
+    // Validate URL format first
+    let url: URL;
+    try {
+      url = new URL(streamUrl);
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Invalid URL format',
+        timestamp,
+        details: {
+          errorCode: 'INVALID_URL',
+          errorMessage: 'The provided URL is not in a valid format',
+          responseTime: Date.now() - startTime
+        }
+      };
+    }
+
+    // Ensure protocol is HTTP or HTTPS
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      return {
+        success: false,
+        message: 'Unsupported protocol. Only HTTP and HTTPS are supported',
+        timestamp,
+        details: {
+          errorCode: 'UNSUPPORTED_PROTOCOL',
+          errorMessage: `Protocol ${url.protocol} is not supported`,
+          responseTime: Date.now() - startTime
+        }
+      };
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      // Perform HEAD request for connectivity testing
+      const response = await fetch(streamUrl, {
+        method: 'HEAD',
+        headers: {
+          'User-Agent': 'TrendAnkara-WebApp/1.0',
+          'Accept': 'audio/*,*/*',
+          'Range': 'bytes=0-0' // Minimal range request to test streaming capability
+        },
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      const responseTime = Date.now() - startTime;
+
+      // Extract response headers
+      const headers: StreamHeaders = {};
+      response.headers.forEach((value, key) => {
+        headers[key.toLowerCase()] = value;
+      });
+
+      const contentType = headers['content-type'] || '';
+      const serverHeader = headers['server'] || '';
+
+      // Validate content type for audio streams
+      const isAudioStream = validateAudioContentType(contentType);
+
+      if (response.ok) {
+        // Extract server information using existing functions
+        const serverInfo = detectServerType(headers);
+        const audioFormat = parseAudioFormat(contentType);
+
+        // Build success message with details
+        let message = 'Stream connection successful';
+        const details: string[] = [];
+
+        if (serverInfo?.software) {
+          details.push(`Server: ${serverInfo.software}${serverInfo.version ? ` ${serverInfo.version}` : ''}`);
+        }
+
+        if (audioFormat) {
+          details.push(`Format: ${audioFormat}`);
+        }
+
+        if (isAudioStream) {
+          details.push('Audio content detected');
+        }
+
+        if (details.length > 0) {
+          message += ` (${details.join(', ')})`;
+        }
+
+        return {
+          success: true,
+          message,
+          timestamp,
+          details: {
+            statusCode: response.status,
+            responseTime
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: `Stream connection failed (HTTP ${response.status})`,
+          timestamp,
+          details: {
+            statusCode: response.status,
+            responseTime,
+            errorCode: 'HTTP_ERROR',
+            errorMessage: `${response.status} ${response.statusText}`,
+            ...(contentType && { contentType })
+          }
+        };
+      }
+
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    let errorMessage = 'Unknown error occurred';
+    let errorCode = 'UNKNOWN_ERROR';
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        errorMessage = `Connection timeout after ${timeout}ms`;
+        errorCode = 'TIMEOUT';
+      } else if (error instanceof TypeError) {
+        errorMessage = `Network error: ${error.message}`;
+        errorCode = 'NETWORK_ERROR';
+      } else {
+        errorMessage = error.message;
+        errorCode = 'REQUEST_ERROR';
+      }
+    }
+
+    return {
+      success: false,
+      message: `Stream test failed: ${errorMessage}`,
+      timestamp,
+      details: {
+        responseTime,
+        errorCode,
+        errorMessage
+      }
+    };
+  }
+}
+
+/**
+ * Validate content type for audio streams
+ * Checks if the content type indicates an audio stream
+ */
+function validateAudioContentType(contentType: string): boolean {
+  if (!contentType) return false;
+
+  const audioTypes = [
+    'audio/',
+    'application/ogg',
+    'application/octet-stream' // Some streams use this generic type
+  ];
+
+  const lowerContentType = contentType.toLowerCase();
+  return audioTypes.some(type => lowerContentType.includes(type));
+}
+
+/**
+ * Enhanced stream testing with metadata extraction
+ * Combines connectivity testing with metadata parsing for comprehensive feedback
+ */
+export async function testStreamWithMetadata(
+  streamUrl: string,
+  timeout: number = 10000
+): Promise<{
+  testResult: StreamTestResult;
+  metadata?: StreamMetadata;
+  responseTime: number;
+}> {
+  const startTime = Date.now();
+
+  // First perform connectivity test
+  const testResult = await testStreamConnection(streamUrl, timeout);
+
+  if (!testResult.success) {
+    return {
+      testResult,
+      responseTime: testResult.details?.responseTime || (Date.now() - startTime)
+    };
+  }
+
+  // If connectivity test succeeds, try to extract metadata
+  try {
+    const metadataResult = await getCurrentSong(streamUrl, Math.max(timeout - (Date.now() - startTime), 1000));
+
+    return {
+      testResult: {
+        ...testResult,
+        message: testResult.message + (metadataResult.success ? ' with metadata' : ', limited metadata')
+      },
+      metadata: metadataResult.metadata,
+      responseTime: Date.now() - startTime
+    };
+  } catch (error) {
+    // Return successful connectivity test even if metadata extraction fails
+    return {
+      testResult: {
+        ...testResult,
+        message: testResult.message + ', metadata unavailable'
+      },
+      responseTime: Date.now() - startTime
     };
   }
 }

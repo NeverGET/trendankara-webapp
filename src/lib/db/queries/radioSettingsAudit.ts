@@ -1,0 +1,1023 @@
+/**
+ * Radio Settings Audit Logging System
+ *
+ * Provides comprehensive audit trail for all radio configuration changes
+ * including admin user tracking, change reason logging, and rollback capabilities.
+ *
+ * Requirements: 6.5, 7.7
+ * - Complete audit trail for all radio configuration changes
+ * - Admin user tracking and change reason logging
+ * - Rollback capability for configuration changes
+ * - Security and compliance audit logging
+ *
+ * This is the final task of the comprehensive radio streaming URL configuration system.
+ */
+
+import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import {
+  BaseEntity,
+  InsertResult,
+  UpdateResult,
+  DatabaseError,
+  PaginationParams,
+  PaginatedResult
+} from '@/types/database';
+import {
+  findById,
+  findAll,
+  insert,
+  executeTransaction,
+  getPaginationParams
+} from './index';
+import { db } from '@/lib/db/client';
+import { StreamConfigurationData } from '@/types/radioSettings';
+import { RadioErrorHandler, RadioErrorType } from '@/lib/utils/radioErrorHandler';
+import { createPrefixedLogger } from '@/lib/utils/logger';
+
+/**
+ * Prefixed logger for audit system
+ */
+const auditLogger = createPrefixedLogger('RadioAudit');
+
+/**
+ * Audit action types for radio configuration changes
+ */
+export enum AuditActionType {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE',
+  ACTIVATE = 'ACTIVATE',
+  DEACTIVATE = 'DEACTIVATE',
+  TEST_CONNECTION = 'TEST_CONNECTION',
+  ROLLBACK = 'ROLLBACK'
+}
+
+/**
+ * Audit event severity levels
+ */
+export enum AuditSeverity {
+  LOW = 'low',        // Minor configuration changes
+  MEDIUM = 'medium',  // Significant configuration updates
+  HIGH = 'high',      // Critical changes affecting service
+  CRITICAL = 'critical' // Emergency changes or security events
+}
+
+/**
+ * Radio settings audit entity interface
+ * Represents the radio_settings_audit table structure
+ */
+export interface RadioSettingsAuditEntity extends BaseEntity {
+  /** ID of the radio setting that was changed */
+  radio_setting_id: number | null;
+  /** Type of action performed */
+  action_type: AuditActionType;
+  /** Admin user ID who performed the action */
+  admin_user_id: number;
+  /** Admin user email for additional context */
+  admin_user_email: string;
+  /** Admin user role at the time of action */
+  admin_user_role: string;
+  /** Human-readable reason for the change */
+  change_reason: string | null;
+  /** JSON of the old configuration values */
+  old_values: string | null;
+  /** JSON of the new configuration values */
+  new_values: string | null;
+  /** Which specific fields were changed */
+  changed_fields: string | null;
+  /** Severity level of the change */
+  severity: AuditSeverity;
+  /** IP address of the admin user */
+  ip_address: string | null;
+  /** User agent string */
+  user_agent: string | null;
+  /** Additional metadata as JSON */
+  metadata: string | null;
+  /** Whether this action can be rolled back */
+  is_rollbackable: boolean;
+  /** ID of the audit entry this action rolled back (if applicable) */
+  rollback_of_audit_id: number | null;
+  /** Session ID for grouping related actions */
+  session_id: string | null;
+  /** Correlation ID for distributed tracing */
+  correlation_id: string | null;
+}
+
+/**
+ * Audit log entry data for creating new records
+ */
+export interface AuditLogEntry {
+  radio_setting_id?: number | null;
+  action_type: AuditActionType;
+  admin_user_id: number;
+  admin_user_email: string;
+  admin_user_role: string;
+  change_reason?: string | null;
+  old_values?: Record<string, any> | null;
+  new_values?: Record<string, any> | null;
+  changed_fields?: string[] | null;
+  severity?: AuditSeverity;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  metadata?: Record<string, any> | null;
+  is_rollbackable?: boolean;
+  rollback_of_audit_id?: number | null;
+  session_id?: string | null;
+  correlation_id?: string | null;
+}
+
+/**
+ * Admin user context for audit logging
+ */
+export interface AdminUserContext {
+  id: number;
+  email: string;
+  role: string;
+  ip_address?: string;
+  user_agent?: string;
+  session_id?: string;
+}
+
+/**
+ * Rollback result interface
+ */
+export interface RollbackResult {
+  success: boolean;
+  audit_id: number;
+  restored_configuration: StreamConfigurationData;
+  rollback_audit_id: number;
+  message: string;
+}
+
+/**
+ * Audit search filters
+ */
+export interface AuditSearchFilters {
+  radio_setting_id?: number;
+  admin_user_id?: number;
+  admin_user_email?: string;
+  action_type?: AuditActionType;
+  severity?: AuditSeverity;
+  date_from?: Date;
+  date_to?: Date;
+  changed_fields?: string;
+  correlation_id?: string;
+  session_id?: string;
+  is_rollbackable?: boolean;
+}
+
+/**
+ * Detailed audit report entry
+ */
+export interface DetailedAuditEntry extends RadioSettingsAuditEntity {
+  /** Parsed old values object */
+  parsed_old_values: Record<string, any> | null;
+  /** Parsed new values object */
+  parsed_new_values: Record<string, any> | null;
+  /** Parsed changed fields array */
+  parsed_changed_fields: string[] | null;
+  /** Parsed metadata object */
+  parsed_metadata: Record<string, any> | null;
+  /** Human-readable action description */
+  action_description: string;
+  /** Time elapsed since the action */
+  time_elapsed: string;
+}
+
+/**
+ * Create audit log entry for radio configuration changes
+ *
+ * This is the main function for logging all radio configuration changes
+ * with comprehensive admin user tracking and change details.
+ *
+ * @param entry - Audit log entry data
+ * @returns Promise resolving to the created audit record
+ */
+export async function createAuditLog(entry: AuditLogEntry): Promise<RadioSettingsAuditEntity> {
+  try {
+    auditLogger.info(`Creating audit log entry: ${entry.action_type} by ${entry.admin_user_email}`);
+
+    // Determine severity if not provided
+    const severity = entry.severity || determineSeverity(entry.action_type, entry.changed_fields);
+
+    // Prepare audit data
+    const auditData = {
+      radio_setting_id: entry.radio_setting_id || null,
+      action_type: entry.action_type,
+      admin_user_id: entry.admin_user_id,
+      admin_user_email: entry.admin_user_email,
+      admin_user_role: entry.admin_user_role,
+      change_reason: entry.change_reason || null,
+      old_values: entry.old_values ? JSON.stringify(entry.old_values) : null,
+      new_values: entry.new_values ? JSON.stringify(entry.new_values) : null,
+      changed_fields: entry.changed_fields ? JSON.stringify(entry.changed_fields) : null,
+      severity,
+      ip_address: entry.ip_address || null,
+      user_agent: entry.user_agent || null,
+      metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
+      is_rollbackable: entry.is_rollbackable !== undefined ? entry.is_rollbackable : isActionRollbackable(entry.action_type),
+      rollback_of_audit_id: entry.rollback_of_audit_id || null,
+      session_id: entry.session_id || null,
+      correlation_id: entry.correlation_id || null
+    };
+
+    // Insert audit record
+    const insertResult = await insert<RadioSettingsAuditEntity>(
+      'radio_settings_audit',
+      auditData
+    );
+
+    // Retrieve the created audit record
+    const auditRecord = await findById<RadioSettingsAuditEntity>(
+      'radio_settings_audit',
+      insertResult.insertId
+    );
+
+    if (!auditRecord) {
+      throw new Error('Failed to retrieve created audit record');
+    }
+
+    auditLogger.success(`Audit log created with ID: ${auditRecord.id}`);
+    return auditRecord;
+
+  } catch (error) {
+    const auditError = RadioErrorHandler.handleDatabaseError(
+      error as DatabaseError,
+      'createAuditLog',
+      {
+        adminUserId: entry.admin_user_id,
+        adminUserEmail: entry.admin_user_email,
+        table: 'radio_settings_audit'
+      }
+    );
+
+    auditLogger.error(`Failed to create audit log: ${auditError.technicalMessage}`);
+    throw new Error(`Failed to create audit log: ${auditError.userMessage}`);
+  }
+}
+
+/**
+ * Log radio configuration creation
+ */
+export async function logConfigurationCreate(
+  newConfiguration: StreamConfigurationData,
+  adminContext: AdminUserContext,
+  changeReason?: string,
+  metadata?: Record<string, any>
+): Promise<RadioSettingsAuditEntity> {
+  return createAuditLog({
+    radio_setting_id: newConfiguration.id,
+    action_type: AuditActionType.CREATE,
+    admin_user_id: adminContext.id,
+    admin_user_email: adminContext.email,
+    admin_user_role: adminContext.role,
+    change_reason: changeReason || 'New radio configuration created',
+    new_values: {
+      stream_url: newConfiguration.stream_url,
+      metadata_url: newConfiguration.metadata_url,
+      station_name: newConfiguration.station_name,
+      station_description: newConfiguration.station_description,
+      facebook_url: newConfiguration.facebook_url,
+      twitter_url: newConfiguration.twitter_url,
+      instagram_url: newConfiguration.instagram_url,
+      youtube_url: newConfiguration.youtube_url,
+      is_active: newConfiguration.is_active
+    },
+    changed_fields: [
+      'stream_url', 'metadata_url', 'station_name', 'station_description',
+      'facebook_url', 'twitter_url', 'instagram_url', 'youtube_url', 'is_active'
+    ],
+    severity: AuditSeverity.HIGH,
+    ip_address: adminContext.ip_address,
+    user_agent: adminContext.user_agent,
+    session_id: adminContext.session_id,
+    metadata: {
+      ...metadata,
+      operation: 'configuration_create',
+      timestamp: new Date().toISOString()
+    },
+    is_rollbackable: true
+  });
+}
+
+/**
+ * Log radio configuration update
+ */
+export async function logConfigurationUpdate(
+  oldConfiguration: StreamConfigurationData,
+  newConfiguration: StreamConfigurationData,
+  adminContext: AdminUserContext,
+  changeReason?: string,
+  metadata?: Record<string, any>
+): Promise<RadioSettingsAuditEntity> {
+  // Determine which fields changed
+  const changedFields = getChangedFields(oldConfiguration, newConfiguration);
+
+  if (changedFields.length === 0) {
+    throw new Error('No changes detected between old and new configuration');
+  }
+
+  return createAuditLog({
+    radio_setting_id: newConfiguration.id,
+    action_type: AuditActionType.UPDATE,
+    admin_user_id: adminContext.id,
+    admin_user_email: adminContext.email,
+    admin_user_role: adminContext.role,
+    change_reason: changeReason || `Radio configuration updated: ${changedFields.join(', ')}`,
+    old_values: {
+      stream_url: oldConfiguration.stream_url,
+      metadata_url: oldConfiguration.metadata_url,
+      station_name: oldConfiguration.station_name,
+      station_description: oldConfiguration.station_description,
+      facebook_url: oldConfiguration.facebook_url,
+      twitter_url: oldConfiguration.twitter_url,
+      instagram_url: oldConfiguration.instagram_url,
+      youtube_url: oldConfiguration.youtube_url,
+      is_active: oldConfiguration.is_active
+    },
+    new_values: {
+      stream_url: newConfiguration.stream_url,
+      metadata_url: newConfiguration.metadata_url,
+      station_name: newConfiguration.station_name,
+      station_description: newConfiguration.station_description,
+      facebook_url: newConfiguration.facebook_url,
+      twitter_url: newConfiguration.twitter_url,
+      instagram_url: newConfiguration.instagram_url,
+      youtube_url: newConfiguration.youtube_url,
+      is_active: newConfiguration.is_active
+    },
+    changed_fields: changedFields,
+    severity: determineSeverityForFieldChanges(changedFields),
+    ip_address: adminContext.ip_address,
+    user_agent: adminContext.user_agent,
+    session_id: adminContext.session_id,
+    metadata: {
+      ...metadata,
+      operation: 'configuration_update',
+      timestamp: new Date().toISOString()
+    },
+    is_rollbackable: true
+  });
+}
+
+/**
+ * Log configuration activation/deactivation
+ */
+export async function logConfigurationActivation(
+  configuration: StreamConfigurationData,
+  adminContext: AdminUserContext,
+  activate: boolean,
+  changeReason?: string,
+  metadata?: Record<string, any>
+): Promise<RadioSettingsAuditEntity> {
+  return createAuditLog({
+    radio_setting_id: configuration.id,
+    action_type: activate ? AuditActionType.ACTIVATE : AuditActionType.DEACTIVATE,
+    admin_user_id: adminContext.id,
+    admin_user_email: adminContext.email,
+    admin_user_role: adminContext.role,
+    change_reason: changeReason || `Radio configuration ${activate ? 'activated' : 'deactivated'}`,
+    old_values: { is_active: !activate },
+    new_values: { is_active: activate },
+    changed_fields: ['is_active'],
+    severity: AuditSeverity.HIGH,
+    ip_address: adminContext.ip_address,
+    user_agent: adminContext.user_agent,
+    session_id: adminContext.session_id,
+    metadata: {
+      ...metadata,
+      operation: activate ? 'configuration_activate' : 'configuration_deactivate',
+      timestamp: new Date().toISOString()
+    },
+    is_rollbackable: true
+  });
+}
+
+/**
+ * Log stream connection testing
+ */
+export async function logStreamConnectionTest(
+  streamUrl: string,
+  testResult: { success: boolean; message: string; details?: any },
+  adminContext: AdminUserContext,
+  metadata?: Record<string, any>
+): Promise<RadioSettingsAuditEntity> {
+  return createAuditLog({
+    action_type: AuditActionType.TEST_CONNECTION,
+    admin_user_id: adminContext.id,
+    admin_user_email: adminContext.email,
+    admin_user_role: adminContext.role,
+    change_reason: `Stream connection test: ${testResult.success ? 'SUCCESS' : 'FAILED'}`,
+    new_values: {
+      stream_url: streamUrl,
+      test_result: testResult
+    },
+    severity: testResult.success ? AuditSeverity.LOW : AuditSeverity.MEDIUM,
+    ip_address: adminContext.ip_address,
+    user_agent: adminContext.user_agent,
+    session_id: adminContext.session_id,
+    metadata: {
+      ...metadata,
+      operation: 'stream_connection_test',
+      stream_url: streamUrl,
+      test_success: testResult.success,
+      timestamp: new Date().toISOString()
+    },
+    is_rollbackable: false
+  });
+}
+
+/**
+ * Get audit log entries with filtering and pagination
+ */
+export async function getAuditLogs(
+  filters: AuditSearchFilters = {},
+  pagination?: PaginationParams
+): Promise<PaginatedResult<DetailedAuditEntry> | DetailedAuditEntry[]> {
+  try {
+    // Build WHERE conditions
+    const whereConditions: { column: string; operator: string; value: any }[] = [];
+
+    if (filters.radio_setting_id) {
+      whereConditions.push({ column: 'radio_setting_id', operator: '=', value: filters.radio_setting_id });
+    }
+
+    if (filters.admin_user_id) {
+      whereConditions.push({ column: 'admin_user_id', operator: '=', value: filters.admin_user_id });
+    }
+
+    if (filters.admin_user_email) {
+      whereConditions.push({ column: 'admin_user_email', operator: 'LIKE', value: `%${filters.admin_user_email}%` });
+    }
+
+    if (filters.action_type) {
+      whereConditions.push({ column: 'action_type', operator: '=', value: filters.action_type });
+    }
+
+    if (filters.severity) {
+      whereConditions.push({ column: 'severity', operator: '=', value: filters.severity });
+    }
+
+    if (filters.date_from) {
+      whereConditions.push({ column: 'created_at', operator: '>=', value: filters.date_from });
+    }
+
+    if (filters.date_to) {
+      whereConditions.push({ column: 'created_at', operator: '<=', value: filters.date_to });
+    }
+
+    if (filters.changed_fields) {
+      whereConditions.push({ column: 'changed_fields', operator: 'LIKE', value: `%${filters.changed_fields}%` });
+    }
+
+    if (filters.correlation_id) {
+      whereConditions.push({ column: 'correlation_id', operator: '=', value: filters.correlation_id });
+    }
+
+    if (filters.session_id) {
+      whereConditions.push({ column: 'session_id', operator: '=', value: filters.session_id });
+    }
+
+    if (filters.is_rollbackable !== undefined) {
+      whereConditions.push({ column: 'is_rollbackable', operator: '=', value: filters.is_rollbackable });
+    }
+
+    const result = await findAll<RadioSettingsAuditEntity>('radio_settings_audit', {
+      where: whereConditions,
+      orderBy: [{ column: 'created_at', direction: 'DESC' }],
+      pagination
+    });
+
+    // Transform to detailed entries
+    const transformEntry = (entry: RadioSettingsAuditEntity): DetailedAuditEntry => ({
+      ...entry,
+      parsed_old_values: entry.old_values ? JSON.parse(entry.old_values) : null,
+      parsed_new_values: entry.new_values ? JSON.parse(entry.new_values) : null,
+      parsed_changed_fields: entry.changed_fields ? JSON.parse(entry.changed_fields) : null,
+      parsed_metadata: entry.metadata ? JSON.parse(entry.metadata) : null,
+      action_description: generateActionDescription(entry),
+      time_elapsed: calculateTimeElapsed(entry.created_at)
+    });
+
+    if ('data' in result) {
+      // Paginated result
+      return {
+        ...result,
+        data: result.data.map(transformEntry)
+      };
+    } else {
+      // Array result
+      return result.map(transformEntry);
+    }
+
+  } catch (error) {
+    const auditError = RadioErrorHandler.handleDatabaseError(
+      error as DatabaseError,
+      'getAuditLogs',
+      undefined,
+      undefined,
+      'radio_settings_audit'
+    );
+
+    throw new Error(`Failed to retrieve audit logs: ${auditError.userMessage}`);
+  }
+}
+
+/**
+ * Get audit log entry by ID
+ */
+export async function getAuditLogById(id: number): Promise<DetailedAuditEntry | null> {
+  try {
+    const entry = await findById<RadioSettingsAuditEntity>('radio_settings_audit', id);
+
+    if (!entry) {
+      return null;
+    }
+
+    return {
+      ...entry,
+      parsed_old_values: entry.old_values ? JSON.parse(entry.old_values) : null,
+      parsed_new_values: entry.new_values ? JSON.parse(entry.new_values) : null,
+      parsed_changed_fields: entry.changed_fields ? JSON.parse(entry.changed_fields) : null,
+      parsed_metadata: entry.metadata ? JSON.parse(entry.metadata) : null,
+      action_description: generateActionDescription(entry),
+      time_elapsed: calculateTimeElapsed(entry.created_at)
+    };
+
+  } catch (error) {
+    const auditError = RadioErrorHandler.handleDatabaseError(
+      error as DatabaseError,
+      'getAuditLogById',
+      undefined,
+      undefined,
+      'radio_settings_audit'
+    );
+
+    throw new Error(`Failed to retrieve audit log: ${auditError.userMessage}`);
+  }
+}
+
+/**
+ * Rollback configuration to a previous state
+ *
+ * This function provides rollback capability by restoring a previous configuration
+ * from the audit trail and creating a new audit entry for the rollback operation.
+ */
+export async function rollbackConfiguration(
+  auditId: number,
+  adminContext: AdminUserContext,
+  rollbackReason?: string
+): Promise<RollbackResult> {
+  try {
+    auditLogger.info(`Starting configuration rollback for audit ID: ${auditId}`);
+
+    return await executeTransaction(async (transactionClient) => {
+      // Get the audit entry to rollback to
+      const auditEntry = await findById<RadioSettingsAuditEntity>('radio_settings_audit', auditId);
+
+      if (!auditEntry) {
+        throw new Error(`Audit entry with ID ${auditId} not found`);
+      }
+
+      if (!auditEntry.is_rollbackable) {
+        throw new Error(`Audit entry ${auditId} is not rollbackable`);
+      }
+
+      if (!auditEntry.old_values && auditEntry.action_type !== AuditActionType.DELETE) {
+        throw new Error('Cannot rollback: no previous values available');
+      }
+
+      // Parse the old values to restore
+      const valuesToRestore = auditEntry.old_values ? JSON.parse(auditEntry.old_values) : null;
+
+      if (!valuesToRestore && auditEntry.action_type !== AuditActionType.DELETE) {
+        throw new Error('Cannot parse values to restore from audit entry');
+      }
+
+      let restoredConfiguration: StreamConfigurationData;
+
+      if (auditEntry.action_type === AuditActionType.DELETE) {
+        // For DELETE rollback, recreate the configuration
+        if (!auditEntry.old_values) {
+          throw new Error('Cannot rollback DELETE: no configuration data available');
+        }
+
+        const configToRestore = JSON.parse(auditEntry.old_values);
+
+        // Insert the restored configuration
+        const insertResult = await transactionClient.insert(
+          `INSERT INTO radio_settings (
+            stream_url, metadata_url, station_name, station_description,
+            facebook_url, twitter_url, instagram_url, youtube_url,
+            is_active, updated_by, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            configToRestore.stream_url,
+            configToRestore.metadata_url,
+            configToRestore.station_name,
+            configToRestore.station_description,
+            configToRestore.facebook_url,
+            configToRestore.twitter_url,
+            configToRestore.instagram_url,
+            configToRestore.youtube_url,
+            configToRestore.is_active,
+            adminContext.id,
+            new Date(),
+            new Date()
+          ]
+        );
+
+        restoredConfiguration = {
+          id: insertResult.insertId,
+          ...configToRestore,
+          updated_by: adminContext.id,
+          created_at: new Date(),
+          updated_at: new Date()
+        };
+
+      } else {
+        // For other actions, update the existing configuration
+        if (!auditEntry.radio_setting_id) {
+          throw new Error('Cannot rollback: no radio setting ID in audit entry');
+        }
+
+        await transactionClient.update(
+          `UPDATE radio_settings SET
+            stream_url = ?, metadata_url = ?, station_name = ?, station_description = ?,
+            facebook_url = ?, twitter_url = ?, instagram_url = ?, youtube_url = ?,
+            is_active = ?, updated_by = ?, updated_at = ?
+          WHERE id = ?`,
+          [
+            valuesToRestore.stream_url,
+            valuesToRestore.metadata_url,
+            valuesToRestore.station_name,
+            valuesToRestore.station_description,
+            valuesToRestore.facebook_url,
+            valuesToRestore.twitter_url,
+            valuesToRestore.instagram_url,
+            valuesToRestore.youtube_url,
+            valuesToRestore.is_active,
+            adminContext.id,
+            new Date(),
+            auditEntry.radio_setting_id
+          ]
+        );
+
+        // Fetch the updated configuration
+        const [updatedRows] = await transactionClient.query<(StreamConfigurationData & RowDataPacket)[]>(
+          'SELECT * FROM radio_settings WHERE id = ?',
+          [auditEntry.radio_setting_id]
+        );
+
+        if (!updatedRows || updatedRows.length === 0) {
+          throw new Error('Failed to fetch updated configuration after rollback');
+        }
+
+        restoredConfiguration = updatedRows[0];
+      }
+
+      // Create audit entry for the rollback
+      const rollbackAuditData = {
+        radio_setting_id: restoredConfiguration.id,
+        action_type: AuditActionType.ROLLBACK,
+        admin_user_id: adminContext.id,
+        admin_user_email: adminContext.email,
+        admin_user_role: adminContext.role,
+        change_reason: rollbackReason || `Configuration rolled back to audit entry ${auditId}`,
+        new_values: JSON.stringify({
+          stream_url: restoredConfiguration.stream_url,
+          metadata_url: restoredConfiguration.metadata_url,
+          station_name: restoredConfiguration.station_name,
+          station_description: restoredConfiguration.station_description,
+          facebook_url: restoredConfiguration.facebook_url,
+          twitter_url: restoredConfiguration.twitter_url,
+          instagram_url: restoredConfiguration.instagram_url,
+          youtube_url: restoredConfiguration.youtube_url,
+          is_active: restoredConfiguration.is_active
+        }),
+        severity: AuditSeverity.HIGH,
+        ip_address: adminContext.ip_address || null,
+        user_agent: adminContext.user_agent || null,
+        session_id: adminContext.session_id || null,
+        metadata: JSON.stringify({
+          operation: 'configuration_rollback',
+          original_audit_id: auditId,
+          rollback_type: auditEntry.action_type,
+          timestamp: new Date().toISOString()
+        }),
+        is_rollbackable: false, // Rollbacks themselves are not rollbackable
+        rollback_of_audit_id: auditId,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+
+      const rollbackInsertResult = await transactionClient.insert(
+        `INSERT INTO radio_settings_audit (
+          radio_setting_id, action_type, admin_user_id, admin_user_email, admin_user_role,
+          change_reason, new_values, severity, ip_address, user_agent, session_id,
+          metadata, is_rollbackable, rollback_of_audit_id, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        Object.values(rollbackAuditData)
+      );
+
+      auditLogger.success(`Configuration rollback completed. Audit ID: ${rollbackInsertResult.insertId}`);
+
+      return {
+        success: true,
+        audit_id: auditId,
+        restored_configuration: restoredConfiguration,
+        rollback_audit_id: rollbackInsertResult.insertId,
+        message: `Configuration successfully rolled back to audit entry ${auditId}`
+      };
+    });
+
+  } catch (error) {
+    const rollbackError = RadioErrorHandler.handleDatabaseError(
+      error as DatabaseError,
+      'rollbackConfiguration',
+      {
+        adminUserId: adminContext.id,
+        adminUserEmail: adminContext.email,
+        table: 'radio_settings_audit'
+      }
+    );
+
+    auditLogger.error(`Configuration rollback failed: ${rollbackError.technicalMessage}`);
+
+    return {
+      success: false,
+      audit_id: auditId,
+      restored_configuration: {} as StreamConfigurationData,
+      rollback_audit_id: 0,
+      message: rollbackError.userMessage
+    };
+  }
+}
+
+/**
+ * Get rollbackable audit entries for a specific configuration
+ */
+export async function getRollbackableEntries(
+  radioSettingId?: number,
+  limit: number = 10
+): Promise<DetailedAuditEntry[]> {
+  const filters: AuditSearchFilters = {
+    is_rollbackable: true
+  };
+
+  if (radioSettingId) {
+    filters.radio_setting_id = radioSettingId;
+  }
+
+  const result = await getAuditLogs(filters, { page: 1, limit });
+
+  if ('data' in result) {
+    return result.data;
+  }
+
+  return result.slice(0, limit);
+}
+
+/**
+ * Get audit statistics for reporting
+ */
+export async function getAuditStatistics(
+  dateFrom?: Date,
+  dateTo?: Date
+): Promise<{
+  totalEntries: number;
+  entriesByAction: Record<string, number>;
+  entriesBySeverity: Record<string, number>;
+  entriesByAdmin: Array<{ admin_email: string; count: number }>;
+  rollbackableEntries: number;
+}> {
+  try {
+    let dateCondition = '';
+    const params: any[] = [];
+
+    if (dateFrom) {
+      dateCondition += ' AND created_at >= ?';
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      dateCondition += ' AND created_at <= ?';
+      params.push(dateTo);
+    }
+
+    // Total entries
+    const [totalResult] = await db.query<{ total: number } & RowDataPacket>(
+      `SELECT COUNT(*) as total FROM radio_settings_audit WHERE deleted_at IS NULL${dateCondition}`,
+      params
+    );
+
+    // Entries by action
+    const actionResult = await db.query<{ action_type: string; count: number } & RowDataPacket>(
+      `SELECT action_type, COUNT(*) as count FROM radio_settings_audit
+       WHERE deleted_at IS NULL${dateCondition} GROUP BY action_type`,
+      params
+    );
+
+    // Entries by severity
+    const severityResult = await db.query<{ severity: string; count: number } & RowDataPacket>(
+      `SELECT severity, COUNT(*) as count FROM radio_settings_audit
+       WHERE deleted_at IS NULL${dateCondition} GROUP BY severity`,
+      params
+    );
+
+    // Entries by admin
+    const adminResult = await db.query<{ admin_user_email: string; count: number } & RowDataPacket>(
+      `SELECT admin_user_email, COUNT(*) as count FROM radio_settings_audit
+       WHERE deleted_at IS NULL${dateCondition} GROUP BY admin_user_email ORDER BY count DESC LIMIT 10`,
+      params
+    );
+
+    // Rollbackable entries
+    const [rollbackResult] = await db.query<{ total: number } & RowDataPacket>(
+      `SELECT COUNT(*) as total FROM radio_settings_audit
+       WHERE deleted_at IS NULL AND is_rollbackable = true${dateCondition}`,
+      params
+    );
+
+    return {
+      totalEntries: totalResult.rows[0]?.total || 0,
+      entriesByAction: actionResult.rows.reduce((acc, row) => {
+        acc[row.action_type] = row.count;
+        return acc;
+      }, {} as Record<string, number>),
+      entriesBySeverity: severityResult.rows.reduce((acc, row) => {
+        acc[row.severity] = row.count;
+        return acc;
+      }, {} as Record<string, number>),
+      entriesByAdmin: adminResult.rows.map(row => ({
+        admin_email: row.admin_user_email,
+        count: row.count
+      })),
+      rollbackableEntries: rollbackResult.rows[0]?.total || 0
+    };
+
+  } catch (error) {
+    const statsError = RadioErrorHandler.handleDatabaseError(
+      error as DatabaseError,
+      'getAuditStatistics',
+      undefined,
+      undefined,
+      'radio_settings_audit'
+    );
+
+    throw new Error(`Failed to get audit statistics: ${statsError.userMessage}`);
+  }
+}
+
+/**
+ * Helper function to determine severity based on action type and changed fields
+ */
+function determineSeverity(actionType: AuditActionType, changedFields?: string[] | null): AuditSeverity {
+  switch (actionType) {
+    case AuditActionType.CREATE:
+    case AuditActionType.ACTIVATE:
+    case AuditActionType.ROLLBACK:
+      return AuditSeverity.HIGH;
+
+    case AuditActionType.DELETE:
+      return AuditSeverity.CRITICAL;
+
+    case AuditActionType.DEACTIVATE:
+      return AuditSeverity.HIGH;
+
+    case AuditActionType.TEST_CONNECTION:
+      return AuditSeverity.LOW;
+
+    case AuditActionType.UPDATE:
+      return determineSeverityForFieldChanges(changedFields);
+
+    default:
+      return AuditSeverity.MEDIUM;
+  }
+}
+
+/**
+ * Helper function to determine severity for field changes
+ */
+function determineSeverityForFieldChanges(changedFields?: string[] | null): AuditSeverity {
+  if (!changedFields || changedFields.length === 0) {
+    return AuditSeverity.LOW;
+  }
+
+  // Critical fields that affect streaming
+  const criticalFields = ['stream_url', 'is_active'];
+  const hasCriticalChanges = changedFields.some(field => criticalFields.includes(field));
+
+  if (hasCriticalChanges) {
+    return AuditSeverity.HIGH;
+  }
+
+  // Important fields
+  const importantFields = ['station_name', 'metadata_url'];
+  const hasImportantChanges = changedFields.some(field => importantFields.includes(field));
+
+  if (hasImportantChanges) {
+    return AuditSeverity.MEDIUM;
+  }
+
+  return AuditSeverity.LOW;
+}
+
+/**
+ * Helper function to determine if an action is rollbackable
+ */
+function isActionRollbackable(actionType: AuditActionType): boolean {
+  switch (actionType) {
+    case AuditActionType.CREATE:
+    case AuditActionType.UPDATE:
+    case AuditActionType.ACTIVATE:
+    case AuditActionType.DEACTIVATE:
+    case AuditActionType.DELETE:
+      return true;
+
+    case AuditActionType.TEST_CONNECTION:
+    case AuditActionType.ROLLBACK:
+      return false;
+
+    default:
+      return false;
+  }
+}
+
+/**
+ * Helper function to get changed fields between configurations
+ */
+function getChangedFields(oldConfig: StreamConfigurationData, newConfig: StreamConfigurationData): string[] {
+  const fields = [
+    'stream_url', 'metadata_url', 'station_name', 'station_description',
+    'facebook_url', 'twitter_url', 'instagram_url', 'youtube_url', 'is_active'
+  ];
+
+  return fields.filter(field => {
+    const oldValue = (oldConfig as any)[field];
+    const newValue = (newConfig as any)[field];
+    return oldValue !== newValue;
+  });
+}
+
+/**
+ * Helper function to generate human-readable action description
+ */
+function generateActionDescription(entry: RadioSettingsAuditEntity): string {
+  switch (entry.action_type) {
+    case AuditActionType.CREATE:
+      return 'Created new radio configuration';
+
+    case AuditActionType.UPDATE:
+      const changedFields = entry.changed_fields ? JSON.parse(entry.changed_fields) : [];
+      return `Updated radio configuration (${changedFields.join(', ')})`;
+
+    case AuditActionType.DELETE:
+      return 'Deleted radio configuration';
+
+    case AuditActionType.ACTIVATE:
+      return 'Activated radio configuration';
+
+    case AuditActionType.DEACTIVATE:
+      return 'Deactivated radio configuration';
+
+    case AuditActionType.TEST_CONNECTION:
+      return 'Tested stream connection';
+
+    case AuditActionType.ROLLBACK:
+      return `Rolled back to previous configuration (audit ${entry.rollback_of_audit_id})`;
+
+    default:
+      return `Performed ${entry.action_type} action`;
+  }
+}
+
+/**
+ * Helper function to calculate time elapsed
+ */
+function calculateTimeElapsed(timestamp: Date): string {
+  const now = new Date();
+  const elapsed = now.getTime() - timestamp.getTime();
+
+  const seconds = Math.floor(elapsed / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  return 'Just now';
+}
+
+/**
+ * Export all audit-related types for use in other modules
+ */
+export type {
+  RadioSettingsAuditEntity,
+  AuditLogEntry,
+  AdminUserContext,
+  RollbackResult,
+  AuditSearchFilters,
+  DetailedAuditEntry
+};
