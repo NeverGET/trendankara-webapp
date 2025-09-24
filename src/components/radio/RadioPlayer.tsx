@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRadioPlayer } from '@/hooks/useRadioPlayer';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 
@@ -83,8 +83,8 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
       )}>
         <Button
           onClick={handlePlayPause}
-          variant="primary"
-          size="medium"
+          variant="default"
+          size="default"
           className="min-w-[44px] h-11 w-11 md:min-w-[48px] md:h-12 md:w-12 p-0 rounded-full"
           aria-label={isPlaying ? 'Duraklat' : 'Oynat'}
         >
@@ -104,7 +104,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
 
         <div className="flex-1 min-w-0">
           <p className="text-sm md:text-base text-dark-text-primary truncate">
-            {currentSong}
+            {isPlaying ? currentSong : 'Radyo çalınmıyor'}
           </p>
           <p className={cn(
             'text-xs',
@@ -120,7 +120,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
           <Button
             onClick={handleReconnect}
             variant="secondary"
-            size="small"
+            size="sm"
             className="text-xs"
           >
             Yeniden Bağlan
@@ -138,8 +138,8 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
       {/* Play/Pause Button */}
       <Button
         onClick={handlePlayPause}
-        variant="primary"
-        size="large"
+        variant="default"
+        size="lg"
         className="min-w-[52px] h-[52px] w-[52px] md:min-w-[60px] md:h-[60px] md:w-[60px] p-0 rounded-full"
         aria-label={isPlaying ? 'Radyoyu duraklat' : 'Radyoyu başlat'}
       >
@@ -160,7 +160,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
       {/* Song Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm md:text-base font-medium text-dark-text-primary truncate">
-          {currentSong}
+          {isPlaying ? currentSong : 'Radyo çalınmıyor'}
         </p>
         <div className="flex items-center gap-2">
           <p className={cn(
@@ -174,7 +174,7 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
             <Button
               onClick={handleReconnect}
               variant="secondary"
-              size="small"
+              size="sm"
               className="text-xs ml-2"
             >
               Yeniden Bağlan
@@ -199,25 +199,47 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
           step="0.01"
           value={volume}
           onChange={handleVolumeChange}
-          className="w-20 md:w-24 h-1 bg-dark-surface-secondary rounded-lg appearance-none cursor-pointer slider"
+          className="w-20 md:w-24 h-1 bg-rose-950 rounded-lg appearance-none cursor-pointer slider"
           aria-label="Ses seviyesi"
         />
         <style jsx>{`
           .slider::-webkit-slider-thumb {
             appearance: none;
-            width: 12px;
-            height: 12px;
-            background: #dc2626;
+            width: 14px;
+            height: 14px;
+            background: #f43f5e;
             border-radius: 50%;
             cursor: pointer;
+            transition: all 0.2s;
+          }
+          .slider::-webkit-slider-thumb:hover {
+            background: #fb7185;
+            transform: scale(1.2);
           }
           .slider::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
-            background: #dc2626;
+            width: 14px;
+            height: 14px;
+            background: #f43f5e;
             border-radius: 50%;
             cursor: pointer;
             border: none;
+            transition: all 0.2s;
+          }
+          .slider::-moz-range-thumb:hover {
+            background: #fb7185;
+            transform: scale(1.2);
+          }
+          .slider::-webkit-slider-runnable-track {
+            background: linear-gradient(to right, #f43f5e 0%, #f43f5e ${volume * 100}%, #881337 ${volume * 100}%, #881337 100%);
+            border-radius: 0.25rem;
+          }
+          .slider::-moz-range-track {
+            background: #881337;
+            border-radius: 0.25rem;
+          }
+          .slider::-moz-range-progress {
+            background: #f43f5e;
+            border-radius: 0.25rem;
           }
         `}</style>
       </div>

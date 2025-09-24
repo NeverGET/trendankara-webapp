@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useConfirmation } from '@/hooks/useConfirmation';
 import { cn } from '@/lib/utils';
@@ -197,7 +197,7 @@ export function ContentActions({
         actions.push(
           <Button
             key="publish"
-            variant="primary"
+            variant="default"
             size={size}
             onClick={handlePublish}
             className="flex items-center gap-2"
@@ -257,7 +257,7 @@ export function ContentActions({
         actions.push(
           <Button
             key="publish-now"
-            variant="primary"
+            variant="default"
             size={size}
             onClick={handlePublish}
             className="flex items-center gap-2"

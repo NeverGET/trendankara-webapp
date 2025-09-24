@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import {
   FiHome,
   FiImage,
@@ -156,7 +156,7 @@ export function AdminSidebar() {
           <div className="p-4 border-t border-dark-border-primary/50 bg-gradient-to-t from-dark-surface-primary/30 to-transparent">
             <Button
               variant="ghost"
-              size="small"
+              size="sm"
               fullWidth
               className="justify-start group hover:pl-6 transition-all duration-300"
             >

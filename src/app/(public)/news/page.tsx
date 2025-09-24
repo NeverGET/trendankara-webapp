@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { NewsGrid } from '@/components/news/NewsGrid';
 import { NewsModal } from '@/components/news/NewsModal';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { getNews, getNewsByCategory, getNewsArticle } from '@/lib/api/news';
 import { NewsArticle, NewsCategory } from '@/types/news';
 
@@ -71,7 +71,7 @@ export default function NewsPage() {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto px-4 py-8" style={{ maxWidth: '1024px' }}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-dark-text-primary mb-4">Haberler</h1>
           <p className="text-dark-text-secondary">
@@ -84,8 +84,8 @@ export default function NewsPage() {
           {categories.map((category) => (
             <Button
               key={category.value}
-              variant={selectedCategory === category.value ? 'primary' : 'secondary'}
-              size="small"
+              variant={selectedCategory === category.value ? 'default' : 'secondary'}
+              size="sm"
               onClick={() => handleCategoryChange(category.value)}
             >
               {category.label}

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { MediaGalleryGrid } from '@/components/admin/MediaGalleryGrid';
 import { ImageUploadZone } from '@/components/admin/ImageUploadZone';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -399,7 +399,7 @@ export default function AdminMediaPage() {
             {/* Type Filter */}
             <Select
               value={filterType}
-              onChange={(value) => setFilterType(value as any)}
+              onValueChange={(value) => setFilterType(value as any)}
               options={[
                 { value: 'all', label: 'Tüm Tipler' },
                 { value: 'image', label: 'Resimler' },
@@ -412,7 +412,7 @@ export default function AdminMediaPage() {
             {/* Sort */}
             <Select
               value={sortBy}
-              onChange={(value) => setSortBy(value as any)}
+              onValueChange={(value) => setSortBy(value as any)}
               options={[
                 { value: 'newest', label: 'En Yeni' },
                 { value: 'oldest', label: 'En Eski' },
@@ -439,8 +439,8 @@ export default function AdminMediaPage() {
 
             {/* Orphaned Toggle */}
             <Button
-              variant={showOrphaned ? 'primary' : 'secondary'}
-              size="small"
+              variant={showOrphaned ? 'default' : 'secondary'}
+              size="sm"
               onClick={() => setShowOrphaned(!showOrphaned)}
             >
               Kullanılmayanlar
@@ -449,8 +449,8 @@ export default function AdminMediaPage() {
             {/* Actions */}
             {selectedIds.length > 0 && (
               <Button
-                variant="danger"
-                size="small"
+                variant="destructive"
+                size="sm"
                 onClick={handleDelete}
                 className="flex items-center gap-2"
               >
@@ -462,7 +462,7 @@ export default function AdminMediaPage() {
             {stats && stats.orphanedFiles > 0 && (
               <Button
                 variant="secondary"
-                size="small"
+                size="sm"
                 onClick={handleCleanupOrphaned}
                 className="flex items-center gap-2"
               >

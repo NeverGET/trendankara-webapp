@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Image as ImageIcon, X, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -96,7 +96,7 @@ export function SimplifiedImagePicker({
         <Button
           type="button"
           variant="secondary"
-          size="small"
+          size="sm"
           onClick={() => setIsPickerOpen(true)}
           disabled={disabled}
           className="w-full"
@@ -156,7 +156,7 @@ export function SimplifiedImagePicker({
             <Button
               type="button"
               variant="secondary"
-              size="small"
+              size="sm"
               onClick={handleChange}
               className="bg-white/90 hover:bg-white text-black border-0"
               title="Değiştir"
@@ -167,7 +167,7 @@ export function SimplifiedImagePicker({
             <Button
               type="button"
               variant="secondary"
-              size="small"
+              size="sm"
               onClick={handleRemove}
               className="bg-red-600/90 hover:bg-red-600 text-white border-0"
               title="Kaldır"

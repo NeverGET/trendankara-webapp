@@ -69,7 +69,7 @@ export function StatsCard({
             {badge && (
               <Badge
                 variant={badge.variant || 'info'}
-                size="small"
+                size="sm"
                 pill
                 animated
               >

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { AlertTriangle, Save, X, CheckCircle } from 'lucide-react';
@@ -254,7 +254,7 @@ export function PollDialog({
         isOpen={isOpen}
         onClose={handleClose}
         title={dialogTitle}
-        size="large"
+        size="lg"
       >
         <form onSubmit={onSubmitHandler} className="space-y-6">
           {/* Success Display */}
@@ -290,7 +290,7 @@ export function PollDialog({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="small"
+                  size="sm"
                   onClick={() => setError(null)}
                   className="text-brand-red-600 dark:text-brand-red-400"
                 >
@@ -322,7 +322,7 @@ export function PollDialog({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="small"
+                  size="sm"
                   onClick={() => setShowValidationSummary(false)}
                   className="text-yellow-600 dark:text-yellow-400"
                 >
@@ -414,7 +414,7 @@ export function PollDialog({
 
               <Button
                 type="submit"
-                variant="primary"
+                variant="default"
                 disabled={isLoading}
                 className={`min-w-[120px] flex items-center gap-2 transition-all ${
                   !isValid ? 'opacity-75 hover:opacity-100' : ''
@@ -444,7 +444,7 @@ export function PollDialog({
         isOpen={showCloseConfirm}
         onClose={handleCancelClose}
         title="Kaydedilmemiş Değişiklikler"
-        size="medium"
+        size="default"
       >
         <div className="space-y-6">
           {/* Warning Icon and Message */}
@@ -475,7 +475,7 @@ export function PollDialog({
             <div className="flex gap-3 flex-1 sm:flex-initial">
               <Button
                 onClick={handleConfirmClose}
-                variant="danger"
+                variant="destructive"
                 className="flex-1 min-w-[120px]"
                 disabled={isSavingAndClosing}
               >
@@ -483,7 +483,7 @@ export function PollDialog({
               </Button>
               <Button
                 onClick={handleSaveAndClose}
-                variant="primary"
+                variant="default"
                 className="flex-1 min-w-[120px] flex items-center gap-2"
                 disabled={!isValid || isSavingAndClosing}
               >

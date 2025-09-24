@@ -9,7 +9,7 @@ import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/Card';
 import Image from 'next/image';
 
@@ -100,7 +100,7 @@ function LoginForm() {
             type="submit"
             className="w-full"
             disabled={isLoading}
-            variant="primary"
+            variant="default"
             size="large"
           >
             {isLoading ? (

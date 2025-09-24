@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { PollCard } from '@/components/admin/PollCard';
 import { PollSkeleton } from '@/components/admin/PollSkeleton';
 import { StatsCard } from '@/components/admin/StatsCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -341,8 +341,8 @@ export default function AdminPollsPage() {
           </div>
         </div>
         <Button
-          variant="primary"
-          size="medium"
+          variant="default"
+          size="default"
           onClick={handleCreatePoll}
           title={`Yeni Anket (${navigator.platform.indexOf('Mac') > -1 ? 'Cmd' : 'Ctrl'}+N)`}
         >
@@ -360,17 +360,17 @@ export default function AdminPollsPage() {
                 <FiCheckCircle className="w-5 h-5 text-red-500" />
               </div>
               <h2 className="text-lg font-semibold text-dark-text-primary">Toplu İşlemler</h2>
-              <Badge variant="error" size="small" pill>
+              <Badge variant="error" size="sm" pill>
                 {selectedPollIds.length} Anket Seçili
               </Badge>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="small" onClick={clearSelection}>
+              <Button variant="ghost" size="sm" onClick={clearSelection}>
                 Seçimi Temizle
               </Button>
               <Button
-                variant="danger"
-                size="small"
+                variant="destructive"
+                size="sm"
                 onClick={handleBatchDelete}
                 className="flex items-center gap-2"
                 title="Seçili anketleri sil (Delete)"
@@ -504,7 +504,7 @@ export default function AdminPollsPage() {
           <div className="flex gap-2">
             <Button
               variant="ghost"
-              size="small"
+              size="sm"
               onClick={selectedPollIds.length === filteredPolls.length ? clearSelection : selectAllVisiblePolls}
             >
               {selectedPollIds.length === filteredPolls.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
@@ -528,7 +528,7 @@ export default function AdminPollsPage() {
               <FiActivity className="w-5 h-5 text-green-500" />
             </div>
             <h2 className="text-lg font-semibold text-dark-text-primary">Aktif Anketler</h2>
-            <Badge variant="success" size="small" pill animated>
+            <Badge variant="success" size="sm" pill animated>
               {filteredPolls.filter(p => {
                 const realStatus = getPollStatus({
                   start_date: p.start_date,
@@ -554,7 +554,7 @@ export default function AdminPollsPage() {
                   {poll.daysRemaining !== undefined && (
                     <Badge
                       variant={poll.daysRemaining <= 3 ? 'error' : 'warning'}
-                      size="small"
+                      size="sm"
                       animated={poll.daysRemaining <= 3}
                     >
                       {poll.daysRemaining} gün
@@ -586,7 +586,7 @@ export default function AdminPollsPage() {
             </div>
             <Button
               variant="ghost"
-              size="small"
+              size="sm"
               onClick={clearError}
               className="text-brand-red-600 dark:text-brand-red-400"
             >
@@ -690,7 +690,7 @@ export default function AdminPollsPage() {
                       </h3>
                       <Badge
                         variant={config.color as any}
-                        size="small"
+                        size="sm"
                         pill
                       >
                         {config.label}
@@ -702,7 +702,7 @@ export default function AdminPollsPage() {
                           realStatus === 'ended' ? 'error' :
                           'default'
                         }
-                        size="small"
+                        size="sm"
                         pill
                         animated={realStatus === 'active'}
                       >
@@ -731,15 +731,15 @@ export default function AdminPollsPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="small">
+                    <Button variant="ghost" size="sm">
                       <FiBarChart2 className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="small" onClick={() => handleEditPoll(poll)}>
+                    <Button variant="ghost" size="sm" onClick={() => handleEditPoll(poll)}>
                       <FiEdit className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="ghost"
-                      size="small"
+                      size="sm"
                       onClick={() => handleDeletePoll(poll.id)}
                     >
                       <FiTrash2 className="w-4 h-4 text-red-500" />
@@ -770,7 +770,7 @@ export default function AdminPollsPage() {
             <div className="flex justify-center items-center gap-4 mt-8">
               <Button
                 variant="ghost"
-                size="small"
+                size="sm"
                 disabled={!pagination.hasPrev}
                 onClick={() => setPage(pagination.page - 1)}
               >
@@ -781,7 +781,7 @@ export default function AdminPollsPage() {
               </span>
               <Button
                 variant="ghost"
-                size="small"
+                size="sm"
                 disabled={!pagination.hasNext}
                 onClick={() => setPage(pagination.page + 1)}
               >

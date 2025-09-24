@@ -224,7 +224,7 @@ export function MetadataDisplay({
                     Mevcut İçerik
                   </label>
                   <div className="flex items-center gap-2">
-                    <Badge variant="success" size="small" animated>
+                    <Badge variant="success" size="sm" animated>
                       {isPolling ? 'Canlı' : 'Çalıyor'}
                     </Badge>
                     <p className="text-sm text-dark-text-primary font-medium">
@@ -255,7 +255,7 @@ export function MetadataDisplay({
                       Audio Format
                     </label>
                     <div className="flex items-center gap-2">
-                      <Badge variant="info" size="small">
+                      <Badge variant="info" size="sm">
                         {displayMetadata.audioFormat}
                       </Badge>
                     </div>
@@ -288,7 +288,7 @@ export function MetadataDisplay({
                       {displayMetadata.serverInfo.software}
                     </p>
                     {displayMetadata.serverInfo.version && (
-                      <Badge variant="purple" size="small">
+                      <Badge variant="purple" size="sm">
                         v{displayMetadata.serverInfo.version}
                       </Badge>
                     )}
@@ -326,7 +326,7 @@ export function MetadataDisplay({
                   <label className="text-xs text-dark-text-secondary font-medium uppercase tracking-wider">
                     Tür
                   </label>
-                  <Badge variant="pink" size="small">
+                  <Badge variant="pink" size="sm">
                     {displayMetadata.extra.genre}
                   </Badge>
                 </div>

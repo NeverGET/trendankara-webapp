@@ -9,7 +9,7 @@ export async function getFeaturedNews(): Promise<NewsArticle[]> {
       throw new Error(`Failed to fetch featured news: ${response.statusText}`);
     }
     const data = await response.json();
-    return data.articles || [];
+    return data.data || [];
   } catch (error) {
     console.error('Error fetching featured news:', error);
     return [];
@@ -37,7 +37,15 @@ export async function getNews(
     }
 
     const data = await response.json();
-    return data;
+    return {
+      articles: data.data || [],
+      pagination: data.pagination || {
+        page: 1,
+        limit: 9,
+        total: 0,
+        hasNext: false
+      }
+    };
   } catch (error) {
     console.error('Error fetching news:', error);
     return {
@@ -81,7 +89,7 @@ export async function searchNews(query: string): Promise<NewsArticle[]> {
       throw new Error(`Failed to search news: ${response.statusText}`);
     }
     const data = await response.json();
-    return data.articles || [];
+    return data.data || [];
   } catch (error) {
     console.error('Error searching news:', error);
     return [];

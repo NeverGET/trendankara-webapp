@@ -3,7 +3,7 @@
 import React, { Suspense } from 'react';
 import { MediaItem } from '@/components/admin/MediaPickerDialog';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ImageIcon, X, ImageOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -173,7 +173,7 @@ const ImagePickerInput: React.FC<ImagePickerInputProps> = ({
             <Button
               type="button"
               variant="secondary"
-              size="medium"
+              size="default"
               onClick={onClear}
               disabled={disabled}
               className="min-w-[44px]"
@@ -187,8 +187,8 @@ const ImagePickerInput: React.FC<ImagePickerInputProps> = ({
           {/* Open picker button */}
           <Button
             type="button"
-            variant="primary"
-            size="medium"
+            variant="default"
+            size="default"
             onClick={onOpenPicker}
             disabled={disabled}
             className="min-w-[44px] md:min-w-auto"
@@ -264,7 +264,7 @@ const ImagePickerInput: React.FC<ImagePickerInputProps> = ({
               {preview.loading && (
                 <div role="status" aria-label="Resim yükleniyor">
                   <LoadingSpinner
-                    size="small"
+                    size="sm"
                     hideText={true}
                     className="p-2"
                   />
@@ -499,7 +499,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           fallback={
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-dark-surface-primary rounded-lg p-6 border border-dark-border-primary">
-                <LoadingSpinner size="medium" text="Galeri yükleniyor..." />
+                <LoadingSpinner size="default" text="Galeri yükleniyor..." />
               </div>
             </div>
           }

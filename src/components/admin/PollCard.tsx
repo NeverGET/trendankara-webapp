@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { getPollStatus, getDaysRemaining, getDaysUntilStart, getTimeRemainingText, isPollEndingSoon } from '@/lib/utils/poll-status';
 import {
   FiEdit,
@@ -113,7 +113,7 @@ export const PollCard = React.memo(function PollCard({
             </div>
             <Badge
               variant={config.color as any}
-              size="small"
+              size="sm"
               pill
             >
               {config.label}
@@ -128,7 +128,7 @@ export const PollCard = React.memo(function PollCard({
               realStatus === 'ended' ? 'error' :
               'default'
             }
-            size="small"
+            size="sm"
             pill
             animated={realStatus === 'active'}
           >
@@ -221,7 +221,7 @@ export const PollCard = React.memo(function PollCard({
           {realStatus === 'active' && (
             <Badge
               variant={isEndingSoon ? 'error' : actualDaysRemaining <= 7 ? 'warning' : 'success'}
-              size="small"
+              size="sm"
               animated={isEndingSoon}
             >
               {timeRemainingText}
@@ -230,7 +230,7 @@ export const PollCard = React.memo(function PollCard({
           {realStatus === 'scheduled' && (
             <Badge
               variant="info"
-              size="small"
+              size="sm"
             >
               {getDaysUntilStart(start_date)} gün sonra başlayacak
             </Badge>
@@ -258,7 +258,7 @@ export const PollCard = React.memo(function PollCard({
       <div className="flex gap-2 p-6 pt-0">
         <Button
           variant="ghost"
-          size="small"
+          size="sm"
           onClick={() => onView?.(id)}
           className="flex-1"
         >
@@ -266,7 +266,7 @@ export const PollCard = React.memo(function PollCard({
         </Button>
         <Button
           variant="ghost"
-          size="small"
+          size="sm"
           onClick={() => onPreview?.(id)}
           className="flex-1"
           title="Önizleme"
@@ -275,7 +275,7 @@ export const PollCard = React.memo(function PollCard({
         </Button>
         <Button
           variant="ghost"
-          size="small"
+          size="sm"
           onClick={() => onEdit?.(id)}
           className="flex-1"
         >
@@ -283,7 +283,7 @@ export const PollCard = React.memo(function PollCard({
         </Button>
         <Button
           variant="ghost"
-          size="small"
+          size="sm"
           onClick={() => onToggleStatus?.(id)}
           className="flex-1"
         >
@@ -295,7 +295,7 @@ export const PollCard = React.memo(function PollCard({
         </Button>
         <Button
           variant="ghost"
-          size="small"
+          size="sm"
           onClick={() => onDelete?.(id)}
           className="flex-1 text-red-500 hover:text-red-400"
         >

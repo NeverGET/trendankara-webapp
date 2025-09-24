@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 
 interface ErrorPageProps {
@@ -87,7 +87,7 @@ export default function PollsErrorPage({ error, reset }: ErrorPageProps) {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               onClick={handleRetry}
-              variant="primary"
+              variant="default"
               className="flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />

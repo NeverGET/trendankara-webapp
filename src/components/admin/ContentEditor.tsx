@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
 import { Textarea } from '@/components/ui-adapters/TextareaAdapter';
 import { Input } from '@/components/ui/Input';
@@ -90,7 +90,7 @@ export function ContentEditor({
       <div className="space-y-4">
         {/* Component Actions */}
         <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-          <Badge variant="purple" size="small">
+          <Badge variant="purple" size="sm">
             {componentTypes.find(c => c.type === type)?.label || type}
           </Badge>
           <div className="flex gap-1">

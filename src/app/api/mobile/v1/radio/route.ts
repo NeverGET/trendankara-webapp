@@ -22,7 +22,7 @@ const MAX_CACHE_SIZE = 100; // Prevent memory leaks
  * Clear the memory cache for mobile radio configuration
  * Used by cache invalidation system when radio settings are updated
  */
-export function clearMobileRadioCache(): void {
+function clearMobileRadioCache(): void {
   radioConfigCache.clear();
   console.log('Mobile radio memory cache cleared due to settings update');
 }

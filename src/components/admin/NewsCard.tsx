@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import {
   FiEdit,
   FiTrash2,
@@ -85,18 +85,18 @@ export function NewsCard({
       <div className="absolute top-4 left-4 flex gap-2">
         <Badge
           variant={categoryColors[category] as any || 'default'}
-          size="small"
+          size="sm"
           pill
         >
           {category}
         </Badge>
         {isHot && (
-          <Badge variant="error" size="small" pill animated>
+          <Badge variant="error" size="sm" pill animated>
             🔥 HOT
           </Badge>
         )}
         {isBreaking && (
-          <Badge variant="warning" size="small" pill animated>
+          <Badge variant="warning" size="sm" pill animated>
             ⚡ SON DAKİKA
           </Badge>
         )}
@@ -110,7 +110,7 @@ export function NewsCard({
             status === 'draft' ? 'warning' :
             'default'
           }
-          size="small"
+          size="sm"
           pill
         >
           {status === 'published' ? 'Yayında' :
@@ -165,7 +165,7 @@ export function NewsCard({
         <div className="flex gap-2 pt-4 border-t border-dark-border-primary/50">
           <Button
             variant="ghost"
-            size="small"
+            size="sm"
             onClick={() => onView?.(id)}
             className="flex-1"
           >
@@ -173,7 +173,7 @@ export function NewsCard({
           </Button>
           <Button
             variant="ghost"
-            size="small"
+            size="sm"
             onClick={() => onEdit?.(id)}
             className="flex-1"
           >
@@ -181,7 +181,7 @@ export function NewsCard({
           </Button>
           <Button
             variant="ghost"
-            size="small"
+            size="sm"
             onClick={() => onDelete?.(id)}
             className="flex-1 text-red-500 hover:text-red-400"
           >

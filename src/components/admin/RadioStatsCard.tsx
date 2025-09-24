@@ -120,7 +120,7 @@ export function RadioStatsCard({
               </h3>
               <Badge
                 variant={streamStatus ? 'success' : 'error'}
-                size="small"
+                size="sm"
                 pill
                 animated={streamStatus}
               >

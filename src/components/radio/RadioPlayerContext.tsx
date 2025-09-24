@@ -275,6 +275,102 @@ export function RadioPlayerProvider({
     localStorage.setItem('radioVolume', clampedVolume.toString());
   }, []);
 
+  // Helper function to perform fallback connections
+  const performFallbackConnection = useCallback(async (fallbackStreamUrl: string) => {
+    if (!audioRef.current) return;
+
+    console.log('[RadioPlayer] Attempting fallback connection to:', fallbackStreamUrl);
+
+    try {
+      setConnectionStatus('connecting');
+      setIsLoading(true);
+
+      const cacheBustedUrl = isIOS
+        ? `${fallbackStreamUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}&fallback=1`
+        : `${fallbackStreamUrl}?t=${Date.now()}&fallback=1`;
+
+      audioRef.current.src = cacheBustedUrl;
+      audioRef.current.load();
+      await audioRef.current.play();
+
+      // Update streamUrl to reflect successful fallback
+      setStreamUrl(fallbackStreamUrl);
+      setLastWorkingUrl(fallbackStreamUrl);
+
+      console.log('[RadioPlayer] Fallback connection successful');
+    } catch (error) {
+      console.error('[RadioPlayer] Fallback connection failed:', error);
+      throw error;
+    }
+  }, [isIOS]);
+
+  // Helper function to perform seamless stream URL transitions
+  const performSeamlessTransition = useCallback(async (newUrl: string) => {
+    if (!audioRef.current) return;
+
+    const previousUrl = streamUrl;
+    console.log('[RadioPlayer] Starting seamless transition from', previousUrl, 'to', newUrl);
+
+    try {
+      setConnectionStatus('connecting');
+      setIsLoading(true);
+      setLastError(null);
+
+      // Store current playback state
+      const wasPlaying = !audioRef.current.paused;
+
+      // Pause current stream gracefully
+      audioRef.current.pause();
+
+      // Wait a moment for cleanup
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Apply iOS-compatible cache-busting for URL transitions
+      const cacheBustedUrl = isIOS
+        ? `${newUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}&ios=1`
+        : `${newUrl}?t=${Date.now()}`;
+
+      console.log('[RadioPlayer] Transitioning to cache-busted URL:', cacheBustedUrl);
+
+      if (audioRef.current) {
+        audioRef.current.src = cacheBustedUrl;
+        audioRef.current.load();
+
+        if (wasPlaying) {
+          await audioRef.current.play();
+          setLastWorkingUrl(newUrl);
+          console.log('[RadioPlayer] Seamless transition successful');
+        }
+      }
+
+    } catch (error) {
+      console.error('[RadioPlayer] Seamless transition failed:', error);
+      setLastError(new Error(`Stream transition failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      setConnectionStatus('disconnected');
+      setIsLoading(false);
+      setIsPlaying(false);
+
+      // Fall back to previous working URL if available
+      if (lastWorkingUrl && lastWorkingUrl !== newUrl && lastWorkingUrl !== previousUrl) {
+        console.log('[RadioPlayer] Attempting fallback to last working URL:', lastWorkingUrl);
+        try {
+          await performFallbackConnection(lastWorkingUrl);
+        } catch (fallbackError) {
+          console.error('[RadioPlayer] Fallback to last working URL failed:', fallbackError);
+        }
+      }
+      // Or fall back to environment fallback URL
+      else if (fallbackUrl && fallbackUrl !== newUrl && fallbackUrl !== previousUrl) {
+        console.log('[RadioPlayer] Attempting fallback to environment URL:', fallbackUrl);
+        try {
+          await performFallbackConnection(fallbackUrl);
+        } catch (fallbackError) {
+          console.error('[RadioPlayer] Fallback URL connection failed:', fallbackError);
+        }
+      }
+    }
+  }, [streamUrl, isIOS, lastWorkingUrl, fallbackUrl, performFallbackConnection]);
+
   // Enhanced method to reload configuration from database with fallback support
   const reloadConfiguration = useCallback(async () => {
     try {
@@ -357,102 +453,6 @@ export function RadioPlayerProvider({
       }
     }
   }, [streamUrl, metadataUrl, fallbackUrl, isPlaying, isIOS, initialStreamUrl, initialMetadataUrl, performSeamlessTransition]);
-
-  // Helper function to perform seamless stream URL transitions
-  const performSeamlessTransition = useCallback(async (newUrl: string) => {
-    if (!audioRef.current) return;
-
-    const previousUrl = streamUrl;
-    console.log('[RadioPlayer] Starting seamless transition from', previousUrl, 'to', newUrl);
-
-    try {
-      setConnectionStatus('connecting');
-      setIsLoading(true);
-      setLastError(null);
-
-      // Store current playback state
-      const wasPlaying = !audioRef.current.paused;
-
-      // Pause current stream gracefully
-      audioRef.current.pause();
-
-      // Wait a moment for cleanup
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Apply iOS-compatible cache-busting for URL transitions
-      const cacheBustedUrl = isIOS
-        ? `${newUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}&ios=1`
-        : `${newUrl}?t=${Date.now()}`;
-
-      console.log('[RadioPlayer] Transitioning to cache-busted URL:', cacheBustedUrl);
-
-      if (audioRef.current) {
-        audioRef.current.src = cacheBustedUrl;
-        audioRef.current.load();
-
-        if (wasPlaying) {
-          await audioRef.current.play();
-          setLastWorkingUrl(newUrl);
-          console.log('[RadioPlayer] Seamless transition successful');
-        }
-      }
-
-    } catch (error) {
-      console.error('[RadioPlayer] Seamless transition failed:', error);
-      setLastError(new Error(`Stream transition failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
-      setConnectionStatus('disconnected');
-      setIsLoading(false);
-      setIsPlaying(false);
-
-      // Fall back to previous working URL if available
-      if (lastWorkingUrl && lastWorkingUrl !== newUrl && lastWorkingUrl !== previousUrl) {
-        console.log('[RadioPlayer] Attempting fallback to last working URL:', lastWorkingUrl);
-        try {
-          await performFallbackConnection(lastWorkingUrl);
-        } catch (fallbackError) {
-          console.error('[RadioPlayer] Fallback to last working URL failed:', fallbackError);
-        }
-      }
-      // Or fall back to environment fallback URL
-      else if (fallbackUrl && fallbackUrl !== newUrl && fallbackUrl !== previousUrl) {
-        console.log('[RadioPlayer] Attempting fallback to environment URL:', fallbackUrl);
-        try {
-          await performFallbackConnection(fallbackUrl);
-        } catch (fallbackError) {
-          console.error('[RadioPlayer] Fallback URL connection failed:', fallbackError);
-        }
-      }
-    }
-  }, [streamUrl, isIOS, lastWorkingUrl, fallbackUrl, performFallbackConnection]);
-
-  // Helper function to perform fallback connections
-  const performFallbackConnection = useCallback(async (fallbackStreamUrl: string) => {
-    if (!audioRef.current) return;
-
-    console.log('[RadioPlayer] Attempting fallback connection to:', fallbackStreamUrl);
-
-    try {
-      setConnectionStatus('connecting');
-      setIsLoading(true);
-
-      const cacheBustedUrl = isIOS
-        ? `${fallbackStreamUrl}?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}&fallback=1`
-        : `${fallbackStreamUrl}?t=${Date.now()}&fallback=1`;
-
-      audioRef.current.src = cacheBustedUrl;
-      audioRef.current.load();
-      await audioRef.current.play();
-
-      // Update streamUrl to reflect successful fallback
-      setStreamUrl(fallbackStreamUrl);
-      setLastWorkingUrl(fallbackStreamUrl);
-
-      console.log('[RadioPlayer] Fallback connection successful');
-    } catch (error) {
-      console.error('[RadioPlayer] Fallback connection failed:', error);
-      throw error;
-    }
-  }, [isIOS]);
 
   // Fetch now playing text periodically
   useEffect(() => {

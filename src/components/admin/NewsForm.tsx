@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui-adapters/CheckboxAdapter';
 import { Textarea } from '@/components/ui-adapters/TextareaAdapter';
 import { Select } from '@/components/ui-adapters/SelectAdapter';
@@ -27,20 +27,22 @@ interface NewsFormData {
 interface NewsFormProps {
   initialData?: Partial<NewsArticle>;
   onSubmit: (data: NewsFormData) => Promise<void>;
+  onCancel?: () => void;
   isLoading?: boolean;
   mode?: 'create' | 'edit';
 }
 
 const NEWS_CATEGORIES: { value: NewsCategory; label: string }[] = [
-  { value: 'MAGAZINE', label: 'Magazin' },
-  { value: 'ARTIST', label: 'Sanatçı' },
-  { value: 'ALBUM', label: 'Albüm' },
-  { value: 'CONCERT', label: 'Konser' },
+  { value: 'MAGAZINE', label: 'MAGAZIN' },
+  { value: 'ARTIST', label: 'SANATÇI' },
+  { value: 'ALBUM', label: 'ALBÜM' },
+  { value: 'CONCERT', label: 'KONSER' },
 ];
 
 export function NewsForm({
   initialData,
   onSubmit,
+  onCancel,
   isLoading = false,
   mode = 'create'
 }: NewsFormProps) {
@@ -58,11 +60,11 @@ export function NewsForm({
       summary: initialData?.summary || '',
       content: initialData?.content || '',
       category: initialData?.category || 'MAGAZINE',
-      featured_image: typeof initialData?.thumbnail === 'string' ? initialData.thumbnail : initialData?.thumbnail?.url || '',
-      featured: false,
-      breaking: initialData?.isBreaking || false,
-      hot: initialData?.isHot || false,
-      active: true,
+      featured_image: initialData?.featured_image || (typeof initialData?.thumbnail === 'string' ? initialData.thumbnail : initialData?.thumbnail?.url) || '',
+      featured: initialData?.is_featured || initialData?.isFeatured || false,
+      breaking: initialData?.is_breaking || initialData?.isBreaking || false,
+      hot: initialData?.is_hot || initialData?.isHot || false,
+      active: initialData?.is_active !== undefined ? initialData?.is_active : true,
     }
   });
 
@@ -296,7 +298,13 @@ export function NewsForm({
           <Button
             type="button"
             variant="secondary"
-            onClick={() => window.history.back()}
+            onClick={() => {
+              if (onCancel) {
+                onCancel();
+              } else {
+                window.history.back();
+              }
+            }}
           >
             İptal
           </Button>

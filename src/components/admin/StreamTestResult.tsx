@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
 import type { StreamTestResult as StreamTestResultType } from '@/types/radioSettings';
 
@@ -86,7 +86,7 @@ export function StreamTestResult({
             <div>
               <Badge
                 variant={success ? 'success' : 'error'}
-                size="medium"
+                size="default"
                 pill
               >
                 {success ? 'Başarılı' : 'Başarısız'}
@@ -158,7 +158,7 @@ export function StreamTestResult({
           <div className="flex justify-end pt-2 border-t border-dark-border-primary/30">
             <Button
               variant="secondary"
-              size="small"
+              size="sm"
               onClick={onRetry}
               loading={retryLoading}
               icon={!retryLoading ? retryIcon : undefined}

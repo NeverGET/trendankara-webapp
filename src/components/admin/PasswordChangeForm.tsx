@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 
 interface PasswordChangeFormProps {
@@ -184,7 +184,7 @@ export function PasswordChangeForm({ onSuccess }: PasswordChangeFormProps) {
       <div className="pt-2">
         <Button
           type="submit"
-          variant="primary"
+          variant="default"
           size="medium"
           loading={loading}
           fullWidth

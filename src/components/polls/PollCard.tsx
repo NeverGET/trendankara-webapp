@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { PollCardProps, PollOption } from '@/types/polls';
 import { PollResults } from './PollResults';
 import { shouldShowResults } from '@/lib/utils/poll-status';
@@ -68,9 +68,14 @@ export function PollCard({
     try {
       await onVote(id, selectedOption);
 
-      // Save vote to localStorage
+      // Find the selected option details
+      const selectedOptionDetails = options.find(opt => opt.id === selectedOption);
+
+      // Save vote to localStorage with option details
       localStorage.setItem(`poll_${id}_vote`, JSON.stringify({
         optionId: selectedOption,
+        optionTitle: selectedOptionDetails?.title || '',
+        optionImageUrl: selectedOptionDetails?.imageUrl || null,
         timestamp: Date.now()
       }));
 
@@ -166,7 +171,7 @@ export function PollCard({
           disabled={!selectedOption || isVoting}
           loading={isVoting}
           fullWidth
-          variant="primary"
+          variant="default"
         >
           Oy Ver
         </Button>

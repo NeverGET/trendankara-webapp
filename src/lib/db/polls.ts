@@ -97,6 +97,56 @@ export async function getActivePolls() {
 }
 
 /**
+ * Get past/ended polls with pagination
+ */
+export async function getPastPolls(offset: number = 0, limit: number = 10) {
+  const result = await db.query<RowDataPacket>(
+    `SELECT p.*,
+            (SELECT COUNT(*) FROM poll_votes WHERE poll_id = p.id) as total_votes
+     FROM polls p
+     WHERE p.is_active = true
+     AND p.deleted_at IS NULL
+     AND p.end_date < NOW()
+     ORDER BY p.end_date DESC
+     LIMIT ? OFFSET ?`,
+    [limit, offset]
+  );
+
+  const polls = result.rows;
+
+  // Get poll items for each poll
+  for (const poll of polls) {
+    const itemResult = await db.query<RowDataPacket>(
+      `SELECT * FROM poll_items
+       WHERE poll_id = ? AND is_active = true
+       ORDER BY display_order, id`,
+      [poll.id]
+    );
+    poll.items = itemResult.rows;
+  }
+
+  // Get total count for pagination
+  const countResult = await db.query<RowDataPacket>(
+    `SELECT COUNT(*) as total
+     FROM polls p
+     WHERE p.is_active = true
+     AND p.deleted_at IS NULL
+     AND p.end_date < NOW()`
+  );
+
+  const total = countResult.rows[0]?.total || 0;
+
+  return {
+    polls,
+    total,
+    offset,
+    limit,
+    hasNext: offset + limit < total,
+    hasPrev: offset > 0
+  };
+}
+
+/**
  * Get poll by ID with items
  */
 export async function getPollById(pollId: number) {

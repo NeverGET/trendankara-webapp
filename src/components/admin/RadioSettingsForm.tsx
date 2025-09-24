@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Textarea } from '@/components/ui-adapters/TextareaAdapter';
 import { StreamTestButton } from '@/components/admin/StreamTestButton';
@@ -386,7 +386,7 @@ export function RadioSettingsForm({
               streamUrl={streamUrlValue}
               onTestComplete={handleTestComplete}
               onTestError={handleTestError}
-              size="small"
+              size="sm"
               variant="secondary"
               disabled={!streamUrlValue || isLoading}
             />

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MobilePreview } from '@/components/admin/MobilePreview';
 import { ComponentPalette, getDefaultProps } from '@/components/admin/ComponentPalette';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -390,7 +390,7 @@ export default function AdminContentPage() {
 
                 <div className="flex gap-2 mt-3 pt-3 border-t">
                   <Button
-                    size="small"
+                    size="sm"
                     variant="secondary"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -400,7 +400,7 @@ export default function AdminContentPage() {
                     {page.is_published ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                   </Button>
                   <Button
-                    size="small"
+                    size="sm"
                     variant="secondary"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -411,7 +411,7 @@ export default function AdminContentPage() {
                   </Button>
                   {!page.is_homepage && (
                     <Button
-                      size="small"
+                      size="sm"
                       variant="secondary"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -422,8 +422,8 @@ export default function AdminContentPage() {
                     </Button>
                   )}
                   <Button
-                    size="small"
-                    variant="danger"
+                    size="sm"
+                    variant="destructive"
                     onClick={(e) => {
                       e.stopPropagation();
                       page.id && deletePage(page.id);
@@ -449,7 +449,7 @@ export default function AdminContentPage() {
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
-            size="small"
+            size="sm"
             onClick={() => setShowPageList(true)}
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -501,7 +501,7 @@ export default function AdminContentPage() {
 
           <Button
             variant="secondary"
-            size="small"
+            size="sm"
             onClick={() => {
               if (currentPage.id) {
                 togglePublish(currentPage.id, !currentPage.is_published);
@@ -617,8 +617,8 @@ export default function AdminContentPage() {
 
                   <div className="pt-4 border-t">
                     <Button
-                      variant="danger"
-                      size="small"
+                      variant="destructive"
+                      size="sm"
                       onClick={() => deleteComponent(selectedComponentId)}
                       className="w-full"
                     >

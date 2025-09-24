@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui-adapters/SelectAdapter';
 import {
@@ -191,7 +191,7 @@ export function MediaPickerDialog({
       isOpen={isOpen}
       onClose={onClose}
       title="Medya Seçici"
-      size="large"
+      size="lg"
     >
       <div className="flex flex-col h-[600px]">
         {/* Header Controls */}
@@ -226,8 +226,8 @@ export function MediaPickerDialog({
             {!hideUpload && (
               <label className="cursor-pointer">
                 <Button
-                  variant="primary"
-                  size="small"
+                  variant="default"
+                  size="sm"
                   disabled={isUploading}
                   className="flex items-center gap-2"
                 >
@@ -355,7 +355,7 @@ export function MediaPickerDialog({
                 İptal
               </Button>
               <Button
-                variant="primary"
+                variant="default"
                 onClick={handleConfirmSelection}
                 disabled={selectedItems.length === 0}
               >

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/Card';
 import { Alert } from '@/components/ui/Alert';
 import { StreamTestIndicator } from '@/components/admin/StreamTestIndicator';
@@ -284,7 +284,7 @@ export function StreamUrlConfigForm({
                             <span>{suggestion}</span>
                             <Button
                               type="button"
-                              size="small"
+                              size="sm"
                               variant="ghost"
                               onClick={() => {
                                 const suggestedUrl = suggestion.replace('Suggested URL: ', '');

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAudioPreview } from '@/hooks/useAudioPreview';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 
@@ -113,8 +113,8 @@ export function AudioPreviewPlayer({
         {/* Compact Play/Pause Button */}
         <Button
           onClick={handlePlayPause}
-          variant="primary"
-          size="small"
+          variant="default"
+          size="sm"
           disabled={!streamUrl || isLoading}
           className="min-w-[36px] h-9 w-9 p-0 rounded-full"
           aria-label={isPlaying ? 'Önizlemeyi duraklat' : 'Önizlemeyi başlat'}
@@ -193,7 +193,7 @@ export function AudioPreviewPlayer({
           <Button
             onClick={handleStop}
             variant="ghost"
-            size="compact"
+            size="sm"
             className="text-dark-text-secondary hover:text-dark-text-primary"
           >
             Durdur
@@ -206,8 +206,8 @@ export function AudioPreviewPlayer({
         {/* Play/Pause Button */}
         <Button
           onClick={handlePlayPause}
-          variant="primary"
-          size="medium"
+          variant="default"
+          size="default"
           disabled={!streamUrl || isLoading}
           className="min-w-[44px] h-11 w-11 md:min-w-[48px] md:h-12 md:w-12 p-0 rounded-full"
           aria-label={isPlaying ? 'Önizlemeyi duraklat' : 'Önizlemeyi başlat'}

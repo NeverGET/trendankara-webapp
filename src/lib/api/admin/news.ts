@@ -133,6 +133,7 @@ export async function createAdminNews(data: NewsFormData): Promise<AdminNewsResp
     formData.append('slug', data.slug);
     formData.append('summary', data.summary);
     formData.append('content', data.content);
+    formData.append('category', data.category);
     formData.append('is_featured', data.featured.toString());
     formData.append('is_breaking', data.breaking.toString());
     formData.append('is_hot', data.hot.toString());
@@ -180,6 +181,8 @@ export async function updateAdminNews(id: number, data: Partial<NewsFormData>): 
           formData.append('is_hot', value.toString());
         } else if (key === 'active') {
           formData.append('is_active', value.toString());
+        } else if (key === 'category') {
+          formData.append('category', value.toString());
         } else {
           formData.append(key, value.toString());
         }

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { NewsCard } from '@/components/admin/NewsCard';
 import { NewsForm } from '@/components/admin/NewsForm';
 import { StatsCard } from '@/components/admin/StatsCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -36,6 +36,7 @@ import {
   NewsFilters
 } from '@/lib/api/admin/news';
 import { NewsArticle } from '@/types/news';
+import { NewsModal } from '@/components/news/NewsModal';
 
 interface NewsStats {
   total_count: number;
@@ -65,11 +66,49 @@ export default function AdminNewsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingNews, setEditingNews] = useState<NewsArticle | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewArticle, setPreviewArticle] = useState<any>(null);
 
   // Confirmation dialog
   const confirmation = useConfirmation();
 
-  const categories = ['all', 'MAGAZINE', 'ARTIST', 'ALBUM', 'CONCERT'];
+  const categories = [
+    { value: 'all', label: 'Tümü' },
+    { value: 'MAGAZINE', label: 'MAGAZIN' },
+    { value: 'ARTIST', label: 'SANATÇI' },
+    { value: 'ALBUM', label: 'ALBÜM' },
+    { value: 'CONCERT', label: 'KONSER' }
+  ];
+
+  // Transform raw database data to match frontend expectations
+  const transformNewsData = (article: any) => {
+    // Map category_id to category name if category_name is not provided
+    const categoryIdMap: Record<number, string> = {
+      1: 'MAGAZINE',
+      2: 'ARTIST',
+      3: 'ALBUM',
+      4: 'CONCERT'
+    };
+
+    let categoryName = article.category_name;
+    if (!categoryName && article.category_id) {
+      categoryName = categoryIdMap[article.category_id] || 'MAGAZINE';
+    }
+
+    return {
+      ...article,
+      thumbnail: article.featured_image,
+      isHot: Boolean(article.is_hot),
+      isBreaking: Boolean(article.is_breaking),
+      publishedAt: article.published_at || article.created_at,
+      category: categoryName || 'MAGAZINE',
+      author: article.creator_name ? {
+        id: article.created_by,
+        name: article.creator_name
+      } : undefined,
+      viewCount: article.views || 0
+    };
+  };
 
   // Load news data
   const loadNews = async (page: number = 1, search?: string, category?: string) => {
@@ -82,22 +121,24 @@ export default function AdminNewsPage() {
       }
 
       if (category && category !== 'all') {
-        // Map frontend categories to backend format
-        const categoryMap: Record<string, string> = {
-          'MAGAZINE': 'MAGAZINE',
-          'ARTIST': 'ARTIST',
-          'ALBUM': 'ALBUM',
-          'CONCERT': 'CONCERT'
+        // Map frontend categories to backend category IDs
+        const categoryIdMap: Record<string, number> = {
+          'MAGAZINE': 1,
+          'ARTIST': 2,
+          'ALBUM': 3,
+          'CONCERT': 4
         };
-        if (categoryMap[category]) {
-          filters.search = `category:${categoryMap[category]}`;
+        if (categoryIdMap[category]) {
+          filters.category_id = categoryIdMap[category];
         }
       }
 
       const response = await getAdminNews(page, 20, filters, true);
 
       if (response.success) {
-        setNews(response.data);
+        // Transform the raw data to match frontend expectations
+        const transformedData = response.data.map(transformNewsData);
+        setNews(transformedData);
         setPagination(response.pagination);
         if (response.stats) {
           setStats(response.stats);
@@ -112,21 +153,12 @@ export default function AdminNewsPage() {
 
   // Load data on component mount and when filters change
   useEffect(() => {
-    loadNews(currentPage, searchQuery, filterCategory);
-  }, [currentPage, searchQuery, filterCategory]);
-
-  // Handle search with debounce
-  useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (currentPage === 1) {
-        loadNews(1, searchQuery, filterCategory);
-      } else {
-        setCurrentPage(1);
-      }
-    }, 500);
+      loadNews(currentPage, searchQuery, filterCategory);
+    }, searchQuery ? 500 : 0); // Only debounce for search, not for other changes
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, currentPage, filterCategory]);
+  }, [currentPage, searchQuery, filterCategory]);
 
   // Handle category filter
   const handleCategoryChange = (category: string) => {
@@ -215,10 +247,13 @@ export default function AdminNewsPage() {
     }
   };
 
-  // Handle view news (placeholder for now)
+  // Handle view news - open preview modal
   const handleViewNews = (id: number) => {
-    // TODO: Open news in new tab or modal
-    console.log('View news:', id);
+    const article = news.find(n => n.id === id);
+    if (article) {
+      setPreviewArticle(article);
+      setShowPreviewModal(true);
+    }
   };
 
   return (
@@ -234,8 +269,8 @@ export default function AdminNewsPage() {
           </p>
         </div>
         <Button
-          variant="primary"
-          size="medium"
+          variant="default"
+          size="default"
           onClick={() => setShowCreateModal(true)}
         >
           <FiPlus className="w-4 h-4 mr-2" />
@@ -294,16 +329,16 @@ export default function AdminNewsPage() {
             <div className="flex gap-2 flex-wrap">
               {categories.map(cat => (
                 <button
-                  key={cat}
-                  onClick={() => handleCategoryChange(cat)}
+                  key={cat.value}
+                  onClick={() => handleCategoryChange(cat.value)}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
-                    filterCategory === cat
+                    filterCategory === cat.value
                       ? "bg-red-500 text-white shadow-lg shadow-red-900/30"
                       : "bg-dark-surface-secondary/50 text-dark-text-secondary hover:bg-dark-surface-tertiary"
                   )}
                 >
-                  {cat === 'all' ? 'Tümü' : cat}
+                  {cat.label}
                 </button>
               ))}
             </div>
@@ -358,7 +393,7 @@ export default function AdminNewsPage() {
                   publishedAt={new Date(article.publishedAt).toLocaleDateString('tr-TR')}
                   viewCount={article.viewCount}
                   commentCount={0} // Not available in current data structure
-                  imageUrl={typeof article.thumbnail === 'string' ? article.thumbnail : article.thumbnail?.url || '/api/placeholder/400/200'}
+                  imageUrl={article.thumbnail || article.featured_image || '/api/placeholder/400/200'}
                   status={'published'} // Map from article status
                   isHot={article.isHot}
                   isBreaking={article.isBreaking}
@@ -383,18 +418,18 @@ export default function AdminNewsPage() {
                         </h3>
                         <Badge
                           variant={categoryColors[article.category] as any || 'default'}
-                          size="small"
+                          size="sm"
                           pill
                         >
                           {article.category}
                         </Badge>
                         {article.isHot && (
-                          <Badge variant="error" size="small" pill animated>
+                          <Badge variant="error" size="sm" pill animated>
                             🔥 HOT
                           </Badge>
                         )}
                         {article.isBreaking && (
-                          <Badge variant="warning" size="small" pill animated>
+                          <Badge variant="warning" size="sm" pill animated>
                             ⚡ SON DAKİKA
                           </Badge>
                         )}
@@ -412,13 +447,13 @@ export default function AdminNewsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="small" onClick={() => handleViewNews(article.id)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleViewNews(article.id)}>
                         <FiEye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="small" onClick={() => handleEditNews(article.id)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleEditNews(article.id)}>
                         <FiEdit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="small" onClick={() => handleDeleteNews(article.id)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteNews(article.id)}>
                         <FiTrash2 className="w-4 h-4 text-red-500" />
                       </Button>
                     </div>
@@ -433,7 +468,7 @@ export default function AdminNewsPage() {
             <div className="flex justify-center items-center gap-4 mt-8">
               <Button
                 variant="ghost"
-                size="small"
+                size="sm"
                 disabled={!pagination.hasPrev}
                 onClick={() => handlePageChange(currentPage - 1)}
               >
@@ -463,7 +498,7 @@ export default function AdminNewsPage() {
 
               <Button
                 variant="ghost"
-                size="small"
+                size="sm"
                 disabled={!pagination.hasNext}
                 onClick={() => handlePageChange(currentPage + 1)}
               >
@@ -490,11 +525,12 @@ export default function AdminNewsPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         title="Yeni Haber Oluştur"
-        size="large"
+        size="lg"
       >
         <NewsForm
           mode="create"
           onSubmit={handleCreateNews}
+          onCancel={() => setShowCreateModal(false)}
           isLoading={isSubmitting}
         />
       </Modal>
@@ -507,13 +543,17 @@ export default function AdminNewsPage() {
           setEditingNews(null);
         }}
         title="Haberi Düzenle"
-        size="large"
+        size="lg"
       >
         {editingNews && (
           <NewsForm
             mode="edit"
             initialData={editingNews}
             onSubmit={handleUpdateNews}
+            onCancel={() => {
+              setShowEditModal(false);
+              setEditingNews(null);
+            }}
             isLoading={isSubmitting}
           />
         )}
@@ -531,6 +571,16 @@ export default function AdminNewsPage() {
         cancelText={confirmation.cancelText}
         loading={confirmation.isLoading}
       />
+
+      {/* Preview Modal */}
+      <NewsModal
+        isOpen={showPreviewModal}
+        onClose={() => {
+          setShowPreviewModal(false);
+          setPreviewArticle(null);
+        }}
+        article={previewArticle}
+      />
     </div>
   );
 }
@@ -541,9 +591,9 @@ function cn(...classes: string[]) {
 }
 
 const categoryColors: Record<string, string> = {
-  'MAGAZIN': 'purple',
-  'SANATÇI': 'pink',
-  'ALBÜM': 'info',
-  'KONSER': 'success',
+  'MAGAZINE': 'purple',
+  'ARTIST': 'pink',
+  'ALBUM': 'info',
+  'CONCERT': 'success',
   'HABER': 'warning'
 };

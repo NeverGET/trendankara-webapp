@@ -96,7 +96,7 @@ export function StreamTestIndicator({
             <p className="text-sm text-dark-text-primary font-medium">
               {message}
             </p>
-            <Badge variant="success" size="small">
+            <Badge variant="success" size="sm">
               Doğrulandı
             </Badge>
           </div>
@@ -152,7 +152,7 @@ export function StreamTestIndicator({
                             {metadata.serverInfo.software}
                           </p>
                           {metadata.serverInfo.version && (
-                            <Badge variant="info" size="small">
+                            <Badge variant="info" size="sm">
                               v{metadata.serverInfo.version}
                             </Badge>
                           )}
@@ -191,7 +191,7 @@ export function StreamTestIndicator({
                     {metadata.audioFormat && (
                       <div className="p-3 bg-dark-surface-secondary/50 rounded-lg border border-dark-border-primary/30">
                         <p className="text-xs text-dark-text-secondary font-medium mb-1">Audio Format</p>
-                        <Badge variant="info" size="small">
+                        <Badge variant="info" size="sm">
                           {metadata.audioFormat}
                         </Badge>
                       </div>
@@ -230,7 +230,7 @@ export function StreamTestIndicator({
           <p className="text-sm text-dark-text-primary font-medium">
             {message}
           </p>
-          <Badge variant="error" size="small">
+          <Badge variant="error" size="sm">
             Başarısız
           </Badge>
         </div>

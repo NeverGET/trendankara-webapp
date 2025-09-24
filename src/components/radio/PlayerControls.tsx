@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRadioPlayer } from '@/hooks/useRadioPlayer';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface PlayerControlsProps {
@@ -40,7 +40,7 @@ export function PlayerControls({
     <div className="flex items-center gap-3">
       <Button
         onClick={handleToggle}
-        variant="primary"
+        variant="default"
         size={buttonSizes[size]}
         disabled={isLoading && !isPlaying}
         aria-label={isPlaying ? 'Duraklat' : 'Oynat'}

@@ -197,18 +197,22 @@ export async function POST(request: NextRequest) {
         slug: formData.get('slug'),
         summary: formData.get('summary'),
         content: formData.get('content'),
+        category: formData.get('category'),
         category_id: formData.get('category_id'),
         is_featured: formData.get('is_featured'),
         is_breaking: formData.get('is_breaking'),
         is_hot: formData.get('is_hot'),
         is_active: formData.get('is_active'),
-        published_at: formData.get('published_at')
+        published_at: formData.get('published_at'),
+        featured_image: formData.get('featured_image')
       };
 
-      // Extract image file if present
-      const uploadedFile = formData.get('featured_image') as File;
-      if (uploadedFile && uploadedFile.size > 0) {
-        imageFile = uploadedFile;
+      // Check if featured_image is a file upload
+      const featuredImageField = formData.get('featured_image');
+      if (featuredImageField instanceof File && featuredImageField.size > 0) {
+        imageFile = featuredImageField;
+        // Remove the string version since we have a file
+        delete body.featured_image;
       }
     } else {
       // Handle JSON request
@@ -221,6 +225,7 @@ export async function POST(request: NextRequest) {
       summary,
       content,
       featured_image,
+      category,
       category_id,
       is_featured,
       is_breaking,
@@ -228,6 +233,19 @@ export async function POST(request: NextRequest) {
       is_active,
       published_at
     } = body;
+
+    // Map category string to category_id if needed
+    let finalCategoryId = category_id;
+    if (!finalCategoryId && category) {
+      // Simple mapping - in production, you'd query the database
+      const categoryMap: Record<string, number> = {
+        'MAGAZINE': 1,
+        'ARTIST': 2,
+        'ALBUM': 3,
+        'CONCERT': 4
+      };
+      finalCategoryId = categoryMap[category];
+    }
 
     // Validate required fields
     if (!title || !content) {
@@ -299,7 +317,7 @@ export async function POST(request: NextRequest) {
       summary,
       content,
       featured_image: finalFeaturedImage,
-      category_id: category_id ? parseInt(category_id) : undefined,
+      category_id: finalCategoryId ? parseInt(finalCategoryId) : undefined,
       is_featured: is_featured === true || is_featured === 'true',
       is_breaking: is_breaking === true || is_breaking === 'true',
       is_hot: is_hot === true || is_hot === 'true',
@@ -371,26 +389,41 @@ export async function PUT(request: NextRequest) {
         slug: formData.get('slug'),
         summary: formData.get('summary'),
         content: formData.get('content'),
+        category: formData.get('category'),
         category_id: formData.get('category_id'),
         is_featured: formData.get('is_featured'),
         is_breaking: formData.get('is_breaking'),
         is_hot: formData.get('is_hot'),
         is_active: formData.get('is_active'),
-        published_at: formData.get('published_at')
+        published_at: formData.get('published_at'),
+        featured_image: formData.get('featured_image')
       };
 
-      // Extract image file if present
-      const uploadedFile = formData.get('featured_image') as File;
-      if (uploadedFile && uploadedFile.size > 0) {
-        imageFile = uploadedFile;
+      // Check if featured_image is a file upload
+      const featuredImageField = formData.get('featured_image');
+      if (featuredImageField instanceof File && featuredImageField.size > 0) {
+        imageFile = featuredImageField;
+        // Remove the string version since we have a file
+        delete body.featured_image;
       }
     } else {
       // Handle JSON request
       body = await request.json();
     }
 
-    const { id, ...updateData } = body;
+    const { id, category, ...updateData } = body;
     newsId = parseInt(id);
+
+    // Map category string to category_id if needed
+    if (category && !updateData.category_id) {
+      const categoryMap: Record<string, number> = {
+        'MAGAZINE': 1,
+        'ARTIST': 2,
+        'ALBUM': 3,
+        'CONCERT': 4
+      };
+      updateData.category_id = categoryMap[category];
+    }
 
     // Validate news ID
     if (!id) {

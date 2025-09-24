@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { SimplifiedImagePicker } from '@/components/ui/SimplifiedImagePicker';
@@ -156,7 +156,7 @@ function SortableItem({
             <div className="flex items-start pt-2">
               <Button
                 onClick={() => onRemoveItem(index)}
-                size="small"
+                size="sm"
                 variant="ghost"
                 className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                 disabled={itemsLength <= 2}
@@ -267,7 +267,7 @@ export function PollItemsManager({
         {!readOnly && (
           <Button
             onClick={handleAddItem}
-            size="small"
+            size="sm"
             variant="secondary"
             className="flex items-center gap-2"
           >
