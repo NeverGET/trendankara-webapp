@@ -90,7 +90,7 @@ export function ContentEditor({
       <div className="space-y-4">
         {/* Component Actions */}
         <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-          <Badge variant="purple" size="sm">
+          <Badge variant="purple" size="small">
             {componentTypes.find(c => c.type === type)?.label || type}
           </Badge>
           <div className="flex gap-1">

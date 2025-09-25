@@ -194,7 +194,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Step 4: Determine if we need to test connection or use cached status
     let connection_status: 'active' | 'testing' | 'failed' = 'testing';
-    let last_tested: string;
+    let last_tested: string = new Date().toISOString();
     let shouldTestConnection = true;
 
     // If we have cached data and connection test is still valid, reuse it

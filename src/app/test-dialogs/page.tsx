@@ -149,7 +149,7 @@ export default function TestDialogsPage() {
         }}
         title="Confirm Action"
         message="This confirmation dialog should have a blurred background matching the ReUI design system."
-        variant="destructive"
+        variant="danger"
       />
     </div>
   );

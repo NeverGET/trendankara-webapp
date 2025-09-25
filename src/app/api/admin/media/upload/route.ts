@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const uploadedMedia = [];
+    const uploadedMedia: any[] = [];
 
     // Process each file
     for (const file of files) {

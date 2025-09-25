@@ -16,7 +16,7 @@ import Image from 'next/image';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/admin';
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -101,7 +101,7 @@ function LoginForm() {
             className="w-full"
             disabled={isLoading}
             variant="default"
-            size="large"
+            size="lg"
           >
             {isLoading ? (
               <span className="flex items-center justify-center">

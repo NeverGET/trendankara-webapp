@@ -393,7 +393,9 @@ export default function AdminNewsPage() {
                   publishedAt={new Date(article.publishedAt).toLocaleDateString('tr-TR')}
                   viewCount={article.viewCount}
                   commentCount={0} // Not available in current data structure
-                  imageUrl={article.thumbnail || article.featured_image || '/api/placeholder/400/200'}
+                  imageUrl={typeof article.thumbnail === 'string'
+                    ? article.thumbnail
+                    : article.thumbnail?.url || '/api/placeholder/400/200'}
                   status={'published'} // Map from article status
                   isHot={article.isHot}
                   isBreaking={article.isBreaking}
@@ -418,18 +420,18 @@ export default function AdminNewsPage() {
                         </h3>
                         <Badge
                           variant={categoryColors[article.category] as any || 'default'}
-                          size="sm"
+                          size="small"
                           pill
                         >
                           {article.category}
                         </Badge>
                         {article.isHot && (
-                          <Badge variant="error" size="sm" pill animated>
+                          <Badge variant="error" size="small" pill animated>
                             🔥 HOT
                           </Badge>
                         )}
                         {article.isBreaking && (
-                          <Badge variant="warning" size="sm" pill animated>
+                          <Badge variant="warning" size="small" pill animated>
                             ⚡ SON DAKİKA
                           </Badge>
                         )}
@@ -525,7 +527,7 @@ export default function AdminNewsPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         title="Yeni Haber Oluştur"
-        size="lg"
+        size="large"
       >
         <NewsForm
           mode="create"
@@ -543,7 +545,7 @@ export default function AdminNewsPage() {
           setEditingNews(null);
         }}
         title="Haberi Düzenle"
-        size="lg"
+        size="large"
       >
         {editingNews && (
           <NewsForm

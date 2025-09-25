@@ -187,9 +187,12 @@ export function ContentActions({
     }
   };
 
+  // Map size prop to Button component size
+  const buttonSize = size === 'small' ? 'sm' : size === 'large' ? 'lg' : 'default';
+
   // Render action buttons based on current status
   const renderActions = () => {
-    const actions = [];
+    const actions: React.ReactElement[] = [];
 
     if (status === 'draft') {
       // Draft: can publish or schedule
@@ -198,7 +201,7 @@ export function ContentActions({
           <Button
             key="publish"
             variant="default"
-            size={size}
+            size={buttonSize}
             onClick={handlePublish}
             className="flex items-center gap-2"
           >
@@ -212,7 +215,7 @@ export function ContentActions({
           <Button
             key="schedule"
             variant="secondary"
-            size={size}
+            size={buttonSize}
             onClick={handleSchedule}
             className="flex items-center gap-2"
           >
@@ -228,7 +231,7 @@ export function ContentActions({
           <Button
             key="unpublish"
             variant="secondary"
-            size={size}
+            size={buttonSize}
             onClick={handleUnpublish}
             className="flex items-center gap-2"
           >
@@ -242,7 +245,7 @@ export function ContentActions({
           <Button
             key="archive"
             variant="secondary"
-            size={size}
+            size={buttonSize}
             onClick={handleArchive}
             className="flex items-center gap-2"
           >
@@ -258,7 +261,7 @@ export function ContentActions({
           <Button
             key="publish-now"
             variant="default"
-            size={size}
+            size={buttonSize}
             onClick={handlePublish}
             className="flex items-center gap-2"
           >
@@ -272,7 +275,7 @@ export function ContentActions({
           <Button
             key="cancel-schedule"
             variant="ghost"
-            size={size}
+            size={buttonSize}
             onClick={handleUnpublish}
             className="flex items-center gap-2"
           >
@@ -288,7 +291,7 @@ export function ContentActions({
           <Button
             key="restore"
             variant="secondary"
-            size={size}
+            size={buttonSize}
             onClick={handlePublish}
             className="flex items-center gap-2"
           >

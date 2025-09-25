@@ -138,7 +138,7 @@ export function ImageUploadZone({
           <Button
             type="button"
             variant="secondary"
-            size="medium"
+            size="default"
             onClick={() => fileInputRef.current?.click()}
           >
             <FiImage className="w-4 h-4 mr-2" />
@@ -197,7 +197,7 @@ export function ImageUploadZone({
           <Button
             type="button"
             variant="default"
-            size="medium"
+            size="default"
             fullWidth
             onClick={handleUpload}
           >

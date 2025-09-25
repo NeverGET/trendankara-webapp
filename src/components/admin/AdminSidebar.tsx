@@ -65,6 +65,7 @@ export function AdminSidebar() {
   const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
   const isActive = (href: string) => {
+    if (!pathname) return false;
     if (href === '/admin') {
       return pathname === '/admin';
     }
@@ -157,8 +158,7 @@ export function AdminSidebar() {
             <Button
               variant="ghost"
               size="sm"
-              fullWidth
-              className="justify-start group hover:pl-6 transition-all duration-300"
+              className="w-full justify-start group hover:pl-6 transition-all duration-300"
             >
               <FiHome className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
               <span className="font-medium">Site Ana Sayfa</span>

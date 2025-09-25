@@ -233,7 +233,7 @@ export function AudioPreviewPlayer({
           </p>
           {isPlaying && (currentTime || duration) && (
             <p className="text-xs text-dark-text-secondary">
-              {formatTime(currentTime)} {duration && `/ ${formatTime(duration)}`}
+              {formatTime(currentTime || 0)} {duration && `/ ${formatTime(duration)}`}
             </p>
           )}
         </div>
@@ -258,7 +258,7 @@ export function AudioPreviewPlayer({
             aria-label="Önizleme ses seviyesi"
           />
           <span className="text-xs text-dark-text-secondary w-8 text-right">
-            {Math.round(volume * 100)}%
+            {Math.round((volume || 1) * 100)}%
           </span>
         </div>
       </div>

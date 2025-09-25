@@ -360,7 +360,7 @@ export default function AdminPollsPage() {
                 <FiCheckCircle className="w-5 h-5 text-red-500" />
               </div>
               <h2 className="text-lg font-semibold text-dark-text-primary">Toplu İşlemler</h2>
-              <Badge variant="error" size="sm" pill>
+              <Badge variant="error" size="small" pill>
                 {selectedPollIds.length} Anket Seçili
               </Badge>
             </div>
@@ -528,7 +528,7 @@ export default function AdminPollsPage() {
               <FiActivity className="w-5 h-5 text-green-500" />
             </div>
             <h2 className="text-lg font-semibold text-dark-text-primary">Aktif Anketler</h2>
-            <Badge variant="success" size="sm" pill animated>
+            <Badge variant="success" size="small" pill animated>
               {filteredPolls.filter(p => {
                 const realStatus = getPollStatus({
                   start_date: p.start_date,
@@ -554,7 +554,7 @@ export default function AdminPollsPage() {
                   {poll.daysRemaining !== undefined && (
                     <Badge
                       variant={poll.daysRemaining <= 3 ? 'error' : 'warning'}
-                      size="sm"
+                      size="small"
                       animated={poll.daysRemaining <= 3}
                     >
                       {poll.daysRemaining} gün
@@ -690,7 +690,7 @@ export default function AdminPollsPage() {
                       </h3>
                       <Badge
                         variant={config.color as any}
-                        size="sm"
+                        size="small"
                         pill
                       >
                         {config.label}
@@ -702,7 +702,7 @@ export default function AdminPollsPage() {
                           realStatus === 'ended' ? 'error' :
                           'default'
                         }
-                        size="sm"
+                        size="small"
                         pill
                         animated={realStatus === 'active'}
                       >

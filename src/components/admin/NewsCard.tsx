@@ -85,18 +85,18 @@ export function NewsCard({
       <div className="absolute top-4 left-4 flex gap-2">
         <Badge
           variant={categoryColors[category] as any || 'default'}
-          size="sm"
+          size="small"
           pill
         >
           {category}
         </Badge>
         {isHot && (
-          <Badge variant="error" size="sm" pill animated>
+          <Badge variant="error" size="small" pill animated>
             🔥 HOT
           </Badge>
         )}
         {isBreaking && (
-          <Badge variant="warning" size="sm" pill animated>
+          <Badge variant="warning" size="small" pill animated>
             ⚡ SON DAKİKA
           </Badge>
         )}
@@ -110,7 +110,7 @@ export function NewsCard({
             status === 'draft' ? 'warning' :
             'default'
           }
-          size="sm"
+          size="small"
           pill
         >
           {status === 'published' ? 'Yayında' :

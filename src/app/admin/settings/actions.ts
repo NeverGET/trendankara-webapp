@@ -84,9 +84,7 @@ async function validateSuperAdminAccess(): Promise<{
       const authError = RadioErrorHandler.handleAuthError(
         'No valid session found',
         'updateStreamUrl',
-        undefined,
-        undefined,
-        'super_admin'
+        { requiredRole: 'super_admin' }
       )
 
       return {
@@ -101,9 +99,11 @@ async function validateSuperAdminAccess(): Promise<{
       const authError = RadioErrorHandler.handleAuthError(
         'Super admin access required for stream URL modifications',
         'updateStreamUrl',
-        session.user?.id ? parseInt(session.user.id) : undefined,
-        session.user?.email,
-        'super_admin'
+        {
+          adminUserId: session.user?.id ? parseInt(session.user.id) : undefined,
+          adminUserEmail: session.user?.email,
+          requiredRole: 'super_admin'
+        }
       )
 
       return {
@@ -143,10 +143,10 @@ function validateFormData(formData: UpdateStreamUrlFormData): {
       const validationError = RadioErrorHandler.handleFormValidationError(
         'Stream URL is required',
         'validateFormData',
-        undefined,
-        undefined,
-        'stream_url',
-        formData.stream_url
+        {
+          fieldName: 'stream_url',
+          fieldValue: formData.stream_url
+        }
       )
 
       return {
@@ -163,9 +163,9 @@ function validateFormData(formData: UpdateStreamUrlFormData): {
       const validationError = RadioErrorHandler.handleStreamValidationError(
         urlValidation.message,
         'validateFormData',
-        undefined,
-        undefined,
-        formData.stream_url
+        {
+          streamUrl: formData.stream_url
+        }
       )
 
       return {
@@ -179,10 +179,10 @@ function validateFormData(formData: UpdateStreamUrlFormData): {
       const validationError = RadioErrorHandler.handleFormValidationError(
         'Station name is required',
         'validateFormData',
-        undefined,
-        undefined,
-        'station_name',
-        formData.station_name
+        {
+          fieldName: 'station_name',
+          fieldValue: formData.station_name
+        }
       )
 
       return {
@@ -196,10 +196,10 @@ function validateFormData(formData: UpdateStreamUrlFormData): {
       const validationError = RadioErrorHandler.handleFormValidationError(
         'Station name cannot exceed 255 characters',
         'validateFormData',
-        undefined,
-        undefined,
-        'station_name',
-        formData.station_name
+        {
+          fieldName: 'station_name',
+          fieldValue: formData.station_name
+        }
       )
 
       return {
@@ -213,10 +213,10 @@ function validateFormData(formData: UpdateStreamUrlFormData): {
       const validationError = RadioErrorHandler.handleFormValidationError(
         'Station description cannot exceed 65535 characters',
         'validateFormData',
-        undefined,
-        undefined,
-        'station_description',
-        formData.station_description
+        {
+          fieldName: 'station_description',
+          fieldValue: formData.station_description
+        }
       )
 
       return {
@@ -241,10 +241,10 @@ function validateFormData(formData: UpdateStreamUrlFormData): {
             const validationError = RadioErrorHandler.handleFormValidationError(
               `${key.replace('_url', '')} URL cannot exceed 500 characters`,
               'validateFormData',
-              undefined,
-              undefined,
-              key,
-              value
+              {
+                fieldName: key,
+                fieldValue: value
+              }
             )
 
             return {
@@ -256,10 +256,10 @@ function validateFormData(formData: UpdateStreamUrlFormData): {
           const validationError = RadioErrorHandler.handleFormValidationError(
             `Invalid ${key.replace('_url', '')} URL format`,
             'validateFormData',
-            undefined,
-            undefined,
-            key,
-            value
+            {
+              fieldName: key,
+              fieldValue: value
+            }
           )
 
           return {
@@ -277,9 +277,9 @@ function validateFormData(formData: UpdateStreamUrlFormData): {
         const validationError = RadioErrorHandler.handleStreamValidationError(
           `Invalid metadata URL: ${metadataUrlValidation.message}`,
           'validateFormData',
-          undefined,
-          undefined,
-          formData.metadata_url
+          {
+            streamUrl: formData.metadata_url
+          }
         )
 
         return {
@@ -325,7 +325,9 @@ async function updateStreamConfiguration(
       facebook_url: formData.facebook_url?.trim() || null,
       twitter_url: formData.twitter_url?.trim() || null,
       instagram_url: formData.instagram_url?.trim() || null,
-      youtube_url: formData.youtube_url?.trim() || null
+      youtube_url: formData.youtube_url?.trim() || null,
+      is_active: true,
+      updated_by: adminUserId
     }
 
     // Use existing atomic database update method
@@ -343,9 +345,10 @@ async function updateStreamConfiguration(
     const dbError = RadioErrorHandler.handleDatabaseError(
       error as Error,
       'updateStreamConfiguration',
-      adminUserId,
-      undefined,
-      'radio_settings'
+      {
+        adminUserId: adminUserId,
+        table: 'radio_settings'
+      }
     )
 
     return {
@@ -375,8 +378,14 @@ export async function updateStreamUrl(
     if (!authValidation.success) {
       return {
         success: false,
-        message: authValidation.error?.error.userMessage || 'Authentication failed',
-        error: authValidation.error?.error
+        message: authValidation.error?.error.message || 'Authentication failed',
+        error: authValidation.error ? {
+          type: authValidation.error.error.type,
+          code: authValidation.error.error.code,
+          userMessage: authValidation.error.error.message,
+          details: authValidation.error.error.details,
+          isRetryable: authValidation.error.error.details?.isRetryable || false
+        } : undefined
       }
     }
 
@@ -399,8 +408,14 @@ export async function updateStreamUrl(
     if (!validation.success) {
       return {
         success: false,
-        message: validation.error?.error.userMessage || 'Form validation failed',
-        error: validation.error?.error
+        message: validation.error?.error.message || 'Form validation failed',
+        error: validation.error ? {
+          type: validation.error.error.type,
+          code: validation.error.error.code,
+          userMessage: validation.error.error.message,
+          details: validation.error.error.details,
+          isRetryable: validation.error.error.details?.isRetryable || false
+        } : undefined
       }
     }
 
@@ -409,8 +424,14 @@ export async function updateStreamUrl(
     if (!updateResult.success) {
       return {
         success: false,
-        message: updateResult.error?.error.userMessage || 'Database update failed',
-        error: updateResult.error?.error
+        message: updateResult.error?.error.message || 'Database update failed',
+        error: updateResult.error ? {
+          type: updateResult.error.error.type,
+          code: updateResult.error.error.code,
+          userMessage: updateResult.error.error.message,
+          details: updateResult.error.error.details,
+          isRetryable: updateResult.error.error.details?.isRetryable || false
+        } : undefined
       }
     }
 
@@ -507,8 +528,14 @@ export async function testStreamConnection(
     if (!authValidation.success) {
       return {
         success: false,
-        message: authValidation.error?.error.userMessage || 'Authentication failed',
-        error: authValidation.error?.error
+        message: authValidation.error?.error.message || 'Authentication failed',
+        error: authValidation.error ? {
+          type: authValidation.error.error.type,
+          code: authValidation.error.error.code,
+          userMessage: authValidation.error.error.message,
+          details: authValidation.error.error.details,
+          isRetryable: authValidation.error.error.details?.isRetryable || false
+        } : undefined
       }
     }
 
@@ -550,9 +577,9 @@ export async function testStreamConnection(
     const connectionError = RadioErrorHandler.handleStreamConnectionError(
       error,
       'testStreamConnection',
-      undefined,
-      undefined,
-      streamUrl
+      {
+        streamUrl: streamUrl
+      }
     )
 
     return {

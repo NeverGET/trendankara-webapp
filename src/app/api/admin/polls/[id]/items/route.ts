@@ -124,7 +124,7 @@ export async function PUT(
       // Prepare poll data
       const pollData: Partial<PollData> = {
         title: body.title.trim(),
-        description: body.description?.trim() || null,
+        description: body.description?.trim() || undefined,
         poll_type: body.poll_type || 'custom',
         start_date: body.start_date,
         end_date: body.end_date,

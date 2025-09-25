@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
 
     // Include stats if requested
     const includeStats = searchParams.get('include_stats') === 'true';
-    let stats = null;
+    let stats: any = null;
     if (includeStats) {
       stats = await getNewsStats();
     }
@@ -295,7 +295,7 @@ export async function POST(request: NextRequest) {
             contentType: imageFile.type,
             metadata: {
               originalName: imageFile.name,
-              uploadedBy: userId,
+              uploadedBy: userId || 'unknown',
               newsTitle: title
             }
           }
@@ -471,7 +471,7 @@ export async function PUT(request: NextRequest) {
             contentType: imageFile.type,
             metadata: {
               originalName: imageFile.name,
-              uploadedBy: userId,
+              uploadedBy: userId || 'unknown',
               newsId: newsId.toString(),
               updatedAt: new Date().toISOString()
             }

@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
       streamTestRateLimit.onSuccess(request);
 
       // Extract metadata when stream test succeeds (Requirements 4.1, 4.2)
-      let metadata = null;
-      let metadataError = null;
+      let metadata: any = null;
+      let metadataError: any = null;
 
       try {
         // Extract metadata with a short timeout to avoid delaying the response
