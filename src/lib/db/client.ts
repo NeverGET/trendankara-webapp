@@ -112,9 +112,15 @@ class MySQLClient implements DatabaseClient {
       password = url.password;
       database = url.pathname.slice(1); // Remove leading /
     } else {
-      // Fallback to individual environment variables
+      // Use individual environment variables
+      // In Docker deployment, DATABASE_HOST will be set to 'radio_mysql_alt' via deploy.yml
+      // In development, DATABASE_HOST will be '82.29.169.180' from .env.local
       host = process.env.DATABASE_HOST || (isDocker ? 'radio_mysql_alt' : 'localhost');
-      port = parseInt(process.env.DATABASE_PORT || '3306');
+
+      // In Docker deployment, use internal port 3306
+      // In development, use external port 3307 for remote connection
+      port = parseInt(process.env.DATABASE_PORT || (isDocker ? '3306' : '3307'));
+
       user = process.env.DATABASE_USER || 'root';
       password = process.env.DATABASE_PASSWORD || '';
       database = process.env.DATABASE_NAME || 'radio_db';
@@ -200,10 +206,11 @@ class MySQLClient implements DatabaseClient {
    * Check if running in Docker environment
    */
   public async isDockerEnvironment(): Promise<boolean> {
-    // Quick check: Skip DNS lookup and use environment indicators only
+    // Use explicit IS_DOCKER_DEPLOYMENT flag for production Docker deployments
+    // This allows us to use NODE_ENV=production for builds without confusion
     return (
+      process.env.IS_DOCKER_DEPLOYMENT === 'true' ||
       process.env.DOCKER_ENV === 'true' ||
-      process.env.NODE_ENV === 'production' ||
       process.env.DATABASE_URL?.includes('radiodb') ||
       process.env.DATABASE_URL?.includes('radio_mysql_alt') ||
       process.env.DATABASE_URL?.includes('trendankara_mysql') ||

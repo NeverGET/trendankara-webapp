@@ -34,6 +34,18 @@ const DEFAULT_BUCKET = 'media';
 const PRESIGNED_URL_EXPIRY = 7 * 24 * 60 * 60;
 
 /**
+ * Check if running in Docker deployment environment
+ */
+function isDockerDeployment(): boolean {
+  return (
+    process.env.IS_DOCKER_DEPLOYMENT === 'true' ||
+    process.env.DOCKER_ENV === 'true' ||
+    process.env.MINIO_ENDPOINT === 'minio' ||
+    false
+  );
+}
+
+/**
  * Get storage configuration from environment variables
  */
 function getStorageConfig(): StorageConfig {
@@ -41,8 +53,16 @@ function getStorageConfig(): StorageConfig {
     return storageConfig;
   }
 
-  const endpoint = process.env.MINIO_ENDPOINT || 'localhost';
-  const port = parseInt(process.env.MINIO_PORT || '9000', 10);
+  const isDocker = isDockerDeployment();
+
+  // In Docker deployment, MINIO_ENDPOINT will be 'minio' (Docker network name)
+  // In development, MINIO_ENDPOINT will be '82.29.169.180' from .env.local
+  const endpoint = process.env.MINIO_ENDPOINT || (isDocker ? 'minio' : 'localhost');
+
+  // In Docker deployment, use internal port 9000
+  // In development, use external port 9002 for remote connection
+  const port = parseInt(process.env.MINIO_PORT || (isDocker ? '9000' : '9002'), 10);
+
   const accessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
   const secretKey = process.env.MINIO_SECRET_KEY || 'minioadmin123';
   const bucket = process.env.MINIO_BUCKET || DEFAULT_BUCKET;

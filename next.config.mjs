@@ -1,8 +1,8 @@
 // next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Temporarily disabled due to Next.js 15.5.3 error page bundling issue
-  // output: "standalone",
+  // Enable standalone output for Docker deployment
+  output: "standalone",
   images: {
     domains: ["trendankara.com", "localhost", "82.29.169.180"],
     remotePatterns: [
