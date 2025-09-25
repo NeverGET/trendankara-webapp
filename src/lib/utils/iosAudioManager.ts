@@ -2,7 +2,7 @@ import { isIOS } from './iosDetection';
 
 export class IOSAudioManager {
   private audioElement: HTMLAudioElement | null = null;
-  private audioContext: AudioContext | null = null;
+  private audioContext: any = null;
   private resetCounter: number = 0;
   private streamUrl: string;
 

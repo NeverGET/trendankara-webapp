@@ -9,14 +9,14 @@ import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/Card';
 import Image from 'next/image';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/admin';
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -100,8 +100,8 @@ function LoginForm() {
             type="submit"
             className="w-full"
             disabled={isLoading}
-            variant="primary"
-            size="large"
+            variant="default"
+            size="lg"
           >
             {isLoading ? (
               <span className="flex items-center justify-center">

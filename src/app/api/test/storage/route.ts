@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     const storageInfo = await getStorageInfo();
 
     // Get basic storage statistics (only if connected)
-    let storageStats = null;
-    let bucketInfo = null;
+    let storageStats: any = null;
+    let bucketInfo: any = null;
 
     if (healthCheckResult.connected) {
       try {
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
 
           if (storageInfo.config) {
             // Try to get bucket policy (if supported)
-            let bucketPolicy = null;
+            let bucketPolicy: any = null;
             try {
               // Note: This might not be supported in all MinIO setups
               bucketPolicy = 'Policy information not available';

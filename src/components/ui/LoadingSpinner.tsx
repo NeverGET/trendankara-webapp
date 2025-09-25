@@ -1,41 +1,14 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+// Feature flag based export
+// This allows gradual migration from legacy to ReUI components
 
-interface LoadingSpinnerProps {
-  size?: 'small' | 'medium' | 'large';
-  text?: string;
-  className?: string;
-}
+const useReUI = true; // process.env.NEXT_PUBLIC_USE_REUI === 'true';
 
-const sizeClasses = {
-  small: 'h-4 w-4',
-  medium: 'h-8 w-8',
-  large: 'h-12 w-12'
-};
+// Import both implementations
+import { LoadingSpinner as ReUILoadingSpinner } from '@/components/ui-adapters/LoadingSpinnerAdapter';
+import { LoadingSpinner as LegacyLoadingSpinner } from '@/components/ui-legacy/LoadingSpinner';
 
-export function LoadingSpinner({
-  size = 'medium',
-  text = 'Yükleniyor...',
-  className
-}: LoadingSpinnerProps) {
-  return (
-    <div className={cn('flex flex-col items-center justify-center gap-3', className)}>
-      <div
-        className={cn(
-          'animate-spin rounded-full border-2 border-dark-border-secondary',
-          'border-t-brand-red-600',
-          sizeClasses[size]
-        )}
-        role="status"
-        aria-label={text}
-      >
-        <span className="sr-only">{text}</span>
-      </div>
-      {text && (
-        <p className="text-dark-text-secondary text-sm animate-pulse">
-          {text}
-        </p>
-      )}
-    </div>
-  );
-}
+// Export the appropriate version based on feature flag
+export const LoadingSpinner = useReUI ? ReUILoadingSpinner : LegacyLoadingSpinner;
+
+// Export default for compatibility
+export default LoadingSpinner;

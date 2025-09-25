@@ -4,44 +4,44 @@ import Link from 'next/link';
 export function Footer() {
   return (
     <footer className="bg-dark-surface-primary border-t border-dark-border-primary mt-auto">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="container mx-auto px-3 md:px-4 py-6 md:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {/* Brand Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-red-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">T</span>
+          <div className="space-y-3 md:space-y-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-brand-red-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg md:text-xl">T</span>
               </div>
-              <span className="text-xl font-bold text-dark-text-primary">
+              <span className="text-lg md:text-xl font-bold text-dark-text-primary">
                 Trend Ankara
               </span>
             </div>
-            <p className="text-dark-text-secondary text-sm">
+            <p className="text-dark-text-secondary text-xs md:text-sm">
               {"Türkiye'nin en iyi radyo istasyonu. 24/7 kesintisiz müzik yayını."}
             </p>
           </div>
 
           {/* Quick Links */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-dark-text-primary">
+          <div className="space-y-3 md:space-y-4">
+            <h3 className="text-base md:text-lg font-semibold text-dark-text-primary">
               Hızlı Linkler
             </h3>
             <nav className="space-y-2">
               <Link
                 href="/"
-                className="block text-dark-text-secondary hover:text-dark-text-primary transition-colors"
+                className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
               >
                 Ana Sayfa
               </Link>
               <Link
                 href="/news"
-                className="block text-dark-text-secondary hover:text-dark-text-primary transition-colors"
+                className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
               >
                 Haberler
               </Link>
               <Link
                 href="/polls"
-                className="block text-dark-text-secondary hover:text-dark-text-primary transition-colors"
+                className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
               >
                 Anketler
               </Link>
@@ -49,11 +49,11 @@ export function Footer() {
           </div>
 
           {/* Contact Info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-dark-text-primary">
+          <div className="space-y-3 md:space-y-4">
+            <h3 className="text-base md:text-lg font-semibold text-dark-text-primary">
               İletişim
             </h3>
-            <div className="space-y-2 text-dark-text-secondary text-sm">
+            <div className="space-y-1.5 md:space-y-2 text-dark-text-secondary text-xs md:text-sm">
               <p>Email: info@trendankara.com</p>
               <p>Telefon: +90 312 XXX XX XX</p>
               <p>Adres: Ankara, Türkiye</p>
@@ -62,7 +62,7 @@ export function Footer() {
             <div className="flex gap-3">
               <a
                 href="#"
-                className="w-10 h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
+                className="min-w-[44px] min-h-[44px] w-11 h-11 md:w-10 md:h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
                 aria-label="Facebook"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -71,7 +71,7 @@ export function Footer() {
               </a>
               <a
                 href="#"
-                className="w-10 h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
+                className="min-w-[44px] min-h-[44px] w-11 h-11 md:w-10 md:h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
                 aria-label="Twitter"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -80,7 +80,7 @@ export function Footer() {
               </a>
               <a
                 href="#"
-                className="w-10 h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
+                className="min-w-[44px] min-h-[44px] w-11 h-11 md:w-10 md:h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
                 aria-label="Instagram"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -91,7 +91,7 @@ export function Footer() {
               </a>
               <a
                 href="#"
-                className="w-10 h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
+                className="min-w-[44px] min-h-[44px] w-11 h-11 md:w-10 md:h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
                 aria-label="YouTube"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">

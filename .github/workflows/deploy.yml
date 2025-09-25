@@ -36,6 +36,7 @@ jobs:
               -p 3000:3000 \
               --restart always \
               -e NODE_ENV=production \
+              -e IS_DOCKER_DEPLOYMENT=true \
               -e DATABASE_HOST=radio_mysql_alt \
               -e DATABASE_PORT=3306 \
               -e DATABASE_USER=root \
@@ -52,4 +53,26 @@ jobs:
               -e MINIO_USE_SSL=false \
               -e RADIO_STREAM_URL=https://radyo.yayin.com.tr:5132/stream \
               -e RADIO_METADATA_URL=https://radyo.yayin.com.tr:5132/ \
+              -e RADIO_BACKUP_STREAM_URL=https://radyo.yayin.com.tr:5132/stream \
+              -e RADIO_CORS_PROXY=https://cros9.yayin.com.tr \
+              -e STREAM_TEST_RATE_LIMIT=10 \
+              -e GENERAL_API_RATE_LIMIT=100 \
+              -e RADIO_CONFIG_CACHE_TIMEOUT=30 \
+              -e CONTENT_CACHE_TIMEOUT=300 \
+              -e FEATURE_CONFIRM_DELETIONS=true \
+              -e FEATURE_RADIO_SETTINGS=true \
+              -e FEATURE_REALTIME_UPDATES=true \
+              -e FEATURE_RATE_LIMITING=true \
+              -e DEFAULT_ADMIN_ROLE=admin \
+              -e REQUIRE_SUPER_ADMIN_FOR_STREAMS=false \
+              -e DATABASE_CONNECTION_LIMIT=10 \
+              -e DATABASE_TIMEOUT=10000 \
+              -e LOG_LEVEL=info \
+              -e ENABLE_API_LOGGING=false \
+              -e API_VERSION=v1 \
+              -e MOBILE_API_KEY="${{ secrets.MOBILE_API_KEY }}" \
+              -e RATE_LIMIT_MOBILE=100 \
+              -e SITE_NAME="Trend Ankara Radio" \
+              -e SITE_URL=https://www.trendankara.com \
+              -e SITE_DESCRIPTION="Professional Turkish Radio Station" \
               radioapp

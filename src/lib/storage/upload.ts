@@ -383,7 +383,7 @@ export async function uploadImages(
 
   // Process uploads in parallel with concurrency limit
   const CONCURRENCY_LIMIT = 3;
-  const chunks = [];
+  const chunks: typeof files[] = [];
 
   for (let i = 0; i < files.length; i += CONCURRENCY_LIMIT) {
     chunks.push(files.slice(i, i + CONCURRENCY_LIMIT));

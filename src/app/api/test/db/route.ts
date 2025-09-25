@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     const latency = Date.now() - startTime;
 
     // Get basic connection info
-    let connectionInfo = null;
-    let poolStatus = null;
-    let schemaInfo = null;
-    let tableList = [];
+    let connectionInfo: any = null;
+    let poolStatus: any = null;
+    let schemaInfo: any = null;
+    let tableList: any[] = [];
 
     if (healthCheck.connected) {
       try {

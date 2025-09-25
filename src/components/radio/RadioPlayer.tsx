@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRadioPlayer } from '@/hooks/useRadioPlayer';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 
@@ -18,16 +18,41 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
     volume,
     currentSong,
     connectionStatus,
+    reconnectAttempts,
+    lastError,
     play,
     pause,
-    setVolume
+    setVolume,
+    resetPlayer,
+    reloadConfiguration
   } = useRadioPlayer();
 
   const handlePlayPause = async () => {
     if (isPlaying) {
       pause();
     } else {
-      await play();
+      try {
+        await play();
+      } catch (error) {
+        console.error('Play error:', error);
+        // If play fails after connection issues, try reloading configuration
+        if (reconnectAttempts >= 3) {
+          await reloadConfiguration();
+        }
+      }
+    }
+  };
+
+  const handleReconnect = async () => {
+    try {
+      resetPlayer();
+      // Wait a moment for reset to complete
+      setTimeout(async () => {
+        await reloadConfiguration();
+        await play();
+      }, 1000);
+    } catch (error) {
+      console.error('Reconnect error:', error);
     }
   };
 
@@ -35,17 +60,32 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
     setVolume(parseFloat(e.target.value));
   };
 
+  // Enhanced status display with connection timeout handling
+  const getStatusDisplay = () => {
+    if (connectionStatus === 'connected') {
+      return 'Canlı Yayın';
+    } else if (connectionStatus === 'connecting') {
+      return isLoading ? 'Bağlanıyor...' : 'Yeniden bağlanılıyor...';
+    } else if (connectionStatus === 'disconnected') {
+      if (reconnectAttempts > 0) {
+        return `Bağlantı sorunu (Deneme ${reconnectAttempts})`;
+      }
+      return lastError ? 'Bağlantı hatası' : 'Çevrimdışı';
+    }
+    return 'Çevrimdışı';
+  };
+
   if (variant === 'mobile') {
     return (
       <div className={cn(
-        'flex items-center gap-3 px-4 py-2 bg-dark-surface-primary',
+        'flex items-center gap-3 px-4 py-3 md:py-2 bg-dark-surface-primary',
         className
       )}>
         <Button
           onClick={handlePlayPause}
-          variant="primary"
-          size="medium"
-          className="min-w-[48px] h-12 w-12 p-0 rounded-full"
+          variant="default"
+          size="default"
+          className="min-w-[44px] h-11 w-11 md:min-w-[48px] md:h-12 md:w-12 p-0 rounded-full"
           aria-label={isPlaying ? 'Duraklat' : 'Oynat'}
         >
           {isLoading ? (
@@ -63,29 +103,44 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
         </Button>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-dark-text-primary truncate">
-            {currentSong}
+          <p className="text-sm md:text-base text-dark-text-primary truncate">
+            {isPlaying ? currentSong : 'Radyo çalınmıyor'}
           </p>
-          <p className="text-xs text-dark-text-tertiary">
-            {connectionStatus === 'connected' ? 'Canlı Yayın' :
-             connectionStatus === 'connecting' ? 'Bağlanıyor...' : 'Çevrimdışı'}
+          <p className={cn(
+            'text-xs',
+            connectionStatus === 'connected' ? 'text-green-400' :
+            connectionStatus === 'connecting' ? 'text-yellow-400' : 'text-red-400'
+          )}>
+            {getStatusDisplay()}
           </p>
         </div>
+
+        {/* Reconnect button for mobile when needed */}
+        {connectionStatus === 'disconnected' && reconnectAttempts >= 3 && (
+          <Button
+            onClick={handleReconnect}
+            variant="secondary"
+            size="sm"
+            className="text-xs"
+          >
+            Yeniden Bağlan
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
     <div className={cn(
-      'flex items-center gap-4 px-6 py-3 bg-dark-surface-primary rounded-lg',
+      'flex items-center gap-3 md:gap-4 px-4 md:px-6 py-3 bg-dark-surface-primary rounded-lg',
       className
     )}>
       {/* Play/Pause Button */}
       <Button
         onClick={handlePlayPause}
-        variant="primary"
-        size="large"
-        className="min-w-[60px] h-[60px] w-[60px] p-0 rounded-full"
+        variant="default"
+        size="lg"
+        className="min-w-[52px] h-[52px] w-[52px] md:min-w-[60px] md:h-[60px] md:w-[60px] p-0 rounded-full"
         aria-label={isPlaying ? 'Radyoyu duraklat' : 'Radyoyu başlat'}
       >
         {isLoading ? (
@@ -104,13 +159,28 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
 
       {/* Song Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-base font-medium text-dark-text-primary truncate">
-          {currentSong}
+        <p className="text-sm md:text-base font-medium text-dark-text-primary truncate">
+          {isPlaying ? currentSong : 'Radyo çalınmıyor'}
         </p>
-        <p className="text-sm text-dark-text-secondary">
-          {connectionStatus === 'connected' ? 'Canlı Yayın' :
-           connectionStatus === 'connecting' ? 'Bağlanıyor...' : 'Çevrimdışı'}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className={cn(
+            'text-sm',
+            connectionStatus === 'connected' ? 'text-green-400' :
+            connectionStatus === 'connecting' ? 'text-yellow-400' : 'text-red-400'
+          )}>
+            {getStatusDisplay()}
+          </p>
+          {connectionStatus === 'disconnected' && reconnectAttempts >= 3 && (
+            <Button
+              onClick={handleReconnect}
+              variant="secondary"
+              size="sm"
+              className="text-xs ml-2"
+            >
+              Yeniden Bağlan
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Volume Control */}
@@ -129,25 +199,47 @@ export function RadioPlayer({ className, variant = 'desktop' }: RadioPlayerProps
           step="0.01"
           value={volume}
           onChange={handleVolumeChange}
-          className="w-24 h-1 bg-dark-surface-secondary rounded-lg appearance-none cursor-pointer slider"
+          className="w-20 md:w-24 h-1 bg-rose-950 rounded-lg appearance-none cursor-pointer slider"
           aria-label="Ses seviyesi"
         />
         <style jsx>{`
           .slider::-webkit-slider-thumb {
             appearance: none;
-            width: 12px;
-            height: 12px;
-            background: #dc2626;
+            width: 14px;
+            height: 14px;
+            background: #f43f5e;
             border-radius: 50%;
             cursor: pointer;
+            transition: all 0.2s;
+          }
+          .slider::-webkit-slider-thumb:hover {
+            background: #fb7185;
+            transform: scale(1.2);
           }
           .slider::-moz-range-thumb {
-            width: 12px;
-            height: 12px;
-            background: #dc2626;
+            width: 14px;
+            height: 14px;
+            background: #f43f5e;
             border-radius: 50%;
             cursor: pointer;
             border: none;
+            transition: all 0.2s;
+          }
+          .slider::-moz-range-thumb:hover {
+            background: #fb7185;
+            transform: scale(1.2);
+          }
+          .slider::-webkit-slider-runnable-track {
+            background: linear-gradient(to right, #f43f5e 0%, #f43f5e ${volume * 100}%, #881337 ${volume * 100}%, #881337 100%);
+            border-radius: 0.25rem;
+          }
+          .slider::-moz-range-track {
+            background: #881337;
+            border-radius: 0.25rem;
+          }
+          .slider::-moz-range-progress {
+            background: #f43f5e;
+            border-radius: 0.25rem;
           }
         `}</style>
       </div>

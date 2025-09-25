@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui-adapters/ButtonAdapter';
 import { PollCardProps, PollOption } from '@/types/polls';
 import { PollResults } from './PollResults';
+import { shouldShowResults } from '@/lib/utils/poll-status';
 import { cn } from '@/lib/utils';
 
 export function PollCard({
@@ -14,6 +15,7 @@ export function PollCard({
   endDate,
   totalVotes,
   hasVoted: initialHasVoted,
+  show_results = 'when_ended',
   onVote
 }: PollCardProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -66,9 +68,14 @@ export function PollCard({
     try {
       await onVote(id, selectedOption);
 
-      // Save vote to localStorage
+      // Find the selected option details
+      const selectedOptionDetails = options.find(opt => opt.id === selectedOption);
+
+      // Save vote to localStorage with option details
       localStorage.setItem(`poll_${id}_vote`, JSON.stringify({
         optionId: selectedOption,
+        optionTitle: selectedOptionDetails?.title || '',
+        optionImageUrl: selectedOptionDetails?.imageUrl || null,
         timestamp: Date.now()
       }));
 
@@ -82,16 +89,27 @@ export function PollCard({
     }
   };
 
-  const showResults = hasVoted || hasEnded;
+  // Determine if results should be shown based on visibility rules
+  const showResults = shouldShowResults(
+    {
+      start_date: new Date(), // Not used in shouldShowResults for this case
+      end_date: endDate,
+      show_results
+    },
+    hasVoted
+  );
+
+  // Special case: never show results if show_results is 'never'
+  const displayResults = show_results !== 'never' && showResults;
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="p-4 md:p-6 space-y-3 md:space-y-4">
       {/* Poll Header */}
       <div>
-        <h3 className="text-xl font-semibold text-dark-text-primary mb-2">
+        <h3 className="text-lg md:text-xl font-semibold text-dark-text-primary mb-2">
           {question}
         </h3>
-        <div className="flex items-center justify-between text-sm text-dark-text-secondary">
+        <div className="flex items-center justify-between text-xs md:text-sm text-dark-text-secondary">
           <span>{totalVotes} oy</span>
           <span className={cn(
             'font-medium',
@@ -103,7 +121,7 @@ export function PollCard({
       </div>
 
       {/* Poll Options or Results */}
-      {showResults ? (
+      {displayResults ? (
         <PollResults
           options={options}
           totalVotes={totalVotes}
@@ -116,7 +134,7 @@ export function PollCard({
             <label
               key={option.id}
               className={cn(
-                'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
+                'flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border cursor-pointer transition-all min-h-[44px]',
                 selectedOption === option.id
                   ? 'border-brand-red-600 bg-brand-red-600/10'
                   : 'border-dark-border-primary hover:border-dark-border-secondary hover:bg-dark-surface-secondary'
@@ -128,17 +146,17 @@ export function PollCard({
                 value={option.id}
                 checked={selectedOption === option.id}
                 onChange={() => setSelectedOption(option.id)}
-                className="w-4 h-4 text-brand-red-600 bg-dark-surface-primary border-dark-border-secondary focus:ring-brand-red-600"
+                className="w-4 h-4 text-brand-red-600 bg-dark-surface-primary border-dark-border-secondary focus:ring-brand-red-600 flex-shrink-0"
               />
 
               {option.imageUrl && (
                 <div
-                  className="w-[60px] h-[60px] rounded-lg bg-cover bg-center bg-dark-surface-secondary flex-shrink-0"
+                  className="w-[40px] h-[40px] md:w-[60px] md:h-[60px] rounded-lg bg-cover bg-center bg-dark-surface-secondary flex-shrink-0"
                   style={{ backgroundImage: `url(${option.imageUrl})` }}
                 />
               )}
 
-              <span className="text-dark-text-primary flex-1">
+              <span className="text-sm md:text-base text-dark-text-primary flex-1">
                 {option.title}
               </span>
             </label>
@@ -147,7 +165,7 @@ export function PollCard({
       )}
 
       {/* Vote Button */}
-      {!showResults && (
+      {!displayResults && !hasEnded && (
         <Button
           onClick={handleVote}
           disabled={!selectedOption || isVoting}
@@ -161,14 +179,24 @@ export function PollCard({
 
       {/* Voted Message */}
       {hasVoted && !hasEnded && (
-        <p className="text-center text-sm text-dark-text-secondary">
-          Oyunuz kaydedildi. Sonuçları görebilirsiniz.
+        <p className="text-center text-xs md:text-sm text-dark-text-secondary">
+          {displayResults
+            ? 'Oyunuz kaydedildi. Sonuçları görebilirsiniz.'
+            : 'Oyunuz kaydedildi. Sonuçlar anket bitince gösterilecektir.'
+          }
+        </p>
+      )}
+
+      {/* Results Hidden Message */}
+      {hasVoted && !displayResults && show_results === 'when_ended' && !hasEnded && (
+        <p className="text-center text-xs md:text-sm text-yellow-600">
+          Sonuçlar anket sona erdiğinde gösterilecektir.
         </p>
       )}
 
       {/* Ended Message */}
       {hasEnded && (
-        <p className="text-center text-sm text-red-600 font-medium">
+        <p className="text-center text-xs md:text-sm text-red-600 font-medium">
           Bu anket sona ermiştir.
         </p>
       )}

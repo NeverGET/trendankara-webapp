@@ -1,6 +1,7 @@
 import { getMinioClient, ensureBucket, healthCheck, getStorageClient } from '@/lib/storage/client';
 import { validateStorageEnv, checkEnvironmentHealth } from '@/lib/config/validator';
 import { logSuccess, logError, logInfo, logWarning } from '@/lib/utils/logger';
+import type { StorageStats } from '@/types/storage';
 
 /**
  * Storage Initialization Module
@@ -508,7 +509,7 @@ export async function getStorageInfo(): Promise<{
     const healthResult = await healthCheck();
 
     // Get storage statistics
-    let stats = null;
+    let stats: StorageStats | null = null;
     try {
       const storageClient = getStorageClient();
       stats = await storageClient.getStorageStats();
@@ -523,7 +524,7 @@ export async function getStorageInfo(): Promise<{
         port: storageConfig.port,
         bucket: storageConfig.bucket,
         useSSL: storageConfig.useSSL,
-        region: storageConfig.region
+        region: storageConfig.region || 'us-east-1'
       },
       stats,
       health: {

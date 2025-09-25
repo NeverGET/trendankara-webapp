@@ -1,4 +1,8 @@
 import { requireAuth } from '@/lib/auth/utils';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
+
+// Force dynamic rendering for all admin pages since they require authentication
+export const dynamic = 'force-dynamic';
 
 export default async function AdminLayout({
   children,
@@ -10,14 +14,26 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-dark-bg-primary">
-      <div className="p-4">
-        <div className="mb-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-dark-text-primary">Yönetim Paneli</h2>
-          <div className="text-dark-text-secondary">
-            Hoş geldiniz, {session.user?.name || session.user?.email}
+      <AdminSidebar />
+
+      {/* Main Content Area */}
+      <div className="md:ml-56 lg:ml-64 min-h-screen">
+        <div className="p-3">
+          {/* Top Bar */}
+          <div className="mb-3 flex justify-between items-center">
+            <div className="md:hidden w-12" /> {/* Spacer for mobile menu button */}
+            <div className="text-xs md:text-sm text-dark-text-secondary">
+              Hoş geldiniz, <span className="text-dark-text-primary font-medium">
+                {session.user?.name || session.user?.email}
+              </span>
+            </div>
           </div>
+
+          {/* Page Content */}
+          <main className="animate-fade-in">
+            {children}
+          </main>
         </div>
-        {children}
       </div>
     </div>
   );

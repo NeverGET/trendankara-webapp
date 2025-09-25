@@ -6,6 +6,33 @@
 import { db } from './client';
 import { RowDataPacket } from 'mysql2';
 
+// Pagination and filtering interfaces
+export interface PaginationOptions {
+  offset?: number;
+  limit?: number;
+}
+
+export interface NewsFilters {
+  search?: string;
+  category_id?: number;
+  is_featured?: boolean;
+  is_breaking?: boolean;
+  is_hot?: boolean;
+  is_active?: boolean;
+  created_by?: number;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface PaginatedNewsResult {
+  data: any[];
+  total: number;
+  offset: number;
+  limit: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export interface NewsData {
   title: string;
   slug: string;
@@ -30,9 +57,90 @@ export interface NewsCategoryData {
 }
 
 /**
- * Get all news for admin (includes inactive and deleted)
+ * Get all news for admin with pagination and filtering support
  */
-export async function getAllNews() {
+export async function getAllNews(
+  pagination: PaginationOptions = {},
+  filters: NewsFilters = {}
+): Promise<PaginatedNewsResult> {
+  const { offset = 0, limit = 20 } = pagination;
+  const {
+    search,
+    category_id,
+    is_featured,
+    is_breaking,
+    is_hot,
+    is_active,
+    created_by,
+    start_date,
+    end_date
+  } = filters;
+
+  // Build WHERE conditions
+  const conditions: string[] = ['n.deleted_at IS NULL'];
+  const params: any[] = [];
+
+  if (search) {
+    conditions.push('(n.title LIKE ? OR n.summary LIKE ? OR n.content LIKE ?)');
+    const searchPattern = `%${search}%`;
+    params.push(searchPattern, searchPattern, searchPattern);
+  }
+
+  if (category_id !== undefined) {
+    conditions.push('n.category_id = ?');
+    params.push(category_id);
+  }
+
+  if (is_featured !== undefined) {
+    conditions.push('n.is_featured = ?');
+    params.push(is_featured ? 1 : 0);
+  }
+
+  if (is_breaking !== undefined) {
+    conditions.push('n.is_breaking = ?');
+    params.push(is_breaking ? 1 : 0);
+  }
+
+  if (is_hot !== undefined) {
+    conditions.push('n.is_hot = ?');
+    params.push(is_hot ? 1 : 0);
+  }
+
+  if (is_active !== undefined) {
+    conditions.push('n.is_active = ?');
+    params.push(is_active ? 1 : 0);
+  }
+
+  if (created_by !== undefined) {
+    conditions.push('n.created_by = ?');
+    params.push(created_by);
+  }
+
+  if (start_date) {
+    conditions.push('n.created_at >= ?');
+    params.push(start_date);
+  }
+
+  if (end_date) {
+    conditions.push('n.created_at <= ?');
+    params.push(end_date);
+  }
+
+  const whereClause = conditions.join(' AND ');
+
+  // Get total count for pagination
+  const countResult = await db.query<RowDataPacket>(
+    `SELECT COUNT(*) as total
+     FROM news n
+     LEFT JOIN users u ON n.created_by = u.id
+     LEFT JOIN news_categories nc ON n.category_id = nc.id
+     WHERE ${whereClause}`,
+    params
+  );
+  const total = countResult.rows[0].total;
+
+  // Get paginated data
+  const dataParams = [...params, limit, offset];
   const result = await db.query<RowDataPacket>(
     `SELECT n.*,
             u.name as creator_name,
@@ -40,10 +148,119 @@ export async function getAllNews() {
      FROM news n
      LEFT JOIN users u ON n.created_by = u.id
      LEFT JOIN news_categories nc ON n.category_id = nc.id
-     WHERE n.deleted_at IS NULL
-     ORDER BY n.created_at DESC`
+     WHERE ${whereClause}
+     ORDER BY n.created_at DESC
+     LIMIT ? OFFSET ?`,
+    dataParams
   );
-  return result.rows;
+
+  return {
+    data: result.rows,
+    total,
+    offset,
+    limit,
+    hasNext: offset + limit < total,
+    hasPrev: offset > 0
+  };
+}
+
+/**
+ * Get all news (simple version for backward compatibility)
+ * Returns just the data array without pagination metadata
+ */
+export async function getAllNewsSimple(
+  pagination: PaginationOptions = {},
+  filters: NewsFilters = {}
+): Promise<any[]> {
+  const result = await getAllNews(pagination, filters);
+  return result.data;
+}
+
+/**
+ * Search news with full-text search capabilities
+ */
+export async function searchNews(
+  searchTerm: string,
+  pagination: PaginationOptions = {},
+  additionalFilters: Omit<NewsFilters, 'search'> = {}
+): Promise<PaginatedNewsResult> {
+  if (!searchTerm.trim()) {
+    return getAllNews(pagination, additionalFilters);
+  }
+
+  const filters: NewsFilters = {
+    ...additionalFilters,
+    search: searchTerm.trim()
+  };
+
+  return getAllNews(pagination, filters);
+}
+
+/**
+ * Get news by status (featured, breaking, hot)
+ */
+export async function getNewsByStatus(
+  status: 'featured' | 'breaking' | 'hot',
+  pagination: PaginationOptions = {}
+): Promise<PaginatedNewsResult> {
+  const filters: NewsFilters = {
+    is_active: true
+  };
+
+  switch (status) {
+    case 'featured':
+      filters.is_featured = true;
+      break;
+    case 'breaking':
+      filters.is_breaking = true;
+      break;
+    case 'hot':
+      filters.is_hot = true;
+      break;
+  }
+
+  return getAllNews(pagination, filters);
+}
+
+/**
+ * Get news by category with pagination
+ */
+export async function getNewsByCategory(
+  categoryId: number,
+  pagination: PaginationOptions = {}
+): Promise<PaginatedNewsResult> {
+  const filters: NewsFilters = {
+    category_id: categoryId,
+    is_active: true
+  };
+
+  return getAllNews(pagination, filters);
+}
+
+/**
+ * Get news statistics for dashboard
+ */
+export async function getNewsStats(): Promise<{
+  total: number;
+  active: number;
+  featured: number;
+  breaking: number;
+  hot: number;
+  drafts: number;
+}> {
+  const result = await db.query<RowDataPacket>(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+      SUM(CASE WHEN is_featured = 1 THEN 1 ELSE 0 END) as featured,
+      SUM(CASE WHEN is_breaking = 1 THEN 1 ELSE 0 END) as breaking,
+      SUM(CASE WHEN is_hot = 1 THEN 1 ELSE 0 END) as hot,
+      SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as drafts
+    FROM news
+    WHERE deleted_at IS NULL
+  `);
+
+  return result.rows[0] as any;
 }
 
 /**
@@ -308,4 +525,37 @@ export function generateSlug(title: string): string {
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
     .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+}
+
+/**
+ * Get news article by slug
+ */
+export async function getNewsBySlug(slug: string): Promise<any | null> {
+  const query = `
+    SELECT
+      n.*,
+      c.name AS category_name,
+      u.name AS creator_name
+    FROM news n
+    LEFT JOIN categories c ON n.category_id = c.id
+    LEFT JOIN users u ON n.created_by = u.id
+    WHERE n.slug = ? AND n.deleted_at IS NULL
+    LIMIT 1
+  `;
+
+  const result = await db.query<RowDataPacket>(query, [slug]);
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+/**
+ * Increment news view count
+ */
+export async function incrementNewsViews(newsId: number): Promise<void> {
+  const query = `
+    UPDATE news
+    SET views = COALESCE(views, 0) + 1
+    WHERE id = ? AND deleted_at IS NULL
+  `;
+
+  await db.update(query, [newsId]);
 }

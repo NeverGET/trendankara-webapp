@@ -8,12 +8,18 @@ import {
   getNewsById,
   newsSlugExists,
   generateSlug,
-  type NewsData
+  searchNews,
+  getNewsStats,
+  type NewsData,
+  type PaginationOptions,
+  type NewsFilters
 } from '@/lib/db/news';
+import { getStorageClient } from '@/lib/storage/client';
+import { invalidateEntityCache } from '@/lib/cache/invalidation';
 
 /**
  * GET /api/admin/news
- * Get all news articles for admin dashboard
+ * Get all news articles for admin dashboard with pagination, search, and filtering
  */
 export async function GET(request: NextRequest) {
   try {
@@ -53,12 +59,95 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get all news articles
-    const news = await getAllNews();
+    // Parse pagination parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
+
+    const pagination: PaginationOptions = {
+      offset: Math.max(0, offset),
+      limit: Math.min(100, Math.max(1, limit)) // Max 100, min 1
+    };
+
+    // Parse filtering parameters
+    const filters: NewsFilters = {};
+
+    // Search term
+    const search = searchParams.get('search');
+    if (search && search.trim()) {
+      filters.search = search.trim();
+    }
+
+    // Category filter
+    const categoryId = searchParams.get('category_id');
+    if (categoryId && !isNaN(parseInt(categoryId))) {
+      filters.category_id = parseInt(categoryId);
+    }
+
+    // Boolean filters
+    const isFeatured = searchParams.get('is_featured');
+    if (isFeatured === 'true') filters.is_featured = true;
+    if (isFeatured === 'false') filters.is_featured = false;
+
+    const isBreaking = searchParams.get('is_breaking');
+    if (isBreaking === 'true') filters.is_breaking = true;
+    if (isBreaking === 'false') filters.is_breaking = false;
+
+    const isHot = searchParams.get('is_hot');
+    if (isHot === 'true') filters.is_hot = true;
+    if (isHot === 'false') filters.is_hot = false;
+
+    const isActive = searchParams.get('is_active');
+    if (isActive === 'true') filters.is_active = true;
+    if (isActive === 'false') filters.is_active = false;
+
+    // Author filter
+    const createdBy = searchParams.get('created_by');
+    if (createdBy && !isNaN(parseInt(createdBy))) {
+      filters.created_by = parseInt(createdBy);
+    }
+
+    // Date range filters
+    const startDate = searchParams.get('start_date');
+    if (startDate) {
+      filters.start_date = startDate;
+    }
+
+    const endDate = searchParams.get('end_date');
+    if (endDate) {
+      filters.end_date = endDate;
+    }
+
+    // Get news with pagination and filtering
+    let result;
+    if (filters.search) {
+      // Use dedicated search function for better performance with search terms
+      result = await searchNews(filters.search, pagination, filters);
+    } else {
+      // Use general getAllNews function
+      result = await getAllNews(pagination, filters);
+    }
+
+    // Include stats if requested
+    const includeStats = searchParams.get('include_stats') === 'true';
+    let stats: any = null;
+    if (includeStats) {
+      stats = await getNewsStats();
+    }
 
     return NextResponse.json({
       success: true,
-      data: news
+      data: result.data,
+      pagination: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit),
+        hasNext: result.hasNext,
+        hasPrev: result.hasPrev
+      },
+      filters,
+      ...(stats && { stats })
     });
 
   } catch (error) {
@@ -72,7 +161,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/admin/news
- * Create a new news article
+ * Create a new news article with optional image upload
  */
 export async function POST(request: NextRequest) {
   try {
@@ -93,13 +182,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const contentType = request.headers.get('content-type') || '';
+    let body: any;
+    let imageFile: File | null = null;
+
+    // Handle both JSON and FormData requests
+    if (contentType.includes('multipart/form-data')) {
+      // Handle FormData (with file upload)
+      const formData = await request.formData();
+
+      // Extract form fields
+      body = {
+        title: formData.get('title'),
+        slug: formData.get('slug'),
+        summary: formData.get('summary'),
+        content: formData.get('content'),
+        category: formData.get('category'),
+        category_id: formData.get('category_id'),
+        is_featured: formData.get('is_featured'),
+        is_breaking: formData.get('is_breaking'),
+        is_hot: formData.get('is_hot'),
+        is_active: formData.get('is_active'),
+        published_at: formData.get('published_at'),
+        featured_image: formData.get('featured_image')
+      };
+
+      // Check if featured_image is a file upload
+      const featuredImageField = formData.get('featured_image');
+      if (featuredImageField instanceof File && featuredImageField.size > 0) {
+        imageFile = featuredImageField;
+        // Remove the string version since we have a file
+        delete body.featured_image;
+      }
+    } else {
+      // Handle JSON request
+      body = await request.json();
+    }
+
     const {
       title,
       slug,
       summary,
       content,
       featured_image,
+      category,
       category_id,
       is_featured,
       is_breaking,
@@ -107,6 +233,19 @@ export async function POST(request: NextRequest) {
       is_active,
       published_at
     } = body;
+
+    // Map category string to category_id if needed
+    let finalCategoryId = category_id;
+    if (!finalCategoryId && category) {
+      // Simple mapping - in production, you'd query the database
+      const categoryMap: Record<string, number> = {
+        'MAGAZINE': 1,
+        'ARTIST': 2,
+        'ALBUM': 3,
+        'CONCERT': 4
+      };
+      finalCategoryId = categoryMap[category];
+    }
 
     // Validate required fields
     if (!title || !content) {
@@ -138,26 +277,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle image upload if provided
+    let finalFeaturedImage = featured_image;
+    if (imageFile) {
+      try {
+        const storageClient = getStorageClient();
+
+        // Convert file to buffer
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const fileBuffer = Buffer.from(arrayBuffer);
+
+        // Upload to MinIO
+        const uploadResult = await storageClient.uploadFile(
+          fileBuffer,
+          `news-${Date.now()}-${imageFile.name}`,
+          {
+            contentType: imageFile.type,
+            metadata: {
+              originalName: imageFile.name,
+              uploadedBy: userId || 'unknown',
+              newsTitle: title
+            }
+          }
+        );
+
+        finalFeaturedImage = uploadResult.originalUrl;
+      } catch (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to upload image' },
+          { status: 500 }
+        );
+      }
+    }
+
     const newsData: NewsData = {
       title,
       slug: finalSlug,
       summary,
       content,
-      featured_image,
-      category_id: category_id ? parseInt(category_id) : undefined,
-      is_featured: is_featured === true,
-      is_breaking: is_breaking === true,
-      is_hot: is_hot === true,
-      is_active: is_active !== false,
+      featured_image: finalFeaturedImage,
+      category_id: finalCategoryId ? parseInt(finalCategoryId) : undefined,
+      is_featured: is_featured === true || is_featured === 'true',
+      is_breaking: is_breaking === true || is_breaking === 'true',
+      is_hot: is_hot === true || is_hot === 'true',
+      is_active: is_active !== false && is_active !== 'false',
       published_at: published_at || null,
       created_by: parseInt(userId)
     };
 
     const newsId = await createNews(newsData);
 
+    // Invalidate news cache after creation
+    await invalidateEntityCache('news');
+
+    // Get the created news article to return full data
+    const createdNews = await getNewsById(newsId);
+
     return NextResponse.json({
       success: true,
-      data: { id: newsId },
+      data: createdNews,
       message: 'News article created successfully'
     });
 
@@ -172,7 +351,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * PUT /api/admin/news
- * Update an existing news article
+ * Update an existing news article with optional image upload
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -193,8 +372,58 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { id, ...updateData } = body;
+    const contentType = request.headers.get('content-type') || '';
+    let body: any;
+    let imageFile: File | null = null;
+    let newsId: number;
+
+    // Handle both JSON and FormData requests
+    if (contentType.includes('multipart/form-data')) {
+      // Handle FormData (with file upload)
+      const formData = await request.formData();
+
+      // Extract form fields
+      body = {
+        id: formData.get('id'),
+        title: formData.get('title'),
+        slug: formData.get('slug'),
+        summary: formData.get('summary'),
+        content: formData.get('content'),
+        category: formData.get('category'),
+        category_id: formData.get('category_id'),
+        is_featured: formData.get('is_featured'),
+        is_breaking: formData.get('is_breaking'),
+        is_hot: formData.get('is_hot'),
+        is_active: formData.get('is_active'),
+        published_at: formData.get('published_at'),
+        featured_image: formData.get('featured_image')
+      };
+
+      // Check if featured_image is a file upload
+      const featuredImageField = formData.get('featured_image');
+      if (featuredImageField instanceof File && featuredImageField.size > 0) {
+        imageFile = featuredImageField;
+        // Remove the string version since we have a file
+        delete body.featured_image;
+      }
+    } else {
+      // Handle JSON request
+      body = await request.json();
+    }
+
+    const { id, category, ...updateData } = body;
+    newsId = parseInt(id);
+
+    // Map category string to category_id if needed
+    if (category && !updateData.category_id) {
+      const categoryMap: Record<string, number> = {
+        'MAGAZINE': 1,
+        'ARTIST': 2,
+        'ALBUM': 3,
+        'CONCERT': 4
+      };
+      updateData.category_id = categoryMap[category];
+    }
 
     // Validate news ID
     if (!id) {
@@ -205,7 +434,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if news exists
-    const existingNews = await getNewsById(parseInt(id));
+    const existingNews = await getNewsById(newsId);
     if (!existingNews) {
       return NextResponse.json(
         { success: false, error: 'News article not found' },
@@ -215,11 +444,46 @@ export async function PUT(request: NextRequest) {
 
     // If slug is being updated, check for uniqueness
     if (updateData.slug && updateData.slug !== existingNews.slug) {
-      const slugExists = await newsSlugExists(updateData.slug, parseInt(id));
+      const slugExists = await newsSlugExists(updateData.slug, newsId);
       if (slugExists) {
         return NextResponse.json(
           { success: false, error: 'Slug already exists' },
           { status: 400 }
+        );
+      }
+    }
+
+    // Handle image upload if provided
+    if (imageFile) {
+      try {
+        const storageClient = getStorageClient();
+        const userId = getUserId(session);
+
+        // Convert file to buffer
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const fileBuffer = Buffer.from(arrayBuffer);
+
+        // Upload to MinIO
+        const uploadResult = await storageClient.uploadFile(
+          fileBuffer,
+          `news-${Date.now()}-${imageFile.name}`,
+          {
+            contentType: imageFile.type,
+            metadata: {
+              originalName: imageFile.name,
+              uploadedBy: userId || 'unknown',
+              newsId: newsId.toString(),
+              updatedAt: new Date().toISOString()
+            }
+          }
+        );
+
+        updateData.featured_image = uploadResult.originalUrl;
+      } catch (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to upload image' },
+          { status: 500 }
         );
       }
     }
@@ -229,10 +493,31 @@ export async function PUT(request: NextRequest) {
       updateData.category_id = parseInt(updateData.category_id);
     }
 
-    await updateNews(parseInt(id), updateData);
+    // Convert boolean string values to boolean
+    if (updateData.is_featured !== undefined) {
+      updateData.is_featured = updateData.is_featured === true || updateData.is_featured === 'true';
+    }
+    if (updateData.is_breaking !== undefined) {
+      updateData.is_breaking = updateData.is_breaking === true || updateData.is_breaking === 'true';
+    }
+    if (updateData.is_hot !== undefined) {
+      updateData.is_hot = updateData.is_hot === true || updateData.is_hot === 'true';
+    }
+    if (updateData.is_active !== undefined) {
+      updateData.is_active = updateData.is_active === true || updateData.is_active === 'true';
+    }
+
+    await updateNews(newsId, updateData);
+
+    // Invalidate news cache after update
+    await invalidateEntityCache('news', newsId.toString());
+
+    // Get the updated news article to return full data
+    const updatedNews = await getNewsById(newsId);
 
     return NextResponse.json({
       success: true,
+      data: updatedNews,
       message: 'News article updated successfully'
     });
 
@@ -289,6 +574,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     await deleteNews(parseInt(newsId));
+
+    // Invalidate news cache after deletion
+    await invalidateEntityCache('news', newsId);
 
     return NextResponse.json({
       success: true,

@@ -61,14 +61,14 @@ export default function PollsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto px-4 py-8" style={{ maxWidth: '1024px' }}>
         <LoadingSpinner text="Anketler yükleniyor..." />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto px-4 py-8" style={{ maxWidth: '1024px' }}>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-dark-text-primary mb-4">Anketler</h1>
         <p className="text-dark-text-secondary">

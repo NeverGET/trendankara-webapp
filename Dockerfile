@@ -8,11 +8,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# Build with production NODE_ENV but don't set other env vars that would affect runtime
+ENV NODE_ENV=production
 RUN npm run build
 
 FROM node:current-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Add flag to indicate this is a Docker deployment
+ENV IS_DOCKER_DEPLOYMENT=true
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./

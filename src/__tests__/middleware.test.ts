@@ -24,6 +24,7 @@ function createMockRequest(pathname: string, baseUrl = 'http://localhost:3000'):
 // Helper function to create mock token
 function createMockToken(role = 'user') {
   return {
+    id: 'user-id',
     sub: 'user-id',
     email: 'test@example.com',
     role,
