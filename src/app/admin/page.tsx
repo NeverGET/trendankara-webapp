@@ -11,6 +11,9 @@ import {
 } from 'react-icons/fi';
 import { headers } from 'next/headers';
 
+// Force dynamic rendering since this page requires authentication
+export const dynamic = 'force-dynamic';
+
 async function fetchDashboardStats() {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';

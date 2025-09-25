@@ -2,8 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { getAllVotes, clearVoteHistory, VoteRecord } from '@/lib/utils/vote-history';
-import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+
+// Format date helper function
+const formatDate = (date: Date | string) => {
+  const d = new Date(date);
+  return d.toLocaleDateString('tr-TR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 export function VoteHistory() {
   const [votes, setVotes] = useState<VoteRecord[]>([]);

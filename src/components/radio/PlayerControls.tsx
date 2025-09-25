@@ -31,9 +31,9 @@ export function PlayerControls({
   };
 
   const buttonSizes = {
-    small: 'small' as const,
-    medium: 'medium' as const,
-    large: 'large' as const
+    small: 'sm' as const,
+    medium: 'default' as const,
+    large: 'lg' as const
   };
 
   return (

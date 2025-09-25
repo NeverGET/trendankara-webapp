@@ -75,7 +75,7 @@ export const toast = {
   },
 
   custom: (jsx: React.ReactNode, options?: any) => {
-    return sonnerToast.custom(jsx, options);
+    return sonnerToast.custom(() => jsx as React.ReactElement, options);
   },
 };
 

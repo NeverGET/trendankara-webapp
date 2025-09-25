@@ -75,7 +75,7 @@ export function parseStreamHeaders(headers: StreamHeaders): StreamMetadata {
     metadata.extra = {
       ...metadata.extra,
       contentType: contentType,
-      url: headers['icy-url'] || headers['x-audiocast-url']
+      url: headers['icy-url'] || headers['x-audiocast-url'] || undefined
     };
   }
 

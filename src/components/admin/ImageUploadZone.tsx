@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui-adapters/ButtonAdapter';
 import { FiUpload, FiImage, FiX } from 'react-icons/fi';
 
 interface ImageUploadZoneProps {
@@ -138,7 +138,7 @@ export function ImageUploadZone({
           <Button
             type="button"
             variant="secondary"
-            size="default"
+            size="medium"
             onClick={() => fileInputRef.current?.click()}
           >
             <FiImage className="w-4 h-4 mr-2" />
@@ -196,8 +196,8 @@ export function ImageUploadZone({
 
           <Button
             type="button"
-            variant="default"
-            size="default"
+            variant="primary"
+            size="medium"
             fullWidth
             onClick={handleUpload}
           >

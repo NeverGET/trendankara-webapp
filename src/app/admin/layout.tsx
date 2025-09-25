@@ -1,6 +1,9 @@
 import { requireAuth } from '@/lib/auth/utils';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 
+// Force dynamic rendering for all admin pages since they require authentication
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLayout({
   children,
 }: {

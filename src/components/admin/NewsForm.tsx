@@ -311,10 +311,9 @@ export function NewsForm({
 
           <Button
             type="submit"
-            loading={isLoading}
-            disabled={!isDirty && mode === 'edit'}
+            disabled={isLoading || (!isDirty && mode === 'edit')}
           >
-            {mode === 'create' ? 'Haberi Oluştur' : 'Değişiklikleri Kaydet'}
+            {isLoading ? 'Kaydediliyor...' : (mode === 'create' ? 'Haberi Oluştur' : 'Değişiklikleri Kaydet')}
           </Button>
         </div>
       </form>

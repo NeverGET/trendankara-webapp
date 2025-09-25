@@ -254,7 +254,7 @@ export function PollDialog({
         isOpen={isOpen}
         onClose={handleClose}
         title={dialogTitle}
-        size="lg"
+        size="large"
       >
         <form onSubmit={onSubmitHandler} className="space-y-6">
           {/* Success Display */}
@@ -444,7 +444,7 @@ export function PollDialog({
         isOpen={showCloseConfirm}
         onClose={handleCancelClose}
         title="Kaydedilmemiş Değişiklikler"
-        size="default"
+        size="medium"
       >
         <div className="space-y-6">
           {/* Warning Icon and Message */}

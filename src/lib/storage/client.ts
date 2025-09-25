@@ -292,7 +292,7 @@ class MinioStorageClient implements StorageClient {
         etag: stats.etag,
         contentType: stats.metaData['content-type'] || 'application/octet-stream',
         metadata: stats.metaData,
-        versionId: stats.versionId,
+        versionId: stats.versionId || undefined,
       };
     }, `getFileMetadata(${key})`);
   }

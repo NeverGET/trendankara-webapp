@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui-adapters/ButtonAdapter';
 import { cn } from '@/lib/utils';
 import type { StreamTestRequest, StreamTestResponse } from '@/types/radioSettings';
 

@@ -14,7 +14,7 @@
  */
 
 import { StreamValidationResult, testStreamConnection } from '@/lib/db/queries/radioSettings';
-import { RadioErrorType, createRadioError, handleRadioError } from '@/lib/utils/radioErrorHandler';
+import { RadioErrorType, RadioErrorHandler } from '@/lib/utils/radioErrorHandler';
 import { logInfo, logWarning, logError, createPrefixedLogger } from '@/lib/utils/logger';
 
 // Prefixed logger for fallback operations
@@ -171,7 +171,7 @@ export async function getFallbackUrls(): Promise<FallbackUrlConfig[]> {
         }
       }
     } catch (error) {
-      logger.warning('Failed to retrieve database fallback URL:', error);
+      logger.warning(`Failed to retrieve database fallback URL: ${error}`);
     }
 
     // Priority 5: Default fallback URLs (hardcoded reliable sources)
@@ -199,7 +199,7 @@ export async function getFallbackUrls(): Promise<FallbackUrlConfig[]> {
     return fallbackUrls;
 
   } catch (error) {
-    logger.error('Error collecting fallback URLs:', error);
+    logger.error(`Error collecting fallback URLs: ${error}`);
 
     // Return minimal default fallback
     return [{
@@ -295,7 +295,7 @@ export async function testFallbackUrls(
 
         return { urlConfig, testResult };
       } catch (error) {
-        logger.error(`Error testing fallback URL ${urlConfig.url}:`, error);
+        logger.error(`Error testing fallback URL ${urlConfig.url}: ${error}`);
         urlConfig.failureCount = (urlConfig.failureCount || 0) + 1;
         urlConfig.lastTested = now;
         return { urlConfig, testResult: null };
@@ -350,10 +350,8 @@ export async function getFallbackUrl(options: FallbackOptions = {}): Promise<str
     return fallbackUrls[0].url;
 
   } catch (error) {
-    logger.error('Error getting fallback URL:', error);
-    handleRadioError(
-      createRadioError(RadioErrorType.STREAM_CONNECTION_FAILED, 'Failed to get fallback URL', { error })
-    );
+    const radioError = RadioErrorHandler.createError(RadioErrorType.NETWORK_CONNECTION_FAILED, 'Failed to get fallback URL', { error });
+    logger.error(`Error getting fallback URL: ${radioError.technicalMessage}`);
     return null;
   }
 }
@@ -415,10 +413,8 @@ export async function rotateToNextFallback(
     return null;
 
   } catch (error) {
-    logger.error('Error during fallback URL rotation:', error);
-    handleRadioError(
-      createRadioError(RadioErrorType.STREAM_CONNECTION_FAILED, 'Failed to rotate fallback URL', { error })
-    );
+    const radioError = RadioErrorHandler.createError(RadioErrorType.NETWORK_CONNECTION_FAILED, 'Failed to rotate fallback URL', { error });
+    logger.error(`Error during fallback URL rotation: ${radioError.technicalMessage}`);
     return null;
   }
 }
@@ -495,7 +491,7 @@ export async function getFallbackStatus(): Promise<{
     };
 
   } catch (error) {
-    logger.error('Error getting fallback status:', error);
+    logger.error(`Error getting fallback status: ${error}`);
     throw error;
   }
 }
@@ -569,7 +565,7 @@ export async function validateAllFallbackUrls(options: FallbackOptions = {}): Pr
     };
 
   } catch (error) {
-    logger.error('Error validating fallback URLs:', error);
+    logger.error(`Error validating fallback URLs: ${error}`);
     throw error;
   }
 }

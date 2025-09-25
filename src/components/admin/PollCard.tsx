@@ -113,7 +113,7 @@ export const PollCard = React.memo(function PollCard({
             </div>
             <Badge
               variant={config.color as any}
-              size="sm"
+              size="small"
               pill
             >
               {config.label}
@@ -128,7 +128,7 @@ export const PollCard = React.memo(function PollCard({
               realStatus === 'ended' ? 'error' :
               'default'
             }
-            size="sm"
+            size="small"
             pill
             animated={realStatus === 'active'}
           >
@@ -221,7 +221,7 @@ export const PollCard = React.memo(function PollCard({
           {realStatus === 'active' && (
             <Badge
               variant={isEndingSoon ? 'error' : actualDaysRemaining <= 7 ? 'warning' : 'success'}
-              size="sm"
+              size="small"
               animated={isEndingSoon}
             >
               {timeRemainingText}
@@ -230,7 +230,7 @@ export const PollCard = React.memo(function PollCard({
           {realStatus === 'scheduled' && (
             <Badge
               variant="info"
-              size="sm"
+              size="small"
             >
               {getDaysUntilStart(start_date)} gün sonra başlayacak
             </Badge>

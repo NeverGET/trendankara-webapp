@@ -16,11 +16,17 @@ export interface NewsArticle {
   summary: string;
   content: string;
   thumbnail: MediaFile | string;
+  featured_image?: string; // For backward compatibility with database
   images?: MediaFile[];
   category: NewsCategory;
   tags?: string[];
   isHot: boolean;
   isBreaking: boolean;
+  isFeatured?: boolean;
+  is_featured?: boolean; // Database compatibility
+  is_breaking?: boolean; // Database compatibility
+  is_hot?: boolean; // Database compatibility
+  is_active?: boolean; // Database compatibility
   publishedAt: Date | string;
   author?: {
     id: number;

@@ -91,7 +91,7 @@ interface ImagePickerInputProps {
     items?: MediaItem[];
   };
   /** Ref to pass to the input */
-  inputRef?: React.RefObject<HTMLInputElement>;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 /**
@@ -264,7 +264,7 @@ const ImagePickerInput: React.FC<ImagePickerInputProps> = ({
               {preview.loading && (
                 <div role="status" aria-label="Resim yükleniyor">
                   <LoadingSpinner
-                    size="sm"
+                    size="small"
                     hideText={true}
                     className="p-2"
                   />
@@ -499,7 +499,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           fallback={
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-dark-surface-primary rounded-lg p-6 border border-dark-border-primary">
-                <LoadingSpinner size="default" text="Galeri yükleniyor..." />
+                <LoadingSpinner size="medium" text="Galeri yükleniyor..." />
               </div>
             </div>
           }

@@ -53,6 +53,9 @@
   "exclude": [
     "node_modules",
     "**/*.stories.tsx",
-    "**/*.stories.ts"
+    "**/*.stories.ts",
+    "**/*.e2e.ts",
+    "**/*.e2e.tsx",
+    "src/e2e/**/*"
   ]
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui-adapters/ButtonAdapter';
 import { PollCardProps, PollOption } from '@/types/polls';
 import { PollResults } from './PollResults';
 import { shouldShowResults } from '@/lib/utils/poll-status';
@@ -171,7 +171,7 @@ export function PollCard({
           disabled={!selectedOption || isVoting}
           loading={isVoting}
           fullWidth
-          variant="default"
+          variant="primary"
         >
           Oy Ver
         </Button>

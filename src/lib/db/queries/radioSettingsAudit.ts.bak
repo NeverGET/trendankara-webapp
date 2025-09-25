@@ -809,21 +809,21 @@ export async function getAuditStatistics(
     );
 
     // Entries by action
-    const actionResult = await db.query<any>(
+    const actionResult = await db.query<{ action_type: string; count: number } & RowDataPacket>(
       `SELECT action_type, COUNT(*) as count FROM radio_settings_audit
        WHERE deleted_at IS NULL${dateCondition} GROUP BY action_type`,
       params
     );
 
     // Entries by severity
-    const severityResult = await db.query<any>(
+    const severityResult = await db.query<{ severity: string; count: number } & RowDataPacket>(
       `SELECT severity, COUNT(*) as count FROM radio_settings_audit
        WHERE deleted_at IS NULL${dateCondition} GROUP BY severity`,
       params
     );
 
     // Entries by admin
-    const adminResult = await db.query<any>(
+    const adminResult = await db.query<{ admin_user_email: string; count: number } & RowDataPacket>(
       `SELECT admin_user_email, COUNT(*) as count FROM radio_settings_audit
        WHERE deleted_at IS NULL${dateCondition} GROUP BY admin_user_email ORDER BY count DESC LIMIT 10`,
       params
@@ -1005,3 +1005,14 @@ function calculateTimeElapsed(timestamp: Date): string {
   return 'Just now';
 }
 
+/**
+ * Export all audit-related types for use in other modules
+ */
+export type {
+  RadioSettingsAuditEntity,
+  AuditLogEntry,
+  AdminUserContext,
+  RollbackResult,
+  AuditSearchFilters,
+  DetailedAuditEntry
+};

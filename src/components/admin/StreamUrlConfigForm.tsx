@@ -208,9 +208,9 @@ export function StreamUrlConfigForm({
   return (
     <Card
       title="Stream URL Konfigürasyonu"
-      subtitle="Radyo stream URL'sini yapılandırın ve test edin"
       className={cn('w-full max-w-4xl', className)}
     >
+      <p className="text-sm text-gray-600 mb-4">{"Radyo stream URL'sini yapılandırın ve test edin"}</p>
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         {/* Success Alert */}
         {saveSuccess && (
@@ -314,27 +314,25 @@ export function StreamUrlConfigForm({
             variant="secondary"
             onClick={handleTestStream}
             disabled={!validationResult?.isValid || isTestingStream || isLoading}
-            loading={isTestingStream}
             className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300"
           >
-            {isTestingStream ? 'Stream Test Ediliyor...' : 'Stream\'i Test Et'}
+            {isTestingStream ? "Stream Test Ediliyor..." : "Stream'i Test Et"}
           </Button>
 
           {/* Save Button */}
           <Button
             type="submit"
             disabled={!isDirty || !validationResult?.isValid || isLoading}
-            loading={isLoading}
             className="bg-brand-red-600 hover:bg-brand-red-700 text-white"
           >
-            {isLoading ? 'Kaydediliyor...' : 'Kaydet'}
+            {isLoading ? "Kaydediliyor..." : "Kaydet"}
           </Button>
         </div>
 
         {/* Stream Test Results (Integration with StreamTestIndicator) */}
         <StreamTestIndicator
-          testResult={testResult}
-          metadata={metadata}
+          testResult={testResult || undefined}
+          metadata={metadata || undefined}
           isLoading={isTestingStream}
           loadingMessage="Stream bağlantısı test ediliyor..."
         />

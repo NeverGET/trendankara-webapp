@@ -86,7 +86,7 @@ export function StreamTestResult({
             <div>
               <Badge
                 variant={success ? 'success' : 'error'}
-                size="default"
+                size="medium"
                 pill
               >
                 {success ? 'Başarılı' : 'Başarısız'}
@@ -160,11 +160,15 @@ export function StreamTestResult({
               variant="secondary"
               size="sm"
               onClick={onRetry}
-              loading={retryLoading}
-              icon={!retryLoading ? retryIcon : undefined}
+              disabled={retryLoading}
               className="text-sm"
             >
-              Tekrar Dene
+              {retryLoading ? 'Test Ediliyor...' : (
+                <>
+                  {retryIcon}
+                  Tekrar Dene
+                </>
+              )}
             </Button>
           </div>
         )}

@@ -269,11 +269,7 @@ class MySQLClient implements DatabaseClient {
       // Use query instead of execute for better parameter handling
       const [result] = await this.pool.query<mysql.ResultSetHeader>(sql, params);
 
-      return {
-        insertId: result.insertId,
-        affectedRows: result.affectedRows,
-        ...result,
-      } as InsertResult;
+      return result as InsertResult;
     } catch (error) {
       const dbError = error as DatabaseError;
       logError(`Insert failed: ${dbError.message}`, { prefix: 'MySQL' });
@@ -295,11 +291,7 @@ class MySQLClient implements DatabaseClient {
       // Use query instead of execute for better parameter handling
       const [result] = await this.pool.query<mysql.ResultSetHeader>(sql, params);
 
-      return {
-        affectedRows: result.affectedRows,
-        changedRows: result.changedRows || 0,
-        ...result,
-      } as UpdateResult;
+      return result as UpdateResult;
     } catch (error) {
       const dbError = error as DatabaseError;
       logError(`Update failed: ${dbError.message}`, { prefix: 'MySQL' });
@@ -321,11 +313,7 @@ class MySQLClient implements DatabaseClient {
       // Use query instead of execute for better parameter handling
       const [result] = await this.pool.query<mysql.ResultSetHeader>(sql, params);
 
-      return {
-        affectedRows: result.affectedRows,
-        changedRows: result.changedRows || 0,
-        ...result,
-      } as UpdateResult;
+      return result as UpdateResult;
     } catch (error) {
       const dbError = error as DatabaseError;
       logError(`Delete failed: ${dbError.message}`, { prefix: 'MySQL' });

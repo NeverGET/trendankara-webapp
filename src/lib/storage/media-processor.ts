@@ -77,7 +77,7 @@ export async function processAndUploadImage(
         ...metadata,
         width: String(imageMetadata.width),
         height: String(imageMetadata.height),
-        format: imageMetadata.format,
+        format: imageMetadata.format || 'unknown',
         isOriginal: 'true'
       }
     }

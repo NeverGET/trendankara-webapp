@@ -133,19 +133,27 @@ export function RadioSettingsForm({
   }, []);
 
   useEffect(() => {
-    validateUrlField(debouncedStreamUrl, 'streamUrl');
+    if (debouncedStreamUrl) {
+      validateUrlField(debouncedStreamUrl, 'streamUrl');
+    }
   }, [debouncedStreamUrl, validateUrlField]);
 
   useEffect(() => {
-    validateUrlField(debouncedBackupStreamUrl, 'backupStreamUrl');
+    if (debouncedBackupStreamUrl) {
+      validateUrlField(debouncedBackupStreamUrl, 'backupStreamUrl');
+    }
   }, [debouncedBackupStreamUrl, validateUrlField]);
 
   useEffect(() => {
-    validateUrlField(debouncedWebsiteUrl, 'websiteUrl');
+    if (debouncedWebsiteUrl) {
+      validateUrlField(debouncedWebsiteUrl, 'websiteUrl');
+    }
   }, [debouncedWebsiteUrl, validateUrlField]);
 
   useEffect(() => {
-    validateUrlField(debouncedSocialUrl, 'socialUrl');
+    if (debouncedSocialUrl) {
+      validateUrlField(debouncedSocialUrl, 'socialUrl');
+    }
   }, [debouncedSocialUrl, validateUrlField]);
 
   // Cleanup preview on component unmount
@@ -386,7 +394,7 @@ export function RadioSettingsForm({
               streamUrl={streamUrlValue}
               onTestComplete={handleTestComplete}
               onTestError={handleTestError}
-              size="sm"
+              size="small"
               variant="secondary"
               disabled={!streamUrlValue || isLoading}
             />
@@ -401,9 +409,9 @@ export function RadioSettingsForm({
 
             {/* Stream Preview Section - only shown after successful test */}
             <StreamPreviewSection
-              testResult={testResults}
+              testResult={testResults || undefined}
               streamUrl={streamUrlValue}
-              metadata={streamMetadata}
+              metadata={streamMetadata || undefined}
               metadataLoading={metadataLoading}
               onPreviewStart={handlePreviewStart}
               onPreviewStop={handlePreviewStop}
@@ -454,10 +462,9 @@ export function RadioSettingsForm({
 
           <Button
             type="submit"
-            loading={isLoading}
             disabled={!isDirty || isLoading || Object.keys(inlineValidationErrors).length > 0}
           >
-            Ayarları Kaydet
+            {isLoading ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
           </Button>
         </div>
       </form>

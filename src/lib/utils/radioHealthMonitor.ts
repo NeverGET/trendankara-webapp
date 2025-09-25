@@ -16,7 +16,7 @@
 
 import { StreamValidationResult, testStreamConnection, getActiveSettings } from '@/lib/db/queries/radioSettings';
 import { getFallbackUrls, testFallbackUrls, rotateToNextFallback, FallbackUrlConfig } from '@/lib/utils/radioFallback';
-import { RadioErrorType, createRadioError, handleRadioError } from '@/lib/utils/radioErrorHandler';
+import { RadioErrorType, RadioErrorHandler } from '@/lib/utils/radioErrorHandler';
 import { broadcastConfigurationReload, safeBroadcastEvent, RADIO_EVENT_NAMES, RadioConfigurationReloadEvent } from '@/lib/utils/radioEvents';
 import { logInfo, logWarning, logError, createPrefixedLogger } from '@/lib/utils/logger';
 
@@ -205,9 +205,8 @@ export async function startHealthMonitoring(config: HealthMonitorConfig = {}): P
         await performHealthCheck();
       } catch (error) {
         logger.error(`Error during periodic health check: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        handleRadioError(
-          createRadioError(RadioErrorType.INTERNAL_SERVER_ERROR, 'Periodic health check failed', { error })
-        );
+        const radioError = RadioErrorHandler.createError(RadioErrorType.INTERNAL_SERVER_ERROR, 'Periodic health check failed', { error });
+        logger.error(`Periodic health check failed: ${radioError.technicalMessage}`);
       }
     }, monitorState.config.checkInterval);
 
@@ -325,9 +324,8 @@ export async function performHealthCheck(): Promise<SystemHealthStatus> {
     const errorStatus = updateHealthStatus([], HealthStatus.CRITICAL,
       `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
 
-    handleRadioError(
-      createRadioError(RadioErrorType.INTERNAL_SERVER_ERROR, 'Health check operation failed', { error })
-    );
+    const radioError = RadioErrorHandler.createError(RadioErrorType.INTERNAL_SERVER_ERROR, 'Health check operation failed', { error });
+    logger.error(`Health check operation failed: ${radioError.technicalMessage}`);
 
     return errorStatus;
   }
@@ -513,9 +511,8 @@ async function attemptAutomaticFailover(failedUrl: string): Promise<void> {
   } catch (error) {
     logger.error(`Automatic failover attempt failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
 
-    handleRadioError(
-      createRadioError(RadioErrorType.STREAM_CONNECTION_FAILED, 'Automatic failover failed', { error, metadata: { failedUrl } })
-    );
+    const radioError = RadioErrorHandler.createError(RadioErrorType.NETWORK_CONNECTION_FAILED, 'Automatic failover failed', { error, metadata: { failedUrl } });
+    logger.error(`Automatic failover failed: ${radioError.technicalMessage}`);
   }
 }
 

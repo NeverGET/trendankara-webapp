@@ -246,7 +246,7 @@ const ERROR_HTTP_STATUS: Record<RadioErrorType, number> = {
 /**
  * Recovery actions for different error types
  */
-const RECOVERY_ACTIONS: Record<RadioErrorType, string[]> = {
+const RECOVERY_ACTIONS: Partial<Record<RadioErrorType, string[]>> = {
   [RadioErrorType.NETWORK_TIMEOUT]: [
     'İnternet bağlantınızı kontrol edin',
     'Biraz bekleyip tekrar deneyin',
@@ -757,9 +757,3 @@ export function handleUnknownError(
 }
 
 // Export the main class for advanced usage
-export { RadioErrorHandler };
-
-// Export types for TypeScript consumers
-export type {
-  RadioError
-};

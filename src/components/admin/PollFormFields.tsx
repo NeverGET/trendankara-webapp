@@ -96,8 +96,10 @@ export function PollFormFields({
                   rows={4}
                   error={errors.description?.message}
                   className="min-h-[100px] max-h-[200px]"
-                  helperText={`${field.value?.length || 0}/2000 karakter`}
                 />
+                <div className="text-xs text-gray-500 mt-1">
+                  {`${field.value?.length || 0}/2000 karakter`}
+                </div>
               </div>
             )}
           />
