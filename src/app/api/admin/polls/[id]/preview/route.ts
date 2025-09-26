@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 import { getPollById } from '@/lib/db/polls';
+import { fixMediaUrlsInObject } from '@/lib/utils/url-fixer';
 
 /**
  * GET /api/admin/polls/[id]/preview
@@ -45,7 +46,7 @@ export async function GET(
     const totalVotes = poll.items?.reduce((sum: number, item: any) => sum + (item.vote_count || 0), 0) || 0;
 
     // Transform poll data for public view
-    const publicPoll = {
+    const publicPoll = fixMediaUrlsInObject({
       id: poll.id,
       question: poll.title,
       description: poll.description,
@@ -53,7 +54,7 @@ export async function GET(
       endDate: poll.end_date,
       totalVotes,
       show_results: poll.show_results,
-      options: poll.items?.map((item: any) => ({
+      options: poll.items?.map((item: any) => fixMediaUrlsInObject({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -61,7 +62,7 @@ export async function GET(
         votes: item.vote_count || 0
       })) || [],
       preview_mode: true
-    };
+    });
 
     return NextResponse.json({
       success: true,

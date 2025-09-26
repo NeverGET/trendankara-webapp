@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPollById, hasVoted } from '@/lib/db/polls';
+import { fixMediaUrlsInObject } from '@/lib/utils/url-fixer';
 
 /**
  * GET /api/polls/[id]/results
@@ -56,7 +57,7 @@ export async function GET(
     const totalVotes = poll.items?.reduce((sum: number, item: any) => sum + (item.vote_count || 0), 0) || 0;
 
     // Transform data
-    const publicPoll = {
+    const publicPoll = fixMediaUrlsInObject({
       id: poll.id,
       title: poll.title,
       description: poll.description,
@@ -67,7 +68,7 @@ export async function GET(
       is_active: poll.is_active,
       total_votes: totalVotes,
       can_view_results: showResults,
-      items: poll.items?.map((item: any) => ({
+      items: poll.items?.map((item: any) => fixMediaUrlsInObject({
         id: item.id,
         title: item.title,
         description: item.description,
@@ -78,7 +79,7 @@ export async function GET(
           : undefined,
         display_order: item.display_order
       })) || []
-    };
+    });
 
     return NextResponse.json({
       success: true,
