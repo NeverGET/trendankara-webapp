@@ -130,6 +130,8 @@ docker logs radioapp
 | DATABASE_PORT | 3307 | 3306 |
 | MINIO_ENDPOINT | 82.29.169.180 | minio |
 | MINIO_PORT | 9002 | 9000 |
+| MINIO_PUBLIC_ENDPOINT | - | 82.29.169.180 |
+| MINIO_PUBLIC_PORT | - | 9002 |
 
 ## Important Notes
 

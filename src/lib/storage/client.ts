@@ -176,6 +176,15 @@ export async function ensureBucket(bucketName?: string): Promise<void> {
  * Get public URL for a file
  */
 export async function getPublicUrl(key: string, bucketName?: string): Promise<string> {
+  // In production/Docker, use the proxy route to serve files through the app
+  // This uses the internal Docker network and doesn't expose MinIO directly
+  if (isDockerDeployment()) {
+    // Use relative URL that will be served through the app's API route
+    // This proxies the request internally through Docker network
+    return `/api/media/${key}`;
+  }
+
+  // In development, generate presigned URL for direct access
   const config = getStorageConfig();
   const bucket = bucketName || config.bucket;
   const client = getMinioClient();
