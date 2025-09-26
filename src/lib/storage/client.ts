@@ -173,19 +173,35 @@ export async function ensureBucket(bucketName?: string): Promise<void> {
 }
 
 /**
+ * Convert a full MinIO URL to just the key
+ */
+export function extractKeyFromUrl(url: string): string {
+  // Handle full URLs like http://82.29.169.180:9002/media/uploads/...
+  if (url.includes('/media/')) {
+    const parts = url.split('/media/');
+    return parts[parts.length - 1];
+  }
+  // Already a key
+  return url;
+}
+
+/**
  * Get public URL for a file
  */
 export async function getPublicUrl(key: string, bucketName?: string): Promise<string> {
+  // Extract key if a full URL was passed
+  const cleanKey = extractKeyFromUrl(key);
+
   // If running on client side, always use the proxy route
   if (typeof window !== 'undefined') {
     // Client-side: always use proxy route to avoid mixed content issues
-    return `/api/media/${key}`;
+    return `/api/media/${cleanKey}`;
   }
 
   // Server-side logic
   if (isDockerDeployment()) {
     // Production server: use proxy route
-    return `/api/media/${key}`;
+    return `/api/media/${cleanKey}`;
   }
 
   // Development server: generate presigned URL for direct access
@@ -195,9 +211,9 @@ export async function getPublicUrl(key: string, bucketName?: string): Promise<st
 
   return withRetry(async () => {
     // Generate pre-signed URL with 7-day expiry
-    const url = await client.presignedGetObject(bucket, key, PRESIGNED_URL_EXPIRY);
+    const url = await client.presignedGetObject(bucket, cleanKey, PRESIGNED_URL_EXPIRY);
     return url;
-  }, `getPublicUrl(${key})`);
+  }, `getPublicUrl(${cleanKey})`);
 }
 
 /**

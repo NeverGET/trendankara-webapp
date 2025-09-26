@@ -4,6 +4,7 @@ import {
   type PaginationOptions,
   type NewsFilters
 } from '@/lib/db/news';
+import { fixMediaUrlsInObject } from '@/lib/utils/url-fixer';
 
 /**
  * GET /api/news
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
     const result = await getAllNews(pagination, filters);
 
     // Transform data for public consumption (remove sensitive fields)
-    const publicData = result.data.map(article => ({
+    const publicData = result.data.map(article => fixMediaUrlsInObject({
       id: article.id,
       title: article.title,
       slug: article.slug,

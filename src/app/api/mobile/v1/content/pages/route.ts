@@ -5,6 +5,7 @@ import {
   getContentPageBySlug,
   trackPageView
 } from '@/lib/db/content-pages';
+import { fixMediaUrlsInObject } from '@/lib/utils/url-fixer';
 
 /**
  * GET /api/mobile/v1/content/pages
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: {
+        data: fixMediaUrlsInObject({
           id: (homepage as any).id,
           title: (homepage as any).title,
           slug: (homepage as any).slug,
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
           meta: (homepage as any).meta,
           is_homepage: true,
           updated_at: (homepage as any).updated_at
-        }
+        })
       });
     }
 
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: {
+        data: fixMediaUrlsInObject({
           id: (page as any).id,
           title: (page as any).title,
           slug: (page as any).slug,
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
           meta: (page as any).meta,
           is_homepage: (page as any).is_homepage,
           updated_at: (page as any).updated_at
-        }
+        })
       });
     }
 
@@ -95,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: pages.map((page: any) => ({
+      data: pages.map((page: any) => fixMediaUrlsInObject({
         id: page.id,
         title: page.title,
         slug: page.slug,
