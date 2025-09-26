@@ -130,8 +130,18 @@ docker logs radioapp
 | DATABASE_PORT | 3307 | 3306 |
 | MINIO_ENDPOINT | 82.29.169.180 | minio |
 | MINIO_PORT | 9002 | 9000 |
-| MINIO_PUBLIC_ENDPOINT | - | 82.29.169.180 |
-| MINIO_PUBLIC_PORT | - | 9002 |
+
+## Image Serving Strategy
+
+### Development
+- Images are served directly from MinIO using presigned URLs
+- URLs: `http://82.29.169.180:9002/media/uploads/...`
+
+### Production (Docker)
+- Images are proxied through the Next.js app via `/api/media/[...path]`
+- Internal path: App → Docker network → `minio:9000`
+- Public URLs: `/api/media/uploads/...` (relative, served over HTTPS)
+- Benefits: No mixed content issues, uses internal network, secure
 
 ## Important Notes
 
@@ -139,3 +149,4 @@ docker logs radioapp
 2. **Always** test builds with `NODE_ENV=production` before deployment
 3. **Standalone output** is required for Docker deployment
 4. **IS_DOCKER_DEPLOYMENT** flag ensures correct service discovery
+5. **Images** are served through app proxy in production (no direct MinIO access)
