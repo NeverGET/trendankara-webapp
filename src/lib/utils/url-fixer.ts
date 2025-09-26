@@ -37,6 +37,11 @@ export function fixMediaUrlsInObject<T>(obj: T): T {
     return obj.map(item => fixMediaUrlsInObject(item)) as T;
   }
 
+  // Handle Date objects - return as is
+  if (obj instanceof Date) {
+    return obj;
+  }
+
   // Handle objects
   if (typeof obj === 'object' && obj !== null) {
     const fixed: any = {};

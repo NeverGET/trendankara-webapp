@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 import { db } from '@/lib/db/client';
 import { RowDataPacket } from 'mysql2';
+import { fixMediaUrlsInObject } from '@/lib/utils/url-fixer';
 
 interface MediaItem extends RowDataPacket {
   id: number;
@@ -114,7 +115,7 @@ export async function GET(request: NextRequest) {
     const media = mediaResult.rows;
 
     // Transform data to match frontend expectations
-    const transformedMedia = media.map(item => ({
+    const transformedMedia = media.map(item => fixMediaUrlsInObject({
       id: item.id.toString(),
       filename: item.filename,
       url: item.url,
