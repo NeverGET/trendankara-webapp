@@ -18,6 +18,7 @@ import {
   type PaginationOptions,
   type ContentPageFilters
 } from '@/lib/db/content-pages';
+import { fixMediaUrlsInObject } from '@/lib/utils/url-fixer';
 
 /**
  * GET /api/admin/content
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: contentPage
+        data: fixMediaUrlsInObject(contentPage)
       });
     }
 
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: contentPage
+        data: fixMediaUrlsInObject(contentPage)
       });
     }
 
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: result.data,
+      data: result.data.map((item: any) => fixMediaUrlsInObject(item)),
       pagination: {
         page,
         limit,
