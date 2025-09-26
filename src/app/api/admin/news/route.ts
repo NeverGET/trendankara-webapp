@@ -16,6 +16,7 @@ import {
 } from '@/lib/db/news';
 import { getStorageClient } from '@/lib/storage/client';
 import { invalidateEntityCache } from '@/lib/cache/invalidation';
+import { fixMediaUrlsInObject } from '@/lib/utils/url-fixer';
 
 /**
  * GET /api/admin/news
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: news
+        data: fixMediaUrlsInObject(news)
       });
     }
 
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: result.data,
+      data: result.data.map((item: any) => fixMediaUrlsInObject(item)),
       pagination: {
         page,
         limit,
