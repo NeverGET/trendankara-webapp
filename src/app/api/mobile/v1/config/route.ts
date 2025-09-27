@@ -1,26 +1,32 @@
 /**
- * Mobile Polls API Endpoint
- * Returns active poll based on mobile settings
- * Requirements: 1.1, 1.2, 1.7 - Mobile poll endpoints with caching
+ * Mobile Configuration API Endpoint
+ * Returns mobile app settings and version check
+ * Requirements: 1.8, 1.9 - Configuration and version management
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import type { MobileApiResponse, MobilePoll } from '@/types/mobile';
-import pollService from '@/services/mobile/PollService';
+import type { MobileApiResponse, MobileSettings } from '@/types/mobile';
 import configService from '@/services/mobile/ConfigService';
 import cacheManager, { MobileCacheManager } from '@/lib/cache/MobileCacheManager';
 
-const CACHE_KEY = 'mobile:polls:active';
-const CACHE_TTL = 60; // 1 minute
+const CACHE_TTL = 600; // 10 minutes
 
 export async function GET(request: NextRequest) {
   try {
-    // Check for conditional request (If-None-Match header)
+    const { searchParams } = new URL(request.url);
+    
+    // Parse version parameter for update check
+    const currentVersion = searchParams.get('version');
+    
+    // Create cache key
+    const cacheKey = MobileCacheManager.createKey('mobile', 'config', 'settings');
+    
+    // Check for conditional request
     const ifNoneMatch = request.headers.get('if-none-match');
-
+    
     // Check cache first
-    const cached = cacheManager.get<MobilePoll>(CACHE_KEY);
-
+    const cached = cacheManager.get<MobileSettings>(cacheKey);
+    
     if (cached) {
       // Check ETag match for 304 Not Modified
       if (ifNoneMatch && MobileCacheManager.isETagMatch(ifNoneMatch, cached.etag)) {
@@ -32,9 +38,9 @@ export async function GET(request: NextRequest) {
           },
         });
       }
-
+      
       // Return cached data
-      const response: MobileApiResponse<MobilePoll | null> = {
+      const response: MobileApiResponse<MobileSettings> = {
         success: true,
         data: cached.data,
         cache: {
@@ -42,7 +48,13 @@ export async function GET(request: NextRequest) {
           maxAge: CACHE_TTL
         }
       };
-
+      
+      // Add update available flag if version provided
+      if (currentVersion) {
+        const updateAvailable = await configService.isUpdateAvailable(currentVersion);
+        response.meta = { updateAvailable };
+      }
+      
       return NextResponse.json(response, {
         headers: {
           'ETag': cached.etag,
@@ -50,37 +62,34 @@ export async function GET(request: NextRequest) {
         },
       });
     }
-
-    // Get mobile settings
+    
+    // Get settings from service
     const settings = await configService.getSettings();
-
-    // Check if polls are enabled
-    if (!settings.enablePolls) {
-      const response: MobileApiResponse<null> = {
-        success: true,
-        data: null,
-        error: 'Anketler devre dışı'
-      };
-
-      return NextResponse.json(response);
+    
+    // Check for app update if version provided
+    let updateAvailable = false;
+    if (currentVersion) {
+      updateAvailable = await configService.isUpdateAvailable(currentVersion);
     }
-
-    // Get active poll from service
-    const poll = await pollService.getActivePoll(settings);
-
+    
     // Cache the result
-    const entry = cacheManager.set(CACHE_KEY, poll, CACHE_TTL);
-
+    const entry = cacheManager.set(cacheKey, settings, CACHE_TTL);
+    
     // Prepare response
-    const response: MobileApiResponse<MobilePoll | null> = {
+    const response: MobileApiResponse<MobileSettings> = {
       success: true,
-      data: poll,
+      data: settings,
       cache: {
         etag: entry.etag,
         maxAge: CACHE_TTL
       }
     };
-
+    
+    // Add update flag if version check was performed
+    if (currentVersion) {
+      response.meta = { updateAvailable };
+    }
+    
     // Return response with cache headers
     return NextResponse.json(response, {
       headers: {
@@ -89,14 +98,14 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error in mobile polls endpoint:', error);
-
+    console.error('Error in mobile config endpoint:', error);
+    
     const response: MobileApiResponse<null> = {
       success: false,
       data: null,
-      error: 'Anketler yüklenirken bir hata oluştu'
+      error: 'Ayarlar yüklenirken bir hata oluştu'
     };
-
+    
     return NextResponse.json(response, { status: 500 });
   }
 }

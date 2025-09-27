@@ -1,25 +1,31 @@
 /**
- * Mobile Polls API Endpoint
- * Returns active poll based on mobile settings
- * Requirements: 1.1, 1.2, 1.7 - Mobile poll endpoints with caching
+ * Mobile Cards API Endpoint
+ * Returns card-based content for mobile display
+ * Requirements: 2.1, 2.2, 2.3 - Card-based content management
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import type { MobileApiResponse, MobilePoll } from '@/types/mobile';
-import pollService from '@/services/mobile/PollService';
-import configService from '@/services/mobile/ConfigService';
+import type { MobileApiResponse, MobileCard } from '@/types/mobile';
+import cardService from '@/services/mobile/CardService';
 import cacheManager, { MobileCacheManager } from '@/lib/cache/MobileCacheManager';
 
-const CACHE_KEY = 'mobile:polls:active';
-const CACHE_TTL = 60; // 1 minute
+const CACHE_TTL = 180; // 3 minutes
 
 export async function GET(request: NextRequest) {
   try {
-    // Check for conditional request (If-None-Match header)
+    const { searchParams } = new URL(request.url);
+
+    // Parse type filter
+    const type = searchParams.get('type') as 'featured' | 'normal' | null;
+
+    // Create cache key based on type
+    const cacheKey = MobileCacheManager.createKey('mobile', 'cards', type || 'all');
+
+    // Check for conditional request
     const ifNoneMatch = request.headers.get('if-none-match');
 
     // Check cache first
-    const cached = cacheManager.get<MobilePoll>(CACHE_KEY);
+    const cached = cacheManager.get<MobileCard[]>(cacheKey);
 
     if (cached) {
       // Check ETag match for 304 Not Modified
@@ -34,7 +40,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Return cached data
-      const response: MobileApiResponse<MobilePoll | null> = {
+      const response: MobileApiResponse<MobileCard[]> = {
         success: true,
         data: cached.data,
         cache: {
@@ -51,30 +57,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get mobile settings
-    const settings = await configService.getSettings();
-
-    // Check if polls are enabled
-    if (!settings.enablePolls) {
-      const response: MobileApiResponse<null> = {
-        success: true,
-        data: null,
-        error: 'Anketler devre dışı'
-      };
-
-      return NextResponse.json(response);
-    }
-
-    // Get active poll from service
-    const poll = await pollService.getActivePoll(settings);
+    // Get cards from service
+    const cards = await cardService.getCards(
+      type && (type === 'featured' || type === 'normal') ? type : undefined
+    );
 
     // Cache the result
-    const entry = cacheManager.set(CACHE_KEY, poll, CACHE_TTL);
+    const entry = cacheManager.set(cacheKey, cards, CACHE_TTL);
 
     // Prepare response
-    const response: MobileApiResponse<MobilePoll | null> = {
+    const response: MobileApiResponse<MobileCard[]> = {
       success: true,
-      data: poll,
+      data: cards,
       cache: {
         etag: entry.etag,
         maxAge: CACHE_TTL
@@ -89,12 +83,12 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error in mobile polls endpoint:', error);
+    console.error('Error in mobile cards endpoint:', error);
 
-    const response: MobileApiResponse<null> = {
+    const response: MobileApiResponse<MobileCard[]> = {
       success: false,
-      data: null,
-      error: 'Anketler yüklenirken bir hata oluştu'
+      data: [],
+      error: 'Kartlar yüklenirken bir hata oluştu'
     };
 
     return NextResponse.json(response, { status: 500 });
