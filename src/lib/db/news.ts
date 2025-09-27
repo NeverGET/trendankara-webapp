@@ -534,17 +534,17 @@ export async function getNewsBySlug(slug: string): Promise<any | null> {
   const query = `
     SELECT
       n.*,
-      c.name AS category_name,
+      nc.name AS category_name,
       u.name AS creator_name
     FROM news n
-    LEFT JOIN categories c ON n.category_id = c.id
+    LEFT JOIN news_categories nc ON n.category_id = nc.id
     LEFT JOIN users u ON n.created_by = u.id
     WHERE n.slug = ? AND n.deleted_at IS NULL
     LIMIT 1
   `;
 
-  const result = await db.query<RowDataPacket>(query, [slug]);
-  return result.rows.length > 0 ? result.rows[0] : null;
+  const [rows] = (await db.execute(query, [slug])) as [RowDataPacket[], any];
+  return rows.length > 0 ? rows[0] : null;
 }
 
 /**
@@ -557,5 +557,5 @@ export async function incrementNewsViews(newsId: number): Promise<void> {
     WHERE id = ? AND deleted_at IS NULL
   `;
 
-  await db.update(query, [newsId]);
+  await db.execute(query, [newsId]);
 }
