@@ -1,25 +1,42 @@
 /**
- * Mobile Polls API Endpoint
- * Returns active poll based on mobile settings
- * Requirements: 1.1, 1.2, 1.7 - Mobile poll endpoints with caching
+ * Mobile News Detail API Endpoint
+ * Returns full news article with image galleries
+ * Requirements: 1.4 - Detailed news with image galleries
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import type { MobileApiResponse, MobilePoll } from '@/types/mobile';
-import pollService from '@/services/mobile/PollService';
-import configService from '@/services/mobile/ConfigService';
+import type { MobileApiResponse, MobileNewsDetail } from '@/types/mobile';
+import newsService from '@/services/mobile/NewsService';
 import cacheManager, { MobileCacheManager } from '@/lib/cache/MobileCacheManager';
 
-const CACHE_KEY = 'mobile:polls:active';
-const CACHE_TTL = 60; // 1 minute
+const CACHE_TTL = 300; // 5 minutes
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
   try {
-    // Check for conditional request (If-None-Match header)
+    // Resolve params (Next.js 15 async params)
+    const resolvedParams = await params;
+    const { slug } = resolvedParams;
+
+    if (!slug) {
+      const response: MobileApiResponse<null> = {
+        success: false,
+        data: null,
+        error: 'Haber bulunamadı'
+      };
+      return NextResponse.json(response, { status: 404 });
+    }
+
+    // Create cache key
+    const cacheKey = MobileCacheManager.createKey('mobile', 'news', 'detail', slug);
+
+    // Check for conditional request
     const ifNoneMatch = request.headers.get('if-none-match');
 
     // Check cache first
-    const cached = cacheManager.get<MobilePoll>(CACHE_KEY);
+    const cached = cacheManager.get<MobileNewsDetail>(cacheKey);
 
     if (cached) {
       // Check ETag match for 304 Not Modified
@@ -34,7 +51,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Return cached data
-      const response: MobileApiResponse<MobilePoll | null> = {
+      const response: MobileApiResponse<MobileNewsDetail> = {
         success: true,
         data: cached.data,
         cache: {
@@ -51,30 +68,25 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get mobile settings
-    const settings = await configService.getSettings();
+    // Get news detail from service
+    const news = await newsService.getNewsDetail(slug);
 
-    // Check if polls are enabled
-    if (!settings.enablePolls) {
+    if (!news) {
       const response: MobileApiResponse<null> = {
-        success: true,
+        success: false,
         data: null,
-        error: 'Anketler devre dışı'
+        error: 'Haber bulunamadı'
       };
-
-      return NextResponse.json(response);
+      return NextResponse.json(response, { status: 404 });
     }
 
-    // Get active poll from service
-    const poll = await pollService.getActivePoll(settings);
-
     // Cache the result
-    const entry = cacheManager.set(CACHE_KEY, poll, CACHE_TTL);
+    const entry = cacheManager.set(cacheKey, news, CACHE_TTL);
 
     // Prepare response
-    const response: MobileApiResponse<MobilePoll | null> = {
+    const response: MobileApiResponse<MobileNewsDetail> = {
       success: true,
-      data: poll,
+      data: news,
       cache: {
         etag: entry.etag,
         maxAge: CACHE_TTL
@@ -89,12 +101,12 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error in mobile polls endpoint:', error);
+    console.error('Error in mobile news detail endpoint:', error);
 
     const response: MobileApiResponse<null> = {
       success: false,
       data: null,
-      error: 'Anketler yüklenirken bir hata oluştu'
+      error: 'Haber detayı yüklenirken bir hata oluştu'
     };
 
     return NextResponse.json(response, { status: 500 });
