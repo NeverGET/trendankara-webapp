@@ -46,7 +46,7 @@ export class ConfigService {
         ORDER BY setting_key
       `;
 
-      const [rows] = await db.execute<SettingRow[]>(query);
+      const [rows] = (await db.execute(query)) as [SettingRow[], any];
 
       // Combine all settings into a single object
       const settings = this.combineSettings(rows);
@@ -77,32 +77,20 @@ export class ConfigService {
   ): Promise<MobileSettings> {
 
     try {
-      // Start transaction
-      await db.beginTransaction();
+      // Map settings to database keys
+      const updates = this.mapSettingsToDbKeys(settings);
 
-      try {
-        // Map settings to database keys
-        const updates = this.mapSettingsToDbKeys(settings);
-
-        // Update each setting key
-        for (const [key, value] of Object.entries(updates)) {
-          await this.updateSettingKey(db, key, value, userId);
-        }
-
-        // Commit transaction
-        await db.commit();
-
-        // Clear cache to force refresh
-        cacheManager.invalidate(this.CACHE_KEY);
-        cacheManager.invalidate('mobile:*'); // Clear all mobile caches
-
-        // Return updated settings
-        return await this.getSettings();
-      } catch (error) {
-        // Rollback on error
-        await db.rollback();
-        throw error;
+      // Update each setting key
+      for (const [key, value] of Object.entries(updates)) {
+        await this.updateSettingKey(db, key, value, userId);
       }
+
+      // Clear cache to force refresh
+      cacheManager.invalidate(this.CACHE_KEY);
+      cacheManager.invalidate('mobile:*'); // Clear all mobile caches
+
+      // Return updated settings
+      return await this.getSettings();
     } catch (error) {
       console.error('Error updating mobile settings:', error);
       throw new Error('Ayarlar güncellenemedi');
@@ -160,7 +148,7 @@ export class ConfigService {
         LIMIT 1
       `;
 
-      const [rows] = await db.execute<SettingRow[]>(query, [key]);
+      const [rows] = (await db.execute(query, [key])) as [SettingRow[], any];
 
       if (rows.length === 0) {
         return null;
@@ -364,7 +352,7 @@ export class ConfigService {
       maxNewsCount: 50,
       enablePolls: true,
       enableNews: true,
-      playerLogoUrl: null,
+      playerLogoUrl: undefined,
       cardDisplayMode: 'grid',
       maxFeaturedCards: 3,
       enableCardAnimation: true,
@@ -417,7 +405,7 @@ export class ConfigService {
    */
   async isUpdateAvailable(currentVersion: string): Promise<boolean> {
     const settings = await this.getSettings();
-    return this.compareVersions(currentVersion, settings.appVersion || '1.0.0') < 0;
+    return this.compareVersions(currentVersion, settings.minimumAppVersion || '1.0.0') < 0;
   }
 
   /**

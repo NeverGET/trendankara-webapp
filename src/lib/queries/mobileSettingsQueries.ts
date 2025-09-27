@@ -114,23 +114,18 @@ export class MobileSettingsQueries {
       // News settings
       enableNews: settings.news?.enableNews ?? true,
       maxNewsCount: settings.news?.maxNewsCount ?? 100,
-      enableBreakingNews: settings.news?.enableBreakingNews ?? true,
       
       // App settings
-      appVersion: settings.app?.appVersion ?? '1.0.0',
-      minAppVersion: settings.app?.minAppVersion ?? '1.0.0',
-      forceUpdate: settings.app?.forceUpdate ?? false,
+      minimumAppVersion: settings.app?.minimumAppVersion ?? '1.0.0',
       maintenanceMode: settings.app?.maintenanceMode ?? false,
-      maintenanceMessage: settings.app?.maintenanceMessage ?? 'Sistem bakımda',
       
       // Player settings
-      streamUrl: settings.player?.streamUrl ?? 'https://radyodinle1.turkhosted.com/yayin?uri=shoutcast2.netdirekt.com.tr:8046/stream',
-      playerBackgroundUrl: settings.player?.playerBackgroundUrl ?? null,
-      enableLiveInfo: settings.player?.enableLiveInfo ?? true,
+      playerLogoUrl: settings.player?.playerLogoUrl ?? undefined,
       
       // Card settings
       maxFeaturedCards: settings.cards?.maxFeaturedCards ?? 5,
-      maxNormalCards: settings.cards?.maxNormalCards ?? 20
+      cardDisplayMode: (settings.cards?.cardDisplayMode ?? 'grid') as 'grid' | 'list',
+      enableCardAnimation: settings.cards?.enableCardAnimation ?? false
     };
   }
 

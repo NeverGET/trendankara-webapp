@@ -124,8 +124,8 @@ export function MobileSettingsForm({
                   <label htmlFor="appVersion" className="text-sm font-medium">Mevcut Versiyon</label>
                   <Input
                     id="appVersion"
-                    value={settings.appVersion}
-                    onChange={(e) => updateSetting('appVersion', e.target.value)}
+                    value={settings.minimumAppVersion || '1.0.0'}
+                    onChange={(e) => updateSetting('minimumAppVersion', e.target.value)}
                     placeholder="1.0.0"
                     disabled={isLoading || isSaving}
                   />
@@ -134,8 +134,8 @@ export function MobileSettingsForm({
                   <label htmlFor="minAppVersion" className="text-sm font-medium">Minimum Versiyon</label>
                   <Input
                     id="minAppVersion"
-                    value={settings.minAppVersion}
-                    onChange={(e) => updateSetting('minAppVersion', e.target.value)}
+                    value={settings.minimumAppVersion || '1.0.0'}
+                    onChange={(e) => updateSetting('minimumAppVersion', e.target.value)}
                     placeholder="1.0.0"
                     disabled={isLoading || isSaving}
                   />
@@ -145,8 +145,8 @@ export function MobileSettingsForm({
               <div className="flex items-center space-x-2">
                 <Switch
                   id="forceUpdate"
-                  checked={settings.forceUpdate}
-                  onCheckedChange={(checked) => updateSetting('forceUpdate', checked)}
+                  checked={false}
+                  onCheckedChange={() => {}}
                   disabled={isLoading || isSaving}
                 />
                 <label htmlFor="forceUpdate" className="text-sm font-medium">Zorunlu Güncelleme</label>
@@ -167,8 +167,8 @@ export function MobileSettingsForm({
                   <label htmlFor="maintenanceMessage" className="text-sm font-medium">Bakım Mesajı</label>
                   <Textarea
                     id="maintenanceMessage"
-                    value={settings.maintenanceMessage}
-                    onChange={(e) => updateSetting('maintenanceMessage', e.target.value)}
+                    value={'Sistem bakımda'}
+                    onChange={() => {}}
                     placeholder="Sistem bakımda, lütfen daha sonra tekrar deneyin."
                     rows={3}
                     disabled={isLoading || isSaving}
@@ -257,8 +257,8 @@ export function MobileSettingsForm({
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="enableBreakingNews"
-                      checked={settings.enableBreakingNews}
-                      onCheckedChange={(checked) => updateSetting('enableBreakingNews', checked)}
+                      checked={false}
+                      onCheckedChange={() => {}}
                       disabled={isLoading || isSaving}
                     />
                     <label htmlFor="enableBreakingNews" className="text-sm font-medium">Son Dakika Haberlerini Etkinleştir</label>
@@ -283,8 +283,8 @@ export function MobileSettingsForm({
                 <label htmlFor="streamUrl" className="text-sm font-medium">Yayın URL</label>
                 <Input
                   id="streamUrl"
-                  value={settings.streamUrl}
-                  onChange={(e) => updateSetting('streamUrl', e.target.value)}
+                  value={''}
+                  onChange={() => {}}
                   placeholder="https://example.com/stream"
                   disabled={isLoading || isSaving}
                 />
@@ -294,8 +294,8 @@ export function MobileSettingsForm({
                 <label htmlFor="playerBackgroundUrl" className="text-sm font-medium">Arka Plan Görseli URL</label>
                 <Input
                   id="playerBackgroundUrl"
-                  value={settings.playerBackgroundUrl || ''}
-                  onChange={(e) => updateSetting('playerBackgroundUrl', e.target.value || null)}
+                  value={settings.playerLogoUrl || ''}
+                  onChange={(e) => updateSetting('playerLogoUrl', e.target.value || undefined)}
                   placeholder="https://example.com/background.jpg (isteğe bağlı)"
                   disabled={isLoading || isSaving}
                 />
@@ -304,8 +304,8 @@ export function MobileSettingsForm({
               <div className="flex items-center space-x-2">
                 <Switch
                   id="enableLiveInfo"
-                  checked={settings.enableLiveInfo}
-                  onCheckedChange={(checked) => updateSetting('enableLiveInfo', checked)}
+                  checked={false}
+                  onCheckedChange={() => {}}
                   disabled={isLoading || isSaving}
                 />
                 <label htmlFor="enableLiveInfo" className="text-sm font-medium">Canlı Yayın Bilgilerini Göster</label>
@@ -342,8 +342,8 @@ export function MobileSettingsForm({
                   <Input
                     id="maxNormalCards"
                     type="number"
-                    value={settings.maxNormalCards}
-                    onChange={(e) => updateSetting('maxNormalCards', parseInt(e.target.value) || 20)}
+                    value={20}
+                    onChange={() => {}}
                     min="0"
                     max="100"
                     disabled={isLoading || isSaving}

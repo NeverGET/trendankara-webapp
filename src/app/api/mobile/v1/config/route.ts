@@ -49,11 +49,7 @@ export async function GET(request: NextRequest) {
         }
       };
       
-      // Add update available flag if version provided
-      if (currentVersion) {
-        const updateAvailable = await configService.isUpdateAvailable(currentVersion);
-        response.meta = { updateAvailable };
-      }
+      // Version check is handled separately, no need to modify response
       
       return NextResponse.json(response, {
         headers: {
@@ -66,15 +62,9 @@ export async function GET(request: NextRequest) {
     // Get settings from service
     const settings = await configService.getSettings();
     
-    // Check for app update if version provided
-    let updateAvailable = false;
-    if (currentVersion) {
-      updateAvailable = await configService.isUpdateAvailable(currentVersion);
-    }
-    
     // Cache the result
     const entry = cacheManager.set(cacheKey, settings, CACHE_TTL);
-    
+
     // Prepare response
     const response: MobileApiResponse<MobileSettings> = {
       success: true,
@@ -84,11 +74,6 @@ export async function GET(request: NextRequest) {
         maxAge: CACHE_TTL
       }
     };
-    
-    // Add update flag if version check was performed
-    if (currentVersion) {
-      response.meta = { updateAvailable };
-    }
     
     // Return response with cache headers
     return NextResponse.json(response, {

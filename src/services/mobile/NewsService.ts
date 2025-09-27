@@ -77,10 +77,10 @@ export class NewsService {
 
       // Check if we've reached the max news count
       const totalAvailable = Math.min(result.total, settings.maxNewsCount || 50);
-      const currentPosition = offset + result.items.length;
+      const currentPosition = offset + result.data.length;
 
       // Transform news items to mobile format
-      const items: MobileNewsItem[] = result.items.map((news: any) =>
+      const items: MobileNewsItem[] = result.data.map((news: any) =>
         this.transformToMobileNewsItem(news)
       );
 
@@ -153,7 +153,7 @@ export class NewsService {
 
       const result = await getAllNews(pagination, filters);
 
-      return result.items.map((news: any) =>
+      return result.data.map((news: any) =>
         this.transformToMobileNewsItem(news)
       );
     } catch (error) {
@@ -183,7 +183,7 @@ export class NewsService {
 
       const result = await getAllNews(pagination, filters);
 
-      return result.items.map((news: any) =>
+      return result.data.map((news: any) =>
         this.transformToMobileNewsItem(news)
       );
     } catch (error) {
@@ -325,7 +325,7 @@ export class NewsService {
 
       const result = await getAllNews(pagination, filters);
 
-      return result.items.map((news: any) =>
+      return result.data.map((news: any) =>
         this.transformToMobileNewsItem(news)
       );
     } catch (error) {
