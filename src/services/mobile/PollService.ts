@@ -210,6 +210,37 @@ export class PollService {
   }
 
   /**
+   * Get current/latest active poll
+   * @param deviceId Device ID to check vote status
+   * @returns Current active poll with vote status
+   */
+  async getCurrentPoll(deviceId: string): Promise<MobilePoll | null> {
+    try {
+      const polls = await getActivePolls();
+
+      if (!polls || polls.length === 0) {
+        return null;
+      }
+
+      // Get the most recent active poll
+      const currentPoll = polls[0];
+
+      // Check if user has voted
+      const hasVoted = deviceId ? await this.hasUserVoted(currentPoll.id, deviceId) : false;
+
+      // Get poll items
+      const items = await getPollItems(currentPoll.id);
+
+      // Transform to mobile format
+      const mobilePoll = this.transformToMobilePoll(currentPoll);
+      return mobilePoll;
+    } catch (error) {
+      console.error('Error getting current poll:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get multiple active polls (for future use)
    * Returns all active polls without filtering
    *
@@ -222,6 +253,21 @@ export class PollService {
     } catch (error) {
       console.error('Error getting active polls:', error);
       throw new Error('Failed to retrieve active polls');
+    }
+  }
+
+  /**
+   * Check if a user has voted (device ID only)
+   * @param pollId Poll ID
+   * @param deviceId Device identifier
+   * @returns True if already voted
+   */
+  async hasUserVoted(pollId: number, deviceId: string): Promise<boolean> {
+    try {
+      return await hasVoted(pollId, deviceId, '');
+    } catch (error) {
+      console.error('Error checking vote status:', error);
+      return false;
     }
   }
 
