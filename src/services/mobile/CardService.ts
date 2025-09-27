@@ -60,7 +60,7 @@ export class CardService {
       // Sort by featured status (featured first) and display order
       query += ' ORDER BY is_featured DESC, display_order ASC, created_at DESC';
 
-      const [rows] = await db.execute<CardRow[]>(query, params);
+      const [rows] = (await db.execute(query, params)) as [CardRow[], any];
 
       // Transform to mobile card format
       return rows.map(row => this.transformToMobileCard(row));
@@ -97,7 +97,7 @@ export class CardService {
         LIMIT 1
       `;
 
-      const [rows] = await db.execute<CardRow[]>(query, [id]);
+      const [rows] = (await db.execute(query, [id])) as [CardRow[], any];
 
       if (rows.length === 0) {
         return null;
@@ -126,10 +126,10 @@ export class CardService {
       }
 
       // Get next display order
-      const [orderResult] = await db.execute<RowDataPacket[]>(
+      const [orderResult] = (await db.execute(
         'SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM mobile_cards WHERE is_featured = ?',
         [data.isFeatured ? 1 : 0]
-      );
+      )) as [any[], any];
       const nextOrder = orderResult[0].next_order;
 
       const query = `
@@ -156,10 +156,10 @@ export class CardService {
         userId || null
       ];
 
-      const [result] = await db.execute<ResultSetHeader>(query, params);
+      const result = (await db.execute(query, params)) as any;
 
       // Return the created card
-      const created = await this.getCardById(result.insertId);
+      const created = await this.getCardById(result[0].insertId);
       if (!created) {
         throw new Error('Failed to retrieve created card');
       }
@@ -247,9 +247,9 @@ export class CardService {
           AND deleted_at IS NULL
       `;
 
-      const [result] = await db.execute<ResultSetHeader>(query, params);
+      const result = (await db.execute(query, params)) as any;
 
-      if (result.affectedRows === 0) {
+      if (result[0].affectedRows === 0) {
         throw new Error('Kart bulunamadı veya güncellenemedi');
       }
 
@@ -282,9 +282,9 @@ export class CardService {
           AND deleted_at IS NULL
       `;
 
-      const [result] = await db.execute<ResultSetHeader>(query, [id]);
+      const result = (await db.execute(query, [id])) as any;
 
-      return result.affectedRows > 0;
+      return result[0].affectedRows > 0;
     } catch (error) {
       console.error('Error deleting card:', error);
       throw new Error('Failed to delete card');
@@ -298,26 +298,13 @@ export class CardService {
    * @returns Success status
    */
   async reorderCards(cardIds: number[]): Promise<void> {
-
     try {
-      // Start transaction
-      await db.beginTransaction();
-
-      try {
-        // Update each card's display_order
-        for (let i = 0; i < cardIds.length; i++) {
-          await db.execute(
-            'UPDATE mobile_cards SET display_order = ? WHERE id = ?',
-            [i + 1, cardIds[i]]
-          );
-        }
-
-        // Commit transaction
-        await db.commit();
-      } catch (error) {
-        // Rollback on error
-        await db.rollback();
-        throw error;
+      // Update each card's display_order
+      for (let i = 0; i < cardIds.length; i++) {
+        await db.execute(
+          'UPDATE mobile_cards SET display_order = ? WHERE id = ?',
+          [i + 1, cardIds[i]]
+        );
       }
     } catch (error) {
       console.error('Error reordering cards:', error);
@@ -361,7 +348,7 @@ export class CardService {
         params.push(limit);
       }
 
-      const [rows] = await db.execute<CardRow[]>(query, params);
+      const [rows] = (await db.execute(query, params)) as [CardRow[], any];
 
       return rows.map(row => this.transformToMobileCard(row));
     } catch (error) {
@@ -393,9 +380,9 @@ export class CardService {
       `;
 
       const params = [isActive ? 1 : 0, ...cardIds];
-      const [result] = await db.execute<ResultSetHeader>(query, params);
+      const result = (await db.execute(query, params)) as any;
 
-      return result.affectedRows;
+      return result[0].affectedRows;
     } catch (error) {
       console.error('Error bulk updating card status:', error);
       throw new Error('Failed to update card status');
@@ -423,9 +410,9 @@ export class CardService {
           AND deleted_at IS NULL
       `;
 
-      const [result] = await db.execute<ResultSetHeader>(query, cardIds);
+      const result = (await db.execute(query, cardIds)) as any;
 
-      return result.affectedRows;
+      return result[0].affectedRows;
     } catch (error) {
       console.error('Error bulk deleting cards:', error);
       throw new Error('Failed to delete cards');

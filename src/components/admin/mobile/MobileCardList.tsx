@@ -151,7 +151,7 @@ export function MobileCardList({
           </Badge>
         </TableCell>
         <TableCell className="text-center">
-          <Badge variant={card.isActive ? 'success' : 'secondary'}>
+          <Badge variant={card.isActive ? 'default' : 'secondary'}>
             {card.isActive ? (
               <><Eye className="h-3 w-3 mr-1" />Aktif</>
             ) : (

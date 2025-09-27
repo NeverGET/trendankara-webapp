@@ -52,7 +52,7 @@ export async function PUT(request: NextRequest) {
     // Parse request body
     const settings: MobileSettings = await request.json();
 
-    // Prepare settings for database
+    // Prepare settings for database - only use properties that exist in MobileSettings interface
     const dbSettings = {
       polls: {
         enablePolls: settings.enablePolls,
@@ -60,24 +60,19 @@ export async function PUT(request: NextRequest) {
       },
       news: {
         enableNews: settings.enableNews,
-        maxNewsCount: settings.maxNewsCount,
-        enableBreakingNews: settings.enableBreakingNews
+        maxNewsCount: settings.maxNewsCount
       },
       app: {
-        appVersion: settings.appVersion,
-        minAppVersion: settings.minAppVersion,
-        forceUpdate: settings.forceUpdate,
-        maintenanceMode: settings.maintenanceMode,
-        maintenanceMessage: settings.maintenanceMessage
+        minimumAppVersion: settings.minimumAppVersion,
+        maintenanceMode: settings.maintenanceMode
       },
       player: {
-        streamUrl: settings.streamUrl,
-        playerBackgroundUrl: settings.playerBackgroundUrl,
-        enableLiveInfo: settings.enableLiveInfo
+        playerLogoUrl: settings.playerLogoUrl
       },
       cards: {
         maxFeaturedCards: settings.maxFeaturedCards,
-        maxNormalCards: settings.maxNormalCards
+        cardDisplayMode: settings.cardDisplayMode,
+        enableCardAnimation: settings.enableCardAnimation
       }
     };
 

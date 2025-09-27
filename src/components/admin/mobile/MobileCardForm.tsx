@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input-reui';
 import { Textarea } from '@/components/ui/textarea-reui';
 import { Switch } from '@/components/ui/switch-reui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card-reui';
-import { MediaPickerDialog } from '../MediaPickerDialog';
+import { MediaPickerDialog, MediaItem } from '../MediaPickerDialog';
 import { Image, Link, Save, X } from 'lucide-react';
 import type { MobileCard, CardInput } from '@/types/mobile';
 
@@ -103,8 +103,16 @@ export function MobileCardForm({
     }
   };
 
-  const handleMediaSelect = (url: string) => {
-    setFormData(prev => ({ ...prev, imageUrl: url }));
+  const handleMediaSelect = (media: MediaItem | MediaItem[]) => {
+    if (Array.isArray(media)) {
+      // If multiple items selected, use the first one
+      if (media.length > 0) {
+        setFormData(prev => ({ ...prev, imageUrl: media[0].url }));
+      }
+    } else {
+      // Single item selected
+      setFormData(prev => ({ ...prev, imageUrl: media.url }));
+    }
     setMediaPickerOpen(false);
   };
 
@@ -263,8 +271,8 @@ export function MobileCardForm({
       </Card>
 
       <MediaPickerDialog
-        open={mediaPickerOpen}
-        onOpenChange={setMediaPickerOpen}
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
         onSelect={handleMediaSelect}
       />
     </>

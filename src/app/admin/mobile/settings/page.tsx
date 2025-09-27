@@ -121,10 +121,10 @@ export default function MobileSettingsPage() {
           />
           <MobileStatsCard
             title="Uygulama Versiyonu"
-            value={settings.appVersion}
+            value={settings.minimumAppVersion || '1.0.0'}
             icon={Smartphone}
             color="blue"
-            description={`Min: ${settings.minAppVersion}`}
+            description={`Minimum gerekli versiyon`}
           />
           <MobileStatsCard
             title="Haberler"
