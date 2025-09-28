@@ -10,13 +10,16 @@ import { useState, useEffect } from 'react';
 import { MobileSettingsForm } from '@/components/admin/mobile/MobileSettingsForm';
 import { MobileStatsCard } from '@/components/admin/mobile/MobileStatsCard';
 import { toast } from 'sonner';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button-reui';
 import type { MobileSettings } from '@/types/mobile';
 import {
   Smartphone,
   CheckCircle,
   XCircle,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft
 } from 'lucide-react';
 
 export default function MobileSettingsPage() {
@@ -81,13 +84,33 @@ export default function MobileSettingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <Link href="/admin" className="hover:text-gray-700">
+          Admin
+        </Link>
+        <span>/</span>
+        <Link href="/admin/content" className="hover:text-gray-700">
+          İçerik Yönetimi
+        </Link>
+        <span>/</span>
+        <span className="text-gray-900">Mobil Uygulama Ayarları</span>
+      </div>
+
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Mobil Uygulama Ayarları</h1>
-          <p className="text-gray-500 mt-1">
-            Mobil uygulama yapılandırmasını yönetin
-          </p>
+        <div className="flex items-center gap-4">
+          <Link href="/admin/content">
+            <Button variant="outline" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Mobil Uygulama Ayarları</h1>
+            <p className="text-gray-500 mt-1">
+              Mobil uygulama yapılandırmasını yönetin
+            </p>
+          </div>
         </div>
         {lastUpdated && (
           <div className="text-sm text-gray-500">
