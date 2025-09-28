@@ -121,7 +121,12 @@ export class MobileSettingsQueries {
       
       // Player settings
       playerLogoUrl: settings.player?.playerLogoUrl ?? undefined,
-      
+      enableLiveInfo: settings.player?.enableLiveInfo ?? false,
+      playerFacebookUrl: settings.player?.playerFacebookUrl ?? undefined,
+      playerInstagramUrl: settings.player?.playerInstagramUrl ?? undefined,
+      playerWhatsappNumber: settings.player?.playerWhatsappNumber ?? undefined,
+      liveCallPhoneNumber: settings.player?.liveCallPhoneNumber ?? undefined,
+
       // Card settings
       maxFeaturedCards: settings.cards?.maxFeaturedCards ?? 5,
       cardDisplayMode: (settings.cards?.cardDisplayMode ?? 'grid') as 'grid' | 'list',

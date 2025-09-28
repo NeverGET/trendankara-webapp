@@ -10,7 +10,7 @@
  *
  * @interface MobileRadioConfig
  * @description Provides radio streaming configuration data with connection status and testing information
- * @requirements 5.1, 5.2 - Mobile API radio configuration and real-time updates
+ * @requirements 5.1, 5.2, 6.3, 7.1 - Mobile API radio configuration and real-time updates, player logo URL
  */
 export interface MobileRadioConfig {
   /** Primary stream URL for radio broadcasting */
@@ -35,6 +35,9 @@ export interface MobileRadioConfig {
    * Used to determine if stream status information is current
    */
   last_tested: string;
+
+  /** Optional player logo URL for custom player branding */
+  playerLogoUrl?: string;
 }
 
 /**
@@ -55,8 +58,30 @@ export interface MobileCard {
   /** Optional image URL (automatically converted to proxy URL) */
   imageUrl?: string;
 
-  /** Optional URL to redirect when card is tapped */
+  /** Optional URL to redirect when card is tapped (deprecated - use contact fields) */
   redirectUrl?: string;
+
+  /** Type of redirect/contact method */
+  redirectType?: 'website' | 'email' | 'phone' | 'whatsapp' | 'instagram' | 'tiktok' | 'location';
+
+  /** Sponsor contact information */
+  contactEmail?: string;
+  contactPhone?: string;
+  contactWhatsapp?: string;
+
+  /** Social media profiles */
+  socialInstagram?: string;
+  socialTiktok?: string;
+
+  /** Location information */
+  locationLatitude?: number;
+  locationLongitude?: number;
+  locationAddress?: string;
+
+  /** Time limit fields */
+  isTimeLimited?: boolean;
+  validFrom?: string;
+  validUntil?: string;
 
   /** Whether this card is featured (appears at top with distinct styling) */
   isFeatured: boolean;
@@ -109,6 +134,17 @@ export interface MobileSettings {
 
   /** Optional player logo URL for branding */
   playerLogoUrl?: string;
+
+  /** Whether to show live playing info (current song/program) */
+  enableLiveInfo?: boolean;
+
+  /** Social media URLs for player */
+  playerFacebookUrl?: string;
+  playerInstagramUrl?: string;
+  playerWhatsappNumber?: string;
+
+  /** Live call phone number for on-air participation */
+  liveCallPhoneNumber?: string;
 
   /** Card display mode preference */
   cardDisplayMode: 'grid' | 'list';

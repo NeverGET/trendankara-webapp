@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input-reui';
 import { Textarea } from '@/components/ui/textarea-reui';
 import { Switch } from '@/components/ui/switch-reui';
 import { Alert, AlertDescription } from '@/components/ui/alert-reui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs-reui';
+import { MediaPickerDialog, MediaItem } from '../MediaPickerDialog';
 import {
   Save,
   Settings,
@@ -21,7 +23,16 @@ import {
   Play,
   Smartphone,
   CreditCard,
-  AlertCircle
+  AlertCircle,
+  Image,
+  Radio,
+  CheckCircle,
+  CheckCircle2,
+  XCircle,
+  Facebook,
+  Instagram,
+  MessageCircle,
+  Phone
 } from 'lucide-react';
 import type { MobileSettings } from '@/types/mobile';
 
@@ -37,13 +48,74 @@ export function MobileSettingsForm({
   isLoading = false
 }: MobileSettingsFormProps) {
   const [settings, setSettings] = useState<MobileSettings>(initialSettings);
-  const [activeTab, setActiveTab] = useState('app');
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [isTestingStream, setIsTestingStream] = useState(false);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     setSettings(initialSettings);
+    // Fetch the actual stream URL from radio settings
+    fetchStreamUrl();
   }, [initialSettings]);
+
+  const fetchStreamUrl = async () => {
+    try {
+      const response = await fetch('/api/admin/settings/radio');
+      if (response.ok) {
+        const data = await response.json();
+        // The API returns the settings directly, not wrapped in a 'settings' property
+        if (data.stream_url) {
+          setStreamUrl(data.stream_url);
+        }
+      } else if (response.status === 404) {
+        // No radio settings found, show a default message
+        setStreamUrl('Radyo ayarları henüz yapılandırılmamış');
+      } else {
+        setStreamUrl('Radyo ayarları yüklenemedi');
+      }
+    } catch (error) {
+      console.error('Error fetching stream URL:', error);
+      setStreamUrl('Radyo ayarları yüklenemedi');
+    }
+  };
+
+  const testStreamConnection = async () => {
+    if (!streamUrl || !streamUrl.startsWith('http')) return;
+
+    setIsTestingStream(true);
+    setTestResult(null);
+    try {
+      // Test the stream connection
+      const response = await fetch('/api/admin/settings/radio/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamUrl: streamUrl })  // API expects camelCase
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setTestResult({
+          success: true,
+          message: `Bağlantı başarılı! ${data.metadata?.name || 'Yayın'} aktif.`
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: 'Bağlantı başarısız! Yayın URL\'sini kontrol edin.'
+        });
+      }
+    } catch (error) {
+      setTestResult({
+        success: false,
+        message: 'Test sırasında bir hata oluştu.'
+      });
+    } finally {
+      setIsTestingStream(false);
+    }
+  };
 
   useEffect(() => {
     setHasChanges(JSON.stringify(settings) !== JSON.stringify(initialSettings));
@@ -68,119 +140,52 @@ export function MobileSettingsForm({
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleMediaSelect = (media: MediaItem | MediaItem[]) => {
+    if (Array.isArray(media)) {
+      // If multiple items selected, use the first one
+      if (media.length > 0) {
+        updateSetting('playerLogoUrl', media[0].url);
+      }
+    } else {
+      // Single item selected
+      updateSetting('playerLogoUrl', media.url);
+    }
+    setMediaPickerOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       {hasChanges && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
+        <Alert className="flex items-center gap-3">
+          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <AlertDescription className="flex-1">
             Kaydedilmemiş değişiklikler var. Değişiklikleri kaydetmeyi unutmayın.
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="space-y-6">
-        {/* Custom Tab Navigation */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'app', label: 'Uygulama', icon: Smartphone },
-              { id: 'polls', label: 'Anketler', icon: Vote },
-              { id: 'news', label: 'Haberler', icon: Newspaper },
-              { id: 'player', label: 'Oynatıcı', icon: Play },
-              { id: 'cards', label: 'Kartlar', icon: CreditCard },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center px-1 py-4 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 mr-2" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* App Settings */}
-        {activeTab === 'app' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Uygulama Ayarları</CardTitle>
-              <CardDescription>
-                Mobil uygulama versiyon ve bakım ayarları
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="appVersion" className="text-sm font-medium">Mevcut Versiyon</label>
-                  <Input
-                    id="appVersion"
-                    value={settings.minimumAppVersion || '1.0.0'}
-                    onChange={(e) => updateSetting('minimumAppVersion', e.target.value)}
-                    placeholder="1.0.0"
-                    disabled={isLoading || isSaving}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="minAppVersion" className="text-sm font-medium">Minimum Versiyon</label>
-                  <Input
-                    id="minAppVersion"
-                    value={settings.minimumAppVersion || '1.0.0'}
-                    onChange={(e) => updateSetting('minimumAppVersion', e.target.value)}
-                    placeholder="1.0.0"
-                    disabled={isLoading || isSaving}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="forceUpdate"
-                  checked={false}
-                  onCheckedChange={() => {}}
-                  disabled={isLoading || isSaving}
-                />
-                <label htmlFor="forceUpdate" className="text-sm font-medium">Zorunlu Güncelleme</label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="maintenanceMode"
-                  checked={settings.maintenanceMode}
-                  onCheckedChange={(checked) => updateSetting('maintenanceMode', checked)}
-                  disabled={isLoading || isSaving}
-                />
-                <label htmlFor="maintenanceMode" className="text-sm font-medium">Bakım Modu</label>
-              </div>
-
-              {settings.maintenanceMode && (
-                <div className="space-y-2">
-                  <label htmlFor="maintenanceMessage" className="text-sm font-medium">Bakım Mesajı</label>
-                  <Textarea
-                    id="maintenanceMessage"
-                    value={'Sistem bakımda'}
-                    onChange={() => {}}
-                    placeholder="Sistem bakımda, lütfen daha sonra tekrar deneyin."
-                    rows={3}
-                    disabled={isLoading || isSaving}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+      <Tabs defaultValue="polls" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="polls" className="flex items-center gap-2">
+            <Vote className="h-4 w-4" />
+            Anketler
+          </TabsTrigger>
+          <TabsTrigger value="news" className="flex items-center gap-2">
+            <Newspaper className="h-4 w-4" />
+            Haberler
+          </TabsTrigger>
+          <TabsTrigger value="player" className="flex items-center gap-2">
+            <Play className="h-4 w-4" />
+            Oynatıcı
+          </TabsTrigger>
+          <TabsTrigger value="cards" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Kartlar
+          </TabsTrigger>
+        </TabsList>
 
         {/* Poll Settings */}
-        {activeTab === 'polls' && (
+        <TabsContent value="polls">
           <Card>
             <CardHeader>
               <CardTitle>Anket Ayarları</CardTitle>
@@ -214,10 +219,10 @@ export function MobileSettingsForm({
               )}
             </CardContent>
           </Card>
-        )}
+        </TabsContent>
 
         {/* News Settings */}
-        {activeTab === 'news' && (
+        <TabsContent value="news">
           <Card>
             <CardHeader>
               <CardTitle>Haber Ayarları</CardTitle>
@@ -267,10 +272,10 @@ export function MobileSettingsForm({
               )}
             </CardContent>
           </Card>
-        )}
+        </TabsContent>
 
         {/* Player Settings */}
-        {activeTab === 'player' && (
+        <TabsContent value="player">
           <Card>
             <CardHeader>
               <CardTitle>Oynatıcı Ayarları</CardTitle>
@@ -279,43 +284,173 @@ export function MobileSettingsForm({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Stream URL Display with Test Button */}
               <div className="space-y-2">
-                <label htmlFor="streamUrl" className="text-sm font-medium">Yayın URL</label>
-                <Input
-                  id="streamUrl"
-                  value={''}
-                  onChange={() => {}}
-                  placeholder="https://example.com/stream"
-                  disabled={isLoading || isSaving}
-                />
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Radio className="h-4 w-4" />
+                  Radyo Yayın URL
+                </label>
+                <div className="flex gap-2">
+                  <div className="flex-1 px-3 py-2 bg-muted rounded-md border min-h-[36px] flex items-center">
+                    <code className="text-sm text-muted-foreground break-all">
+                      {streamUrl || 'Yükleniyor...'}
+                    </code>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={testStreamConnection}
+                    disabled={isLoading || isSaving || isTestingStream || !streamUrl || !streamUrl.startsWith('http')}
+                    className="flex items-center gap-2"
+                  >
+                    {isTestingStream ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-current border-r-transparent rounded-full animate-spin" />
+                        Test ediliyor...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        Test Et
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {testResult && (
+                  <div className={`flex items-center gap-2 text-sm ${testResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                    {testResult.success ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      <XCircle className="h-4 w-4" />
+                    )}
+                    <span>{testResult.message}</span>
+                  </div>
+                )}
+                <p className="text-sm text-gray-500">
+                  Web sitesi ile aynı yayın URL&apos;si kullanılır. Radyo Ayarları&apos;ndan değiştirilebilir.
+                </p>
               </div>
 
+              {/* Player Logo Upload */}
               <div className="space-y-2">
-                <label htmlFor="playerBackgroundUrl" className="text-sm font-medium">Arka Plan Görseli URL</label>
-                <Input
-                  id="playerBackgroundUrl"
-                  value={settings.playerLogoUrl || ''}
-                  onChange={(e) => updateSetting('playerLogoUrl', e.target.value || undefined)}
-                  placeholder="https://example.com/background.jpg (isteğe bağlı)"
-                  disabled={isLoading || isSaving}
-                />
+                <label htmlFor="playerLogo" className="text-sm font-medium">Oynatıcı Logosu</label>
+                <div className="flex gap-2">
+                  <Input
+                    id="playerLogo"
+                    value={settings.playerLogoUrl || ''}
+                    onChange={(e) => updateSetting('playerLogoUrl', e.target.value || undefined)}
+                    placeholder="https://example.com/logo.png (isteğe bağlı)"
+                    disabled={isLoading || isSaving}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setMediaPickerOpen(true)}
+                    disabled={isLoading || isSaving}
+                  >
+                    <Image className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Mobil oynatıcıda gösterilecek özel logo (isteğe bağlı)
+                </p>
+                {settings.playerLogoUrl && (
+                  <div className="mt-2">
+                    <img
+                      alt="Oynatıcı logosu önizleme"
+                      src={settings.playerLogoUrl}
+                      className="max-w-xs max-h-20 rounded-lg border object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
                 <Switch
                   id="enableLiveInfo"
-                  checked={false}
-                  onCheckedChange={() => {}}
+                  checked={settings.enableLiveInfo || false}
+                  onCheckedChange={(checked) => updateSetting('enableLiveInfo', checked)}
                   disabled={isLoading || isSaving}
                 />
                 <label htmlFor="enableLiveInfo" className="text-sm font-medium">Canlı Yayın Bilgilerini Göster</label>
               </div>
+
+              {/* Social Media Links */}
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="text-sm font-medium">Sosyal Medya Bağlantıları</h4>
+
+                <div className="space-y-2">
+                  <label htmlFor="playerFacebookUrl" className="text-sm font-medium flex items-center gap-2">
+                    <Facebook className="h-4 w-4" />
+                    Facebook
+                  </label>
+                  <Input
+                    id="playerFacebookUrl"
+                    value={settings.playerFacebookUrl || ''}
+                    onChange={(e) => updateSetting('playerFacebookUrl', e.target.value || undefined)}
+                    placeholder="https://facebook.com/yourpage"
+                    disabled={isLoading || isSaving}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="playerInstagramUrl" className="text-sm font-medium flex items-center gap-2">
+                    <Instagram className="h-4 w-4" />
+                    Instagram
+                  </label>
+                  <Input
+                    id="playerInstagramUrl"
+                    value={settings.playerInstagramUrl || ''}
+                    onChange={(e) => updateSetting('playerInstagramUrl', e.target.value || undefined)}
+                    placeholder="https://instagram.com/yourpage"
+                    disabled={isLoading || isSaving}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="playerWhatsappNumber" className="text-sm font-medium flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
+                  </label>
+                  <Input
+                    id="playerWhatsappNumber"
+                    value={settings.playerWhatsappNumber || ''}
+                    onChange={(e) => updateSetting('playerWhatsappNumber', e.target.value || undefined)}
+                    placeholder="905551234567 (ülke koduyla birlikte)"
+                    disabled={isLoading || isSaving}
+                  />
+                  <p className="text-sm text-gray-500">
+                    Ülke koduyla birlikte, başında + olmadan yazın (örn: 905551234567)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="liveCallPhoneNumber" className="text-sm font-medium flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Canlı Yayın Hattı
+                  </label>
+                  <Input
+                    id="liveCallPhoneNumber"
+                    value={settings.liveCallPhoneNumber || ''}
+                    onChange={(e) => updateSetting('liveCallPhoneNumber', e.target.value || undefined)}
+                    placeholder="0312 555 12 34 (dinleyicilerin arayabileceği numara)"
+                    disabled={isLoading || isSaving}
+                  />
+                  <p className="text-sm text-gray-500">
+                    Dinleyicilerin canlı yayına katılmak için arayabileceği telefon numarası
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        )}
+        </TabsContent>
 
         {/* Card Settings */}
-        {activeTab === 'cards' && (
+        <TabsContent value="cards">
           <Card>
             <CardHeader>
               <CardTitle>Kart Limitleri</CardTitle>
@@ -352,8 +487,8 @@ export function MobileSettingsForm({
               </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Save Button */}
       <div className="flex justify-end">
@@ -366,6 +501,13 @@ export function MobileSettingsForm({
           {isSaving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
         </Button>
       </div>
+
+      <MediaPickerDialog
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={handleMediaSelect}
+        accept="image/*"
+      />
     </div>
   );
 }

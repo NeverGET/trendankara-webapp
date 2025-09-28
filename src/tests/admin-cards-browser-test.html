@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Cards Interface Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 24px;
+        }
+        .test-section {
+            margin-bottom: 24px;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #374151;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #059669;
+            font-weight: 500;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: 500;
+        }
+        .results {
+            background: #f3f4f6;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 16px;
+        }
+        .log {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        .status.pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Admin Cards Interface Test</h1>
+        <p>This test verifies that the admin cards interface loads correctly and all CRUD operations work as expected.</p>
+
+        <div class="test-section">
+            <h3>Quick Tests</h3>
+            <button onclick="testPageComponents()">Test Page Components</button>
+            <button onclick="testCardsAPI()">Test Cards API</button>
+            <button onclick="testFullCRUD()">Test Full CRUD</button>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div class="results">
+                <div>Page Components: <span id="result-components" class="status pending">PENDING</span></div>
+                <div>Cards API: <span id="result-api" class="status pending">PENDING</span></div>
+                <div>Create Card: <span id="result-create" class="status pending">PENDING</span></div>
+                <div>Update Card: <span id="result-update" class="status pending">PENDING</span></div>
+                <div>Delete Card: <span id="result-delete" class="status pending">PENDING</span></div>
+                <div>Toggle Status: <span id="result-toggle" class="status pending">PENDING</span></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Log</h3>
+            <div id="log" class="log">Ready to run tests...\n</div>
+        </div>
+    </div>
+
+    <script>
+        let testCardId = null;
+
+        function log(message) {
+            const logElement = document.getElementById('log');
+            logElement.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateResult(testName, status) {
+            const element = document.getElementById(`result-${testName}`);
+            element.textContent = status ? 'PASS' : 'FAIL';
+            element.className = `status ${status ? 'pass' : 'fail'}`;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = 'Log cleared...\n';
+        }
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                return response;
+            } catch (error) {
+                log(`❌ Request failed: ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function testPageComponents() {
+            log('🧪 Testing page components...');
+
+            try {
+                // Check for essential page elements
+                const hasTitle = document.querySelector('h1') && document.querySelector('h1').textContent.includes('Mobil Kartlar');
+                const hasCreateButton = document.querySelector('button') && document.body.textContent.includes('Yeni Kart');
+                const hasStatsSection = document.body.textContent.includes('Toplam Kart');
+
+                if (hasTitle && hasCreateButton && hasStatsSection) {
+                    log('✅ All essential page components found');
+                    updateResult('components', true);
+                } else {
+                    log(`❌ Missing components: Title: ${hasTitle}, Create Button: ${hasCreateButton}, Stats: ${hasStatsSection}`);
+                    updateResult('components', false);
+                }
+            } catch (error) {
+                log(`❌ Error testing page components: ${error.message}`);
+                updateResult('components', false);
+            }
+        }
+
+        async function testCardsAPI() {
+            log('🧪 Testing cards API...');
+
+            try {
+                const response = await makeRequest('/api/admin/mobile/cards');
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (Array.isArray(data.cards)) {
+                        log(`✅ Cards API working. Found ${data.cards.length} cards`);
+                        updateResult('api', true);
+                        return data.cards;
+                    } else {
+                        log('❌ Cards API returned invalid data structure');
+                        updateResult('api', false);
+                    }
+                } else {
+                    log(`❌ Cards API failed. Status: ${response.status}`);
+                    updateResult('api', false);
+                }
+            } catch (error) {
+                log(`❌ Error testing cards API: ${error.message}`);
+                updateResult('api', false);
+            }
+
+            return [];
+        }
+
+        async function testCreateCard() {
+            log('🧪 Testing card creation...');
+
+            const testCard = {
+                title: 'Test Card ' + Date.now(),
+                description: 'Test card description for automated testing',
+                imageUrl: 'https://via.placeholder.com/300x200?text=Test+Card',
+                redirectUrl: '/test-page',
+                isFeatured: false,
+                displayOrder: 999,
+                isActive: true
+            };
+
+            try {
+                const response = await makeRequest('/api/admin/mobile/cards', {
+                    method: 'POST',
+                    body: JSON.stringify(testCard)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.success && data.cardId) {
+                        testCardId = data.cardId;
+                        log(`✅ Card created successfully. ID: ${data.cardId}`);
+                        updateResult('create', true);
+                        return data.cardId;
+                    } else {
+                        log('❌ Card creation response invalid');
+                        updateResult('create', false);
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Card creation failed. Status: ${response.status}, Error: ${errorData.error || 'Unknown'}`);
+                    updateResult('create', false);
+                }
+            } catch (error) {
+                log(`❌ Error creating card: ${error.message}`);
+                updateResult('create', false);
+            }
+
+            return null;
+        }
+
+        async function testUpdateCard(cardId) {
+            if (!cardId) {
+                log('⚠️  Skipping update test - no card ID');
+                return;
+            }
+
+            log('🧪 Testing card update...');
+
+            const updateData = {
+                title: 'Updated Test Card ' + Date.now(),
+                description: 'Updated test card description',
+                imageUrl: 'https://via.placeholder.com/300x200?text=Updated+Card',
+                redirectUrl: '/updated-test-page',
+                isFeatured: true,
+                displayOrder: 1,
+                isActive: true
+            };
+
+            try {
+                const response = await makeRequest(`/api/admin/mobile/cards/${cardId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updateData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.success) {
+                        log('✅ Card updated successfully');
+                        updateResult('update', true);
+                    } else {
+                        log('❌ Card update response invalid');
+                        updateResult('update', false);
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Card update failed. Status: ${response.status}, Error: ${errorData.error || 'Unknown'}`);
+                    updateResult('update', false);
+                }
+            } catch (error) {
+                log(`❌ Error updating card: ${error.message}`);
+                updateResult('update', false);
+            }
+        }
+
+        async function testToggleActive(cardId) {
+            if (!cardId) {
+                log('⚠️  Skipping toggle test - no card ID');
+                return;
+            }
+
+            log('🧪 Testing card status toggle...');
+
+            try {
+                const response = await makeRequest(`/api/admin/mobile/cards/${cardId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ isActive: false })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.success) {
+                        log('✅ Card status toggled successfully');
+                        updateResult('toggle', true);
+                    } else {
+                        log('❌ Card status toggle response invalid');
+                        updateResult('toggle', false);
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Card status toggle failed. Status: ${response.status}, Error: ${errorData.error || 'Unknown'}`);
+                    updateResult('toggle', false);
+                }
+            } catch (error) {
+                log(`❌ Error toggling card status: ${error.message}`);
+                updateResult('toggle', false);
+            }
+        }
+
+        async function testDeleteCard(cardId) {
+            if (!cardId) {
+                log('⚠️  Skipping delete test - no card ID');
+                return;
+            }
+
+            log('🧪 Testing card deletion...');
+
+            try {
+                const response = await makeRequest(`/api/admin/mobile/cards/${cardId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.success) {
+                        log('✅ Card deleted successfully');
+                        updateResult('delete', true);
+                    } else {
+                        log('❌ Card deletion response invalid');
+                        updateResult('delete', false);
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Card deletion failed. Status: ${response.status}, Error: ${errorData.error || 'Unknown'}`);
+                    updateResult('delete', false);
+                }
+            } catch (error) {
+                log(`❌ Error deleting card: ${error.message}`);
+                updateResult('delete', false);
+            }
+        }
+
+        async function testFullCRUD() {
+            log('🚀 Starting full CRUD test...');
+
+            // Create
+            const cardId = await testCreateCard();
+
+            // Update
+            await testUpdateCard(cardId);
+
+            // Toggle status
+            await testToggleActive(cardId);
+
+            // Delete
+            await testDeleteCard(cardId);
+
+            log('✅ Full CRUD test completed');
+        }
+
+        async function runAllTests() {
+            log('🚀 Starting all tests...');
+
+            // Test page components
+            await testPageComponents();
+
+            // Test API
+            await testCardsAPI();
+
+            // Test full CRUD
+            await testFullCRUD();
+
+            log('🎉 All tests completed!');
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🟢 Test page loaded and ready');
+
+            // Auto-test page components since we're already on the page
+            setTimeout(testPageComponents, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -73,7 +73,6 @@ export default function MobileSettingsPage() {
   // Calculate statistics
   const getSystemStatus = () => {
     if (!settings) return { status: 'loading', color: 'blue' as const };
-    if (settings.maintenanceMode) return { status: 'maintenance', color: 'yellow' as const };
     if (!settings.enableNews && !settings.enablePolls) return { status: 'limited', color: 'yellow' as const };
     return { status: 'active', color: 'green' as const };
   };
@@ -104,18 +103,15 @@ export default function MobileSettingsPage() {
             title="Sistem Durumu"
             value={
               systemStatus.status === 'active' ? 'Aktif' :
-              systemStatus.status === 'maintenance' ? 'Bakımda' :
               systemStatus.status === 'limited' ? 'Kısıtlı' : 'Yükleniyor'
             }
             icon={
               systemStatus.status === 'active' ? CheckCircle :
-              systemStatus.status === 'maintenance' ? AlertTriangle :
               systemStatus.status === 'limited' ? AlertTriangle : RefreshCw
             }
             color={systemStatus.color}
             description={
               systemStatus.status === 'active' ? 'Tüm özellikler aktif' :
-              systemStatus.status === 'maintenance' ? 'Bakım modu açık' :
               systemStatus.status === 'limited' ? 'Bazı özellikler kapalı' : 'Ayarlar yükleniyor'
             }
           />
