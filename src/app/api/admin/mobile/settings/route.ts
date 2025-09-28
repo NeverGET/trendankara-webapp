@@ -67,7 +67,12 @@ export async function PUT(request: NextRequest) {
         maintenanceMode: settings.maintenanceMode
       },
       player: {
-        playerLogoUrl: settings.playerLogoUrl
+        playerLogoUrl: settings.playerLogoUrl,
+        enableLiveInfo: settings.enableLiveInfo,
+        playerFacebookUrl: settings.playerFacebookUrl,
+        playerInstagramUrl: settings.playerInstagramUrl,
+        playerWhatsappNumber: settings.playerWhatsappNumber,
+        liveCallPhoneNumber: settings.liveCallPhoneNumber
       },
       cards: {
         maxFeaturedCards: settings.maxFeaturedCards,

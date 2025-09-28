@@ -71,9 +71,11 @@ export interface RadioSettingsUpdateData {
 export async function getActiveSettings(): Promise<RadioSettingsEntity | null> {
   try {
     // First try to get the most recently updated active settings
+    // Note: radio_settings table doesn't have deleted_at column, so we skip soft delete filter
     const result = await findAll<RadioSettingsEntity>('radio_settings', {
       where: [{ column: 'is_active', operator: '=', value: true }],
-      orderBy: [{ column: 'updated_at', direction: 'DESC' }]
+      orderBy: [{ column: 'updated_at', direction: 'DESC' }],
+      includeSoftDeleted: true  // Skip deleted_at filter as this table doesn't have that column
     });
 
     if (Array.isArray(result) && result.length > 0) {
@@ -82,7 +84,8 @@ export async function getActiveSettings(): Promise<RadioSettingsEntity | null> {
 
     // If no active settings found, get the most recent one regardless of status
     const fallbackResult = await findAll<RadioSettingsEntity>('radio_settings', {
-      orderBy: [{ column: 'updated_at', direction: 'DESC' }]
+      orderBy: [{ column: 'updated_at', direction: 'DESC' }],
+      includeSoftDeleted: true  // Skip deleted_at filter as this table doesn't have that column
     });
 
     if (Array.isArray(fallbackResult) && fallbackResult.length > 0) {
@@ -307,7 +310,8 @@ function validateUrl(url: string): boolean {
 export async function getAllSettings(): Promise<RadioSettingsEntity[]> {
   try {
     const result = await findAll<RadioSettingsEntity>('radio_settings', {
-      orderBy: [{ column: 'updated_at', direction: 'DESC' }]
+      orderBy: [{ column: 'updated_at', direction: 'DESC' }],
+      includeSoftDeleted: true  // Skip deleted_at filter as this table doesn't have that column
     });
 
     return Array.isArray(result) ? result : result.data;
@@ -377,7 +381,8 @@ export async function getFallbackUrl(): Promise<string | null> {
         { column: 'backup_stream_url', operator: 'IS NOT', value: null },
         { column: 'backup_stream_url', operator: '!=', value: '' }
       ],
-      orderBy: [{ column: 'updated_at', direction: 'DESC' }]
+      orderBy: [{ column: 'updated_at', direction: 'DESC' }],
+      includeSoftDeleted: true  // Skip deleted_at filter as this table doesn't have that column
     });
 
     if (Array.isArray(settings) && settings.length > 0) {
@@ -390,7 +395,8 @@ export async function getFallbackUrl(): Promise<string | null> {
 
     // Finally, try to get any working stream URL from previous settings
     const allSettings = await findAll<RadioSettingsEntity>('radio_settings', {
-      orderBy: [{ column: 'updated_at', direction: 'DESC' }]
+      orderBy: [{ column: 'updated_at', direction: 'DESC' }],
+      includeSoftDeleted: true  // Skip deleted_at filter as this table doesn't have that column
     });
 
     if (Array.isArray(allSettings) && allSettings.length > 0) {

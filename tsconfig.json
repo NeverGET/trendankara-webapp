@@ -56,6 +56,11 @@
     "**/*.stories.ts",
     "**/*.e2e.ts",
     "**/*.e2e.tsx",
-    "src/e2e/**/*"
+    "src/e2e/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**/*",
+    "**/tests/**/*",
+    "src/__tests__/**/*"
   ]
 }

@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+
+// Force dynamic rendering to avoid React 19 + Next.js 15 static generation issues
+export const dynamic = 'force-dynamic';
 import { NewsGrid } from '@/components/news/NewsGrid';
 import { NewsModal } from '@/components/news/NewsModal';
 import { Button } from '@/components/ui/button';

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getActiveSettings, testStreamConnection } from '@/lib/db/queries/radioSettings';
 import { MobileRadioConfig } from '@/types/mobile';
 import { CACHE_TAGS, cacheWithTag } from '@/lib/cache/invalidation';
+import { MobileSettingsQueries } from '@/lib/queries/mobileSettingsQueries';
 import * as crypto from 'crypto';
 
 // Memory cache for radio configuration with TTL
@@ -35,7 +36,8 @@ function generateETag(config: MobileRadioConfig): string {
     stream_url: config.stream_url,
     metadata_url: config.metadata_url,
     station_name: config.station_name,
-    connection_status: config.connection_status
+    connection_status: config.connection_status,
+    playerLogoUrl: config.playerLogoUrl
   });
   return `"mobile-radio-${crypto.createHash('md5').update(configString).digest('hex').slice(0, 16)}"`;
 }
@@ -93,6 +95,8 @@ function cleanExpiredCache(): void {
  * - 5.4: Fallback to environment variables when no active settings exist
  * - 5.5: Respond within 200ms with caching
  * - 5.6: Include connection validation and status
+ * - 6.3: Include optional playerLogoUrl for custom player branding
+ * - 7.1: Retrieve player logo URL from mobile_settings table
  *
  * Response Format: MobileRadioConfig
  * - stream_url: Primary streaming endpoint
@@ -100,6 +104,7 @@ function cleanExpiredCache(): void {
  * - station_name: Display name for radio station
  * - connection_status: 'active' | 'testing' | 'failed'
  * - last_tested: ISO timestamp of last connectivity test
+ * - playerLogoUrl: Optional player logo URL for custom branding
  *
  * @param request NextRequest - Incoming request object
  * @returns NextResponse<{ success: boolean, data: MobileRadioConfig, error: string | null }>
@@ -192,6 +197,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       console.warn('No active radio settings found in database, using environment fallback');
     }
 
+    // Step 3.1: Retrieve mobile settings for player logo URL (Requirements 6.3, 7.1)
+    let playerLogoUrl: string | undefined = undefined;
+    try {
+      const mobileSettings = await MobileSettingsQueries.getCombinedSettings();
+      playerLogoUrl = mobileSettings.playerLogoUrl;
+    } catch (error) {
+      console.warn('Failed to retrieve mobile settings for player logo:', error);
+      // Continue without logo URL - it's optional
+    }
+
     // Step 4: Determine if we need to test connection or use cached status
     let connection_status: 'active' | 'testing' | 'failed' = 'testing';
     let last_tested: string = new Date().toISOString();
@@ -240,7 +255,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       metadata_url,
       station_name,
       connection_status,
-      last_tested
+      last_tested,
+      playerLogoUrl
     };
 
     // Step 6: Generate ETag for the new configuration

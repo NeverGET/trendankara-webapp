@@ -3,7 +3,7 @@
 # Production API Test Script
 # Tests all mobile API endpoints on the live server
 
-SERVER_URL="http://localhost:3000"
+SERVER_URL="https://radio.trendankara.com"
 MOBILE_API="$SERVER_URL/api/mobile/v1"
 ADMIN_API="$SERVER_URL/api/admin/mobile"
 

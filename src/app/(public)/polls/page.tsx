@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+
+// Force dynamic rendering to avoid React 19 + Next.js 15 static generation issues
+export const dynamic = 'force-dynamic';
 import { PollCard } from '@/components/polls/PollCard';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getActivePolls, getPastPolls, submitVote } from '@/lib/api/polls';
