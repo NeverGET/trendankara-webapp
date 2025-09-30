@@ -9,7 +9,6 @@ import { Alert } from '@/components/ui/Alert';
 import { StreamTestIndicator } from '@/components/admin/StreamTestIndicator';
 import { cn } from '@/lib/utils';
 import { StreamUrlValidator } from '@/lib/utils/streamUrlValidator';
-import { testStreamWithMetadata } from '@/lib/utils/streamMetadata';
 import type {
   StreamConfigurationData,
   URLValidationResult,
@@ -25,7 +24,7 @@ interface StreamUrlConfigFormProps {
   /** Initial stream configuration data */
   initialData?: Pick<StreamConfigurationData, 'stream_url'>;
   /** Callback fired when form is submitted successfully */
-  onSubmit: (streamUrl: string) => Promise<void>;
+  onSubmit?: (streamUrl: string) => Promise<void>;
   /** Whether the form is in loading state */
   isLoading?: boolean;
   /** Additional CSS classes */
@@ -74,7 +73,7 @@ export function StreamUrlConfigForm({
   });
 
   const streamUrlValue = watch('streamUrl');
-  const validator = new StreamUrlValidator();
+  const validator = React.useMemo(() => new StreamUrlValidator(), []);
 
   // Real-time URL validation (Requirement 1.2)
   useEffect(() => {
@@ -106,24 +105,56 @@ export function StreamUrlConfigForm({
   // Test stream connectivity (Requirement 1.3)
   const handleTestStream = useCallback(async () => {
     if (!streamUrlValue || !validationResult?.isValid) {
+      console.log('Test cannot proceed: URL invalid or empty', { streamUrlValue, isValid: validationResult?.isValid });
       return;
     }
 
+    console.log('Starting stream test for:', streamUrlValue);
     setIsTestingStream(true);
     setTestResult(null);
     setMetadata(null);
     setSaveError(null);
 
     try {
-      const result = await testStreamWithMetadata(streamUrlValue.trim(), 15000);
-      setTestResult(result.testResult);
+      // Call the server-side API to test the stream (avoids CORS issues)
+      const response = await fetch('/api/admin/settings/radio/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ streamUrl: streamUrlValue.trim() })
+      });
 
-      if (result.metadata) {
-        setMetadata(result.metadata);
+      const data = await response.json();
+      console.log('Stream test API response:', data);
+
+      if (data.success) {
+        setTestResult({
+          success: true,
+          message: data.message || 'Stream bağlantısı başarılı',
+          timestamp: new Date().toISOString(),
+          details: data.details
+        });
+
+        if (data.metadata) {
+          setMetadata(data.metadata);
+        }
+      } else {
+        setTestResult({
+          success: false,
+          message: data.message || 'Stream bağlantısı başarısız',
+          timestamp: new Date().toISOString(),
+          details: {
+            errorCode: 'CONNECTION_FAILED',
+            errorMessage: data.error || 'Bağlantı hatası',
+            ...data.details
+          }
+        });
       }
     } catch (error) {
+      console.error('Stream test error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Stream testi sırasında bilinmeyen bir hata oluştu';
-      setTestResult({
+      const errorResult = {
         success: false,
         message: `Stream test hatası: ${errorMessage}`,
         timestamp: new Date().toISOString(),
@@ -131,9 +162,12 @@ export function StreamUrlConfigForm({
           errorCode: 'TEST_ERROR',
           errorMessage: errorMessage
         }
-      });
+      };
+      console.log('Setting error result:', errorResult);
+      setTestResult(errorResult);
     } finally {
       setIsTestingStream(false);
+      console.log('Stream test completed, isTestingStream set to false');
     }
   }, [streamUrlValue, validationResult]);
 
@@ -165,21 +199,49 @@ export function StreamUrlConfigForm({
 
     // Attempt connection test before saving (Requirement 1.3)
     try {
-      const testResult = await testStreamWithMetadata(trimmedUrl, 10000);
+      // Call the server-side API to test the stream before saving
+      const testResponse = await fetch('/api/admin/settings/radio/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ streamUrl: trimmedUrl })
+      });
 
-      if (!testResult.testResult.success) {
+      const testData = await testResponse.json();
+
+      if (!testData.success) {
         setSaveError('Stream bağlantısı başarısız. Lütfen URL\'yi kontrol edin ve tekrar deneyin.');
-        setTestResult(testResult.testResult);
+        setTestResult({
+          success: false,
+          message: testData.message || 'Stream bağlantısı başarısız',
+          timestamp: new Date().toISOString(),
+          details: {
+            errorCode: 'CONNECTION_FAILED',
+            errorMessage: testData.error || 'Bağlantı hatası',
+            ...testData.details
+          }
+        });
         return;
       }
 
       // If test passes, proceed with save
-      await onSubmit(trimmedUrl);
+      if (onSubmit) {
+        await onSubmit(trimmedUrl);
+      } else {
+        // Default behavior: log for now (TODO: implement actual save functionality)
+        console.log('Saving stream URL:', trimmedUrl);
+      }
       setSaveSuccess(true);
-      setTestResult(testResult.testResult);
+      setTestResult({
+        success: true,
+        message: testData.message || 'Stream bağlantısı başarılı',
+        timestamp: new Date().toISOString(),
+        details: testData.details
+      });
 
-      if (testResult.metadata) {
-        setMetadata(testResult.metadata);
+      if (testData.metadata) {
+        setMetadata(testData.metadata);
       }
 
       // Auto-hide success message after 3 seconds
@@ -288,7 +350,7 @@ export function StreamUrlConfigForm({
                               variant="ghost"
                               onClick={() => {
                                 const suggestedUrl = suggestion.replace('Suggested URL: ', '');
-                                setValue('streamUrl', suggestedUrl);
+                                setValue('streamUrl', suggestedUrl, { shouldDirty: true, shouldValidate: true });
                               }}
                               className="text-xs"
                             >

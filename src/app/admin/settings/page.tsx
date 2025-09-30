@@ -81,11 +81,6 @@ export default function AdminSettingsPage() {
         >
           <StreamUrlConfigForm
             initialData={{ stream_url: 'https://radyo.yayin.com.tr:5132/stream' }}
-            onSubmit={async (streamUrl: string) => {
-              // TODO: Implement actual save functionality
-              console.log('Saving stream URL:', streamUrl);
-              // This will be implemented in future tasks for actual API integration
-            }}
             className="border-0 shadow-none bg-transparent"
           />
         </Suspense>
