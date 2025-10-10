@@ -14,8 +14,7 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiTrendingUp,
-  FiAward,
-  FiExternalLink
+  FiAward
 } from 'react-icons/fi';
 
 interface PollOption {
@@ -259,19 +258,11 @@ export const PollCard = React.memo(function PollCard({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onView?.(id)}
-          className="flex-1"
-        >
-          <FiEye className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
           onClick={() => onPreview?.(id)}
           className="flex-1"
           title="Önizleme"
         >
-          <FiExternalLink className="w-4 h-4" />
+          <FiEye className="w-4 h-4" />
         </Button>
         <Button
           variant="ghost"

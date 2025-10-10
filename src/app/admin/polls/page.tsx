@@ -14,6 +14,7 @@ import { deletePoll } from '@/lib/api/admin-polls';
 import { cn } from '@/lib/utils';
 import { getPollStatus } from '@/lib/utils/poll-status';
 import { PollDialog } from '@/components/admin/PollDialog';
+import { Modal } from '@/components/ui/Modal';
 import {
   FiPlus,
   FiBarChart2,
@@ -67,6 +68,11 @@ export default function AdminPollsPage() {
   const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
   const [selectedPoll, setSelectedPoll] = useState<any>(null);
+
+  // Preview modal states
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewPoll, setPreviewPoll] = useState<any>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Confirmation dialog
   const confirmation = useConfirmation();
@@ -280,9 +286,26 @@ export default function AdminPollsPage() {
   };
 
   // Handle poll preview
-  const handlePreviewPoll = (id: number) => {
-    // Open preview in new tab
-    window.open(`/api/admin/polls/${id}/preview`, '_blank');
+  const handlePreviewPoll = async (id: number) => {
+    try {
+      setPreviewLoading(true);
+      setIsPreviewOpen(true);
+
+      // Fetch poll preview data
+      const response = await fetch(`/api/admin/polls/${id}/preview`);
+      const data = await response.json();
+
+      if (data.success) {
+        setPreviewPoll(data.data);
+      } else {
+        throw new Error(data.error || 'Failed to load preview');
+      }
+    } catch (error) {
+      console.error('Error loading preview:', error);
+      setIsPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   // Keyboard shortcuts handler
@@ -813,6 +836,182 @@ export default function AdminPollsPage() {
         mode={dialogMode}
         onSuccess={handleDialogSuccess}
       />
+
+      {/* Preview Modal */}
+      <Modal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        title="Anket Önizleme"
+        size="large"
+      >
+        {previewLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : previewPoll ? (
+          <div className="space-y-6">
+            {/* Poll Header */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold text-dark-text-primary mb-2">
+                  {previewPoll.title}
+                </h2>
+                {previewPoll.description && (
+                  <p className="text-dark-text-secondary">
+                    {previewPoll.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="primary" size="small">
+                  {previewPoll.poll_type === 'weekly' ? 'Haftalık' :
+                   previewPoll.poll_type === 'monthly' ? 'Aylık' : 'Özel'}
+                </Badge>
+                <Badge
+                  variant={
+                    getPollStatus({
+                      start_date: previewPoll.start_date,
+                      end_date: previewPoll.end_date,
+                      is_active: previewPoll.is_active
+                    }) === 'active' ? 'success' :
+                    getPollStatus({
+                      start_date: previewPoll.start_date,
+                      end_date: previewPoll.end_date,
+                      is_active: previewPoll.is_active
+                    }) === 'scheduled' ? 'warning' :
+                    getPollStatus({
+                      start_date: previewPoll.start_date,
+                      end_date: previewPoll.end_date,
+                      is_active: previewPoll.is_active
+                    }) === 'ended' ? 'error' : 'default'
+                  }
+                  size="small"
+                >
+                  {getPollStatus({
+                    start_date: previewPoll.start_date,
+                    end_date: previewPoll.end_date,
+                    is_active: previewPoll.is_active
+                  }) === 'active' ? 'Aktif' :
+                   getPollStatus({
+                     start_date: previewPoll.start_date,
+                     end_date: previewPoll.end_date,
+                     is_active: previewPoll.is_active
+                   }) === 'scheduled' ? 'Planlandı' :
+                   getPollStatus({
+                     start_date: previewPoll.start_date,
+                     end_date: previewPoll.end_date,
+                     is_active: previewPoll.is_active
+                   }) === 'ended' ? 'Bitti' : 'Taslak'}
+                </Badge>
+              </div>
+
+              {/* Poll Info */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2 text-dark-text-secondary">
+                  <FiCalendar className="w-4 h-4" />
+                  <span>
+                    Başlangıç: {new Date(previewPoll.start_date).toLocaleDateString('tr-TR')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-dark-text-secondary">
+                  <FiCalendar className="w-4 h-4" />
+                  <span>
+                    Bitiş: {new Date(previewPoll.end_date).toLocaleDateString('tr-TR')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-dark-text-secondary">
+                  <FiBarChart2 className="w-4 h-4" />
+                  <span>Toplam Oy: {previewPoll.total_votes || 0}</span>
+                </div>
+                <div className="flex items-center gap-2 text-dark-text-secondary">
+                  <FiUsers className="w-4 h-4" />
+                  <span>Seçenek Sayısı: {previewPoll.items?.length || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Poll Items */}
+            {previewPoll.items && previewPoll.items.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-dark-text-primary">
+                  Seçenekler
+                </h3>
+                <div className="space-y-3">
+                  {previewPoll.items.map((item: any, index: number) => {
+                    const votePercentage = previewPoll.total_votes > 0
+                      ? ((item.vote_count || 0) / previewPoll.total_votes) * 100
+                      : 0;
+
+                    return (
+                      <div
+                        key={item.id || index}
+                        className="bg-dark-surface-secondary/50 rounded-lg p-4 border border-dark-border-primary/50"
+                      >
+                        <div className="flex items-start gap-3">
+                          {item.image_url && (
+                            <img
+                              src={item.image_url}
+                              alt={item.title}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-dark-text-primary">
+                                {item.title}
+                              </h4>
+                              <span className="text-sm text-dark-text-secondary">
+                                {item.vote_count || 0} oy ({votePercentage.toFixed(1)}%)
+                              </span>
+                            </div>
+                            {item.description && (
+                              <p className="text-sm text-dark-text-secondary mb-2">
+                                {item.description}
+                              </p>
+                            )}
+                            <div className="w-full bg-dark-surface-tertiary rounded-full h-2">
+                              <div
+                                className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${votePercentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-4 border-t border-dark-border-primary/50">
+              <Button
+                variant="ghost"
+                onClick={() => setIsPreviewOpen(false)}
+              >
+                Kapat
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => {
+                  setIsPreviewOpen(false);
+                  handleEditPoll(previewPoll);
+                }}
+              >
+                <FiEdit className="w-4 h-4 mr-2" />
+                Düzenle
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-dark-text-secondary">
+            Önizleme yüklenemedi
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
