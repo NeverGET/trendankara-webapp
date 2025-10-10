@@ -267,9 +267,26 @@ export default function AdminPollsPage() {
   };
 
   // Handle opening edit dialog
-  const handleEditPoll = (poll: any) => {
+  const handleEditPoll = async (poll: any) => {
     setDialogMode('edit');
-    setSelectedPoll(poll);
+
+    try {
+      // Fetch full poll data with items
+      const response = await fetch(`/api/admin/polls/${poll.id}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setSelectedPoll(data.data);
+      } else {
+        // Fallback to poll from list if fetch fails
+        setSelectedPoll(poll);
+      }
+    } catch (error) {
+      console.error('Error fetching poll details:', error);
+      // Fallback to poll from list if fetch fails
+      setSelectedPoll(poll);
+    }
+
     setIsPollDialogOpen(true);
   };
 

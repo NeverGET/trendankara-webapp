@@ -136,6 +136,18 @@ export function PollDialog({
   const endDate = watch('end_date');
   const pollItems = watch('items');
 
+  // Determine if poll is "online" (started and active)
+  const isPollOnline = React.useMemo(() => {
+    if (mode !== 'edit' || !poll) return false;
+
+    const now = new Date();
+    const start = new Date(poll.start_date);
+    const isActive = poll.is_active;
+
+    // Poll is online if it's active AND start time has passed
+    return isActive && now >= start;
+  }, [mode, poll]);
+
   // Keep a stable reference to poll items
   const pollItemsRef = React.useRef(pollItems);
   React.useEffect(() => {
@@ -334,17 +346,17 @@ export function PollDialog({
 
           {/* Form Content */}
           <div className="space-y-8">
-            {/* Active Poll Warning for Edit Mode */}
-            {mode === 'edit' && poll?.is_active && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            {/* Online Poll Warning for Edit Mode */}
+            {isPollOnline && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
                   <div className="flex-1">
-                    <h4 className="font-medium text-amber-800 dark:text-amber-200">
-                      Aktif Anket Uyarısı
+                    <h4 className="font-medium text-red-800 dark:text-red-200">
+                      Canlı Anket - Kısıtlı Düzenleme
                     </h4>
-                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                      Bu anket şu anda aktif ve oylamaya açık. Değişiklikler mevcut oyları etkileyebilir.
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      Bu anket başlamış ve oylamaya açık. Sadece açıklama düzenlenebilir. Diğer alanlar ve seçenekler değiştirilemez.
                     </p>
                   </div>
                 </div>
@@ -355,7 +367,8 @@ export function PollDialog({
             <PollFormFields
               control={control}
               errors={errors}
-              disabled={isLoading}
+              disabled={isLoading || (isPollOnline && mode === 'edit')} // Disable all fields for online polls except description
+              descriptionOnly={isPollOnline} // Special prop to only enable description
             />
 
             {/* Poll Scheduling */}
@@ -366,8 +379,9 @@ export function PollDialog({
               onEndDateChange={(date) => setValue('end_date', date, { shouldDirty: true })}
               startDateError={errors.start_date?.message}
               endDateError={errors.end_date?.message}
-              disabled={isLoading}
+              disabled={isLoading || isPollOnline} // Disable for online polls
               minDate={getMinDate()}
+              isEditMode={mode === 'edit'}
             />
 
             {/* Poll Options Management */}
@@ -375,7 +389,7 @@ export function PollDialog({
               pollId={poll?.id}
               items={pollItems || []}
               onChange={(items: PollItem[]) => setValue('items', items, { shouldDirty: true })}
-              readOnly={isLoading}
+              readOnly={isLoading || isPollOnline} // Disable for online polls
             />
 
             {/* Items Validation Error */}
