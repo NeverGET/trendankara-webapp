@@ -14,6 +14,7 @@ interface PollFormFieldsProps {
   errors: any;
   disabled?: boolean;
   className?: string;
+  descriptionOnly?: boolean; // When true, only description field is editable
 }
 
 /**
@@ -24,12 +25,14 @@ interface PollFormFieldsProps {
  * - Poll type selector (weekly/monthly/custom)
  * - Show results dropdown with three options
  * - Homepage visibility checkbox
+ * - Support for description-only editing (for online polls)
  */
 export function PollFormFields({
   control,
   errors,
   disabled = false,
-  className = ''
+  className = '',
+  descriptionOnly = false
 }: PollFormFieldsProps) {
 
   return (
@@ -64,7 +67,7 @@ export function PollFormFields({
                 {...field}
                 label="Anket Başlığı *"
                 placeholder="Anket başlığını girin..."
-                disabled={disabled}
+                disabled={disabled || descriptionOnly} // Disable for description-only mode
                 error={errors.title?.message}
                 maxLength={500}
                 aria-describedby={errors.title ? 'title-error' : undefined}
@@ -125,7 +128,7 @@ export function PollFormFields({
                 <Select
                   {...field}
                   label="Anket Türü"
-                  disabled={disabled}
+                  disabled={disabled || descriptionOnly}
                   options={[
                     { value: 'custom', label: 'Özel Anket' },
                     { value: 'weekly', label: 'Haftalık Anket' },
@@ -146,7 +149,7 @@ export function PollFormFields({
                   <Select
                     {...field}
                     label="Sonuçları Göster"
-                    disabled={disabled}
+                    disabled={disabled || descriptionOnly}
                     options={[
                       { value: 'never', label: 'Hiçbir Zaman' },
                       { value: 'after_voting', label: 'Oy Verdikten Sonra' },
@@ -186,7 +189,7 @@ export function PollFormFields({
                     id="show_on_homepage"
                     checked={field.value}
                     onCheckedChange={field.onChange}
-                    disabled={disabled}
+                    disabled={disabled || descriptionOnly}
                     className="mt-0.5"
                   />
                   <div className="flex-1">
@@ -216,7 +219,7 @@ export function PollFormFields({
                     id="is_active"
                     checked={field.value}
                     onCheckedChange={field.onChange}
-                    disabled={disabled}
+                    disabled={disabled || descriptionOnly}
                     className="mt-0.5"
                   />
                   <div className="flex-1">

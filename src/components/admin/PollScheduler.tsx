@@ -14,6 +14,7 @@ interface PollSchedulerProps {
   disabled?: boolean;
   minDate?: string;
   className?: string;
+  isEditMode?: boolean;
 }
 
 /**
@@ -36,8 +37,29 @@ export function PollScheduler({
   endDateError,
   disabled = false,
   minDate,
-  className = ''
+  className = '',
+  isEditMode = false
 }: PollSchedulerProps) {
+  // State for "Start Now" switch
+  const [startNow, setStartNow] = React.useState(false);
+
+  // Auto-set start date to now when switch is enabled
+  React.useEffect(() => {
+    if (startNow && !isEditMode) {
+      const now = new Date();
+      now.setSeconds(0);
+      now.setMilliseconds(0);
+
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const nowString = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+      onStartDateChange(nowString);
+    }
+  }, [startNow, isEditMode, onStartDateChange]);
 
   // Get minimum date for inputs (default to current datetime)
   const getMinDate = React.useMemo(() => {
@@ -161,6 +183,29 @@ export function PollScheduler({
         </h3>
       </div>
 
+      {/* "Start Now" Switch - Only show in create mode */}
+      {!isEditMode && (
+        <div className="bg-muted/50 border border-border rounded-lg p-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={startNow}
+              onChange={(e) => setStartNow(e.target.checked)}
+              disabled={disabled}
+              className="w-5 h-5 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+            />
+            <div className="flex-1">
+              <div className="text-sm font-medium text-foreground">
+                Şimdi Başlat
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Anketi şu anda başlat (başlangıç tarihi otomatik ayarlanır)
+              </div>
+            </div>
+          </label>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Start Date Input */}
         <div className="space-y-2">
@@ -172,7 +217,7 @@ export function PollScheduler({
             value={startDate || ''}
             onChange={handleStartDateChange}
             min={getMinDate}
-            disabled={disabled}
+            disabled={disabled || startNow}
             error={startDateError}
             placeholder="Başlangıç tarihini seçin"
           />
