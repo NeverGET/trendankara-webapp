@@ -106,22 +106,26 @@ export function canVoteOnPoll(poll: PollDates): boolean {
 
 /**
  * Check if poll results should be visible
+ * Handles three visibility modes:
+ * - 'always': Results always visible
+ * - 'after_voting': Results shown after user votes
+ * - 'never': Results never shown (even after poll ends)
  */
 export function shouldShowResults(
   poll: PollDates & { show_results?: string },
   hasVoted: boolean = false
 ): boolean {
   const status = getPollStatus(poll);
-  const showResults = poll.show_results || 'when_ended';
+  const showResults = poll.show_results || 'after_voting';
 
   switch (showResults) {
     case 'always':
       return true;
     case 'after_voting':
-      return hasVoted;
-    case 'when_ended':
-      return status === 'ended';
+      return hasVoted || status === 'ended';
+    case 'never':
+      return false;
     default:
-      return status === 'ended';
+      return hasVoted || status === 'ended';
   }
 }
