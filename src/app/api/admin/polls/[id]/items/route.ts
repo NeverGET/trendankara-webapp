@@ -184,7 +184,7 @@ export async function PUT(
             [
               item.title.trim(),
               item.description?.trim() || null,
-              item.image_url || null,
+              item.image_url?.trim() || null, // Fix: properly sanitize empty strings to null
               item.display_order ?? i,
               item.is_active !== false ? 1 : 0,
               item.id,
@@ -200,7 +200,7 @@ export async function PUT(
               pollId,
               item.title.trim(),
               item.description?.trim() || null,
-              item.image_url || null,
+              item.image_url?.trim() || null, // Fix: properly sanitize empty strings to null
               item.display_order ?? i,
               item.is_active !== false ? 1 : 0
             ]

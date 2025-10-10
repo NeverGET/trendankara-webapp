@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
             pollId,
             item.title.trim(),
             item.description?.trim() || null,
-            item.image_url || null,
+            item.image_url?.trim() || null, // Fix: properly sanitize empty strings to null
             item.display_order ?? i,
             item.is_active !== false ? 1 : 0
           ]

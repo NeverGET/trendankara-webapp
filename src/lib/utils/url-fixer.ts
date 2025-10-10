@@ -9,12 +9,30 @@
 export function fixMediaUrl(url: string | null | undefined): string | null | undefined {
   if (!url) return url;
 
-  // Check if it's a MinIO URL that needs fixing
+  // Check if it's an external MinIO URL that needs fixing
   if (url.includes('82.29.169.180:9002/media/')) {
     // Extract the path after /media/
     const parts = url.split('/media/');
     const key = parts[parts.length - 1];
     return `/api/media/${key}`;
+  }
+
+  // Check if it's an internal MinIO URL (Docker hostname)
+  if (url.includes('minio:9000/media/')) {
+    // Extract the path after /media/
+    const parts = url.split('/media/');
+    const key = parts[parts.length - 1];
+    return `/api/media/${key}`;
+  }
+
+  // Check for http://minio:9000 pattern
+  if (url.startsWith('http://minio:9000/')) {
+    // Extract the full path after the hostname
+    const path = url.substring('http://minio:9000/'.length);
+    if (path.startsWith('media/')) {
+      const key = path.substring('media/'.length);
+      return `/api/media/${key}`;
+    }
   }
 
   // Already a proxy URL or other URL
@@ -54,8 +72,11 @@ export function fixMediaUrlsInObject<T>(obj: T): T {
           key === 'image' ||
           key === 'backgroundImage' ||
           key === 'thumbnail' ||
+          key === 'thumbnailUrl' ||
+          key === 'thumbnail_url' ||
           key === 'featured_image' ||
           key === 'imageUrl' ||
+          key === 'image_url' ||
           key === 'logo'
         ) {
           fixed[key] = fixMediaUrl((obj as any)[key]);
