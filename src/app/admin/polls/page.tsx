@@ -846,7 +846,7 @@ export default function AdminPollsPage() {
       >
         {previewLoading ? (
           <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" />
+            <LoadingSpinner size="large" />
           </div>
         ) : previewPoll ? (
           <div className="space-y-6">
@@ -865,7 +865,7 @@ export default function AdminPollsPage() {
 
               {/* Badges */}
               <div className="flex flex-wrap gap-2">
-                <Badge variant="primary" size="small">
+                <Badge variant="purple" size="small">
                   {previewPoll.poll_type === 'weekly' ? 'Haftalık' :
                    previewPoll.poll_type === 'monthly' ? 'Aylık' : 'Özel'}
                 </Badge>

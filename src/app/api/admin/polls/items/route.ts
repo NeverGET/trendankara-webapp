@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       // Prepare poll data
       const pollData: PollData = {
         title: body.title.trim(),
-        description: body.description?.trim() || null, // Fix: use null instead of undefined
+        description: body.description?.trim() || undefined,
         poll_type: body.poll_type || 'custom',
         start_date: body.start_date,
         end_date: body.end_date,
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           pollData.title,
-          pollData.description || null, // Fix: ensure null instead of undefined
+          pollData.description ?? null,
           pollData.poll_type,
           pollData.start_date,
           pollData.end_date,
@@ -140,8 +140,8 @@ export async function POST(request: NextRequest) {
           [
             pollId,
             item.title.trim(),
-            item.description?.trim() || null,
-            item.image_url?.trim() || null, // Fix: properly sanitize empty strings to null
+            item.description?.trim() ?? null,
+            item.image_url?.trim() ?? null,
             item.display_order ?? i,
             item.is_active !== false ? 1 : 0
           ]

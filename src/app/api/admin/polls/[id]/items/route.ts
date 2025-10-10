@@ -124,7 +124,7 @@ export async function PUT(
       // Prepare poll data
       const pollData: Partial<PollData> = {
         title: body.title.trim(),
-        description: body.description?.trim() || null, // Fix: use null instead of undefined
+        description: body.description?.trim() || undefined,
         poll_type: body.poll_type || 'custom',
         start_date: body.start_date,
         end_date: body.end_date,
@@ -140,7 +140,7 @@ export async function PUT(
       Object.entries(pollData).forEach(([key, value]) => {
         if (value !== undefined) {
           updateFields.push(`${key} = ?`);
-          updateValues.push(key === 'is_active' || key === 'show_on_homepage' ? (value ? 1 : 0) : value);
+          updateValues.push(key === 'is_active' || key === 'show_on_homepage' ? (value ? 1 : 0) : (value || null));
         }
       });
 
@@ -183,8 +183,8 @@ export async function PUT(
              WHERE id = ? AND poll_id = ?`,
             [
               item.title.trim(),
-              item.description?.trim() || null,
-              item.image_url?.trim() || null, // Fix: properly sanitize empty strings to null
+              item.description?.trim() ?? null,
+              item.image_url?.trim() ?? null,
               item.display_order ?? i,
               item.is_active !== false ? 1 : 0,
               item.id,
@@ -199,8 +199,8 @@ export async function PUT(
             [
               pollId,
               item.title.trim(),
-              item.description?.trim() || null,
-              item.image_url?.trim() || null, // Fix: properly sanitize empty strings to null
+              item.description?.trim() ?? null,
+              item.image_url?.trim() ?? null,
               item.display_order ?? i,
               item.is_active !== false ? 1 : 0
             ]
