@@ -7,6 +7,11 @@ const nextConfig = {
   // Enable gzip compression
   compress: true,
 
+  // Skip static page generation for client components during build
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+
   // Image optimization settings
   images: {
     domains: ["trendankara.com", "localhost", "82.29.169.180"],

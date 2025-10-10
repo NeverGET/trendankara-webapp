@@ -5,6 +5,9 @@
  * SIMPLE implementation with email/password form
  */
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';

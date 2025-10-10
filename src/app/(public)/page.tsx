@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+
+// Force dynamic rendering to avoid build-time errors
+export const dynamic = 'force-dynamic';
 import { useRadioPlayer } from '@/hooks/useRadioPlayer';
 import { FaPlay } from 'react-icons/fa';
 import Image from 'next/image';
