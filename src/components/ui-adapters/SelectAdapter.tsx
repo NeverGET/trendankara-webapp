@@ -21,6 +21,7 @@ interface SelectOption {
 interface SelectAdapterProps {
   value?: string;
   onValueChange?: (value: string) => void;
+  onChange?: (value: string) => void; // React Hook Form compatibility
   options?: SelectOption[];
   placeholder?: string;
   label?: string;
@@ -34,14 +35,20 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectAdapterProps>(
   ({
     value,
     onValueChange,
+    onChange, // Support both onValueChange (our API) and onChange (React Hook Form)
     options = [],
     placeholder = "Select an option",
     label,
     error,
     disabled,
     className,
-    required
+    required,
+    ...rest
   }, ref) => {
+    // Use onValueChange if provided, otherwise fall back to onChange
+    // This ensures compatibility with both React Hook Form and direct usage
+    const handleValueChange = onValueChange || onChange;
+
     return (
       <div className="space-y-1.5">
         {label && (
@@ -55,7 +62,7 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectAdapterProps>(
         )}
         <ReUISelect
           value={value}
-          onValueChange={onValueChange}
+          onValueChange={handleValueChange}
           disabled={disabled}
         >
           <SelectTrigger
