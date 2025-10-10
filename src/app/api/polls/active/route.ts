@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const polls = await getActivePolls();
 
     // Transform data for public consumption
+    // Note: Always include vote_count in API response - frontend will decide when to display based on show_results setting
     const publicPolls = polls.map((poll: any) => fixMediaUrlsInObject({
       id: poll.id,
       title: poll.title,
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
         title: item.title,
         description: item.description,
         image_url: item.image_url,
-        vote_count: poll.show_results === 'always' ? item.vote_count : undefined,
+        vote_count: parseInt(item.vote_count) || 0,
         display_order: item.display_order
       })) || []
     }));

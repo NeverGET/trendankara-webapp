@@ -43,9 +43,11 @@ export function PollScheduler({
   // State for "Start Now" switch
   const [startNow, setStartNow] = React.useState(false);
 
-  // Auto-set start date to now when switch is enabled
-  React.useEffect(() => {
-    if (startNow && !isEditMode) {
+  // Handle "Start Now" toggle
+  const handleStartNowToggle = (checked: boolean) => {
+    setStartNow(checked);
+
+    if (checked && !isEditMode) {
       const now = new Date();
       now.setSeconds(0);
       now.setMilliseconds(0);
@@ -59,7 +61,7 @@ export function PollScheduler({
 
       onStartDateChange(nowString);
     }
-  }, [startNow, isEditMode, onStartDateChange]);
+  };
 
   // Get minimum date for inputs (default to current datetime)
   const getMinDate = React.useMemo(() => {
@@ -190,7 +192,7 @@ export function PollScheduler({
             <input
               type="checkbox"
               checked={startNow}
-              onChange={(e) => setStartNow(e.target.checked)}
+              onChange={(e) => handleStartNowToggle(e.target.checked)}
               disabled={disabled}
               className="w-5 h-5 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
             />

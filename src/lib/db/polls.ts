@@ -68,6 +68,7 @@ export async function recordVote(vote: PollVote): Promise<boolean> {
 
 /**
  * Get active polls
+ * Uses CONVERT_TZ to handle timezone differences between app and DB server
  */
 export async function getActivePolls() {
   const result = await db.query<RowDataPacket>(
@@ -76,7 +77,7 @@ export async function getActivePolls() {
      FROM polls p
      WHERE p.is_active = true
      AND p.deleted_at IS NULL
-     AND NOW() BETWEEN p.start_date AND p.end_date
+     AND CONVERT_TZ(NOW(), '+00:00', '+03:00') BETWEEN p.start_date AND p.end_date
      ORDER BY p.created_at DESC`
   );
 
@@ -98,6 +99,7 @@ export async function getActivePolls() {
 
 /**
  * Get past/ended polls with pagination
+ * Uses CONVERT_TZ to handle timezone differences between app and DB server
  */
 export async function getPastPolls(offset: number = 0, limit: number = 10) {
   const result = await db.query<RowDataPacket>(
@@ -106,7 +108,7 @@ export async function getPastPolls(offset: number = 0, limit: number = 10) {
      FROM polls p
      WHERE p.is_active = true
      AND p.deleted_at IS NULL
-     AND p.end_date < NOW()
+     AND p.end_date < CONVERT_TZ(NOW(), '+00:00', '+03:00')
      ORDER BY p.end_date DESC
      LIMIT ? OFFSET ?`,
     [limit, offset]

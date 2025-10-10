@@ -15,7 +15,7 @@ export function PollCard({
   endDate,
   totalVotes,
   hasVoted: initialHasVoted,
-  show_results = 'when_ended',
+  show_results = 'after_voting',
   onVote
 }: PollCardProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -182,15 +182,17 @@ export function PollCard({
         <p className="text-center text-xs md:text-sm text-dark-text-secondary">
           {displayResults
             ? 'Oyunuz kaydedildi. Sonuçları görebilirsiniz.'
+            : show_results === 'never'
+            ? 'Oyunuz kaydedildi. Bu ankette sonuçlar gizlidir.'
             : 'Oyunuz kaydedildi. Sonuçlar anket bitince gösterilecektir.'
           }
         </p>
       )}
 
-      {/* Results Hidden Message */}
-      {hasVoted && !displayResults && show_results === 'when_ended' && !hasEnded && (
+      {/* Results Hidden Message - Only for 'never' mode */}
+      {hasVoted && !displayResults && show_results === 'never' && !hasEnded && (
         <p className="text-center text-xs md:text-sm text-yellow-600">
-          Sonuçlar anket sona erdiğinde gösterilecektir.
+          Bu ankette sonuçlar hiçbir zaman gösterilmez.
         </p>
       )}
 

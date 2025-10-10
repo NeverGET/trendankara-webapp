@@ -867,141 +867,95 @@ export default function AdminPollsPage() {
           </div>
         ) : previewPoll ? (
           <div className="space-y-6">
-            {/* Poll Header */}
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-2xl font-bold text-dark-text-primary mb-2">
-                  {previewPoll.title}
-                </h2>
-                {previewPoll.description && (
-                  <p className="text-dark-text-secondary">
-                    {previewPoll.description}
-                  </p>
-                )}
+            {/* Admin Info Banner */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
+                <FiBarChart2 className="w-4 h-4" />
+                <div className="flex-1">
+                  <strong>Önizleme Modu:</strong> Bu anketin kullanıcıların göreceği halidir. Oy verme işlevsel değildir.
+                </div>
               </div>
-
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="purple" size="small">
-                  {previewPoll.poll_type === 'weekly' ? 'Haftalık' :
-                   previewPoll.poll_type === 'monthly' ? 'Aylık' : 'Özel'}
-                </Badge>
-                <Badge
-                  variant={
-                    getPollStatus({
-                      start_date: previewPoll.start_date,
-                      end_date: previewPoll.end_date,
-                      is_active: previewPoll.is_active
-                    }) === 'active' ? 'success' :
-                    getPollStatus({
-                      start_date: previewPoll.start_date,
-                      end_date: previewPoll.end_date,
-                      is_active: previewPoll.is_active
-                    }) === 'scheduled' ? 'warning' :
-                    getPollStatus({
-                      start_date: previewPoll.start_date,
-                      end_date: previewPoll.end_date,
-                      is_active: previewPoll.is_active
-                    }) === 'ended' ? 'error' : 'default'
-                  }
-                  size="small"
-                >
-                  {getPollStatus({
-                    start_date: previewPoll.start_date,
-                    end_date: previewPoll.end_date,
-                    is_active: previewPoll.is_active
-                  }) === 'active' ? 'Aktif' :
-                   getPollStatus({
-                     start_date: previewPoll.start_date,
-                     end_date: previewPoll.end_date,
-                     is_active: previewPoll.is_active
-                   }) === 'scheduled' ? 'Planlandı' :
-                   getPollStatus({
-                     start_date: previewPoll.start_date,
-                     end_date: previewPoll.end_date,
-                     is_active: previewPoll.is_active
-                   }) === 'ended' ? 'Bitti' : 'Taslak'}
-                </Badge>
-              </div>
-
-              {/* Poll Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2 text-dark-text-secondary">
-                  <FiCalendar className="w-4 h-4" />
-                  <span>
-                    Başlangıç: {new Date(previewPoll.start_date).toLocaleDateString('tr-TR')}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-dark-text-secondary">
-                  <FiCalendar className="w-4 h-4" />
-                  <span>
-                    Bitiş: {new Date(previewPoll.end_date).toLocaleDateString('tr-TR')}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-dark-text-secondary">
-                  <FiBarChart2 className="w-4 h-4" />
-                  <span>Toplam Oy: {previewPoll.total_votes || 0}</span>
-                </div>
-                <div className="flex items-center gap-2 text-dark-text-secondary">
-                  <FiUsers className="w-4 h-4" />
-                  <span>Seçenek Sayısı: {previewPoll.items?.length || 0}</span>
-                </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-blue-700 dark:text-blue-300">
+                <div>📅 {new Date(previewPoll.start_date).toLocaleDateString('tr-TR')} - {new Date(previewPoll.end_date).toLocaleDateString('tr-TR')}</div>
+                <div>📊 Toplam: {previewPoll.total_votes || 0} oy</div>
               </div>
             </div>
 
-            {/* Poll Items */}
-            {previewPoll.items && previewPoll.items.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-dark-text-primary">
-                  Seçenekler
+            {/* PUBLIC POLL VIEW - Matches the user-facing interface */}
+            <div className="bg-dark-surface-primary border border-dark-border-primary rounded-lg p-4 md:p-6">
+              {/* Poll Header */}
+              <div className="mb-4">
+                <h3 className="text-lg md:text-xl font-semibold text-dark-text-primary mb-2">
+                  {previewPoll.title}
                 </h3>
-                <div className="space-y-3">
-                  {previewPoll.items.map((item: any, index: number) => {
-                    const votePercentage = previewPoll.total_votes > 0
-                      ? ((item.vote_count || 0) / previewPoll.total_votes) * 100
-                      : 0;
-
-                    return (
-                      <div
-                        key={item.id || index}
-                        className="bg-dark-surface-secondary/50 rounded-lg p-4 border border-dark-border-primary/50"
-                      >
-                        <div className="flex items-start gap-3">
-                          {item.image_url && (
-                            <img
-                              src={item.image_url}
-                              alt={item.title}
-                              className="w-16 h-16 object-cover rounded"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium text-dark-text-primary">
-                                {item.title}
-                              </h4>
-                              <span className="text-sm text-dark-text-secondary">
-                                {item.vote_count || 0} oy ({votePercentage.toFixed(1)}%)
-                              </span>
-                            </div>
-                            {item.description && (
-                              <p className="text-sm text-dark-text-secondary mb-2">
-                                {item.description}
-                              </p>
-                            )}
-                            <div className="w-full bg-dark-surface-tertiary rounded-full h-2">
-                              <div
-                                className="bg-red-500 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${votePercentage}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                {previewPoll.description && (
+                  <p className="text-sm text-dark-text-secondary mb-3">
+                    {previewPoll.description}
+                  </p>
+                )}
+                <div className="flex items-center justify-between text-xs md:text-sm text-dark-text-secondary">
+                  <span>{previewPoll.total_votes || 0} oy</span>
+                  <span className="font-medium text-brand-red-600">
+                    {(() => {
+                      const now = new Date();
+                      const end = new Date(previewPoll.end_date);
+                      const diff = end.getTime() - now.getTime();
+                      if (diff <= 0) return 'Sona erdi';
+                      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                      if (days > 0) return `${days} gün ${hours} saat kaldı`;
+                      return `${hours} saat kaldı`;
+                    })()}
+                  </span>
                 </div>
               </div>
-            )}
+
+              {/* Poll Options - Interactive looking but disabled */}
+              {previewPoll.options && previewPoll.options.length > 0 && (
+                <div className="space-y-3 mb-4">
+                  {previewPoll.options.map((option: any, index: number) => (
+                    <label
+                      key={option.id || index}
+                      className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg border border-dark-border-primary hover:border-dark-border-secondary hover:bg-dark-surface-secondary cursor-not-allowed opacity-75 transition-all min-h-[44px]"
+                      title="Önizleme modunda oy kullanılamaz"
+                    >
+                      <input
+                        type="radio"
+                        name="preview-poll"
+                        disabled
+                        className="w-4 h-4 text-brand-red-600 bg-dark-surface-primary border-dark-border-secondary flex-shrink-0 cursor-not-allowed"
+                      />
+
+                      {option.imageUrl && (
+                        <div
+                          className="w-[40px] h-[40px] md:w-[60px] md:h-[60px] rounded-lg bg-cover bg-center bg-dark-surface-secondary flex-shrink-0"
+                          style={{ backgroundImage: `url(${option.imageUrl})` }}
+                        />
+                      )}
+
+                      <span className="text-sm md:text-base text-dark-text-primary flex-1">
+                        {option.title}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {/* Vote Button (Disabled) */}
+              <Button
+                variant="default"
+                disabled
+                className="w-full opacity-75 cursor-not-allowed"
+                title="Önizleme modunda oy kullanılamaz"
+              >
+                Oy Ver
+              </Button>
+
+              {/* Preview Note */}
+              <p className="text-center text-xs md:text-sm text-dark-text-secondary mt-3">
+                Bu bir önizlemedir. Gerçek ankette kullanıcılar oy verebilir.
+              </p>
+            </div>
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t border-dark-border-primary/50">
