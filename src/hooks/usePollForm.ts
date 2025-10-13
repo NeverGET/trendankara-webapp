@@ -297,6 +297,13 @@ export function usePollForm(options: UsePollFormOptions = {}) {
     return formatForDateTimeLocal(now);
   }, []);
 
+  // Direct form submission (bypasses react-hook-form's handleSubmit wrapper)
+  // Useful for programmatic submission like "Save & Close" button
+  const submitForm = useCallback(async (): Promise<void> => {
+    const data = getValues();
+    await onSubmitHandler(data);
+  }, [getValues]);
+
   return {
     // Form instance and methods
     form,
@@ -309,6 +316,7 @@ export function usePollForm(options: UsePollFormOptions = {}) {
 
     // Form handlers
     handleSubmit: handleSubmit(onSubmitHandler),
+    submitForm, // Direct submission method
     reset: resetForm,
     setValue,
     getValues,

@@ -20,6 +20,7 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
+    data-overlay="true"
     className={cn(
       "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm",
       "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -37,23 +38,75 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, onInteractOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay className="overflow-y-auto">
-      <div
-        className="min-h-screen px-2 sm:px-4 pt-20 sm:pt-8 pb-8 flex items-start justify-center"
-        onClick={(e) => {
-          // Close dialog when clicking outside on mobile
-          if (e.target === e.currentTarget) {
-            const closeButton = document.querySelector('[aria-label="Close"]');
-            if (closeButton instanceof HTMLElement) {
-              closeButton.click();
-            }
-          }
-        }}
-      >
+      <div className="min-h-screen px-2 sm:px-4 pt-20 sm:pt-8 pb-8 flex items-start justify-center">
         <DialogPrimitive.Content
           ref={ref}
+          onInteractOutside={(e) => {
+            console.log('🔍 onInteractOutside called');
+
+            // Get the actual pointer event from Radix's custom event
+            const pointerEvent = (e as any).detail?.originalEvent || e;
+            const clickX = pointerEvent.clientX;
+            const clickY = pointerEvent.clientY;
+
+            console.log('📍 Click coordinates:', { clickX, clickY });
+
+            // Detect scrollbar clicks to prevent closing dialog
+            const target = e.target as HTMLElement;
+            const overlay = document.querySelector('[data-overlay="true"]') as HTMLElement;
+
+            console.log('🎯 Overlay found:', !!overlay);
+
+            if (overlay) {
+              const rect = overlay.getBoundingClientRect();
+              console.log('📏 Overlay rect:', {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.width,
+                height: rect.height
+              });
+
+              // Check if click is within scrollbar area
+              // Scrollbars are typically 15-20px wide on the right/bottom edges
+              const scrollbarWidth = 20;
+              const hasVerticalScrollbar = overlay.scrollHeight > overlay.clientHeight;
+              const hasHorizontalScrollbar = overlay.scrollWidth > overlay.clientWidth;
+
+              console.log('📊 Scrollbar check:', {
+                hasVerticalScrollbar,
+                hasHorizontalScrollbar,
+                scrollHeight: overlay.scrollHeight,
+                clientHeight: overlay.clientHeight,
+                scrollWidth: overlay.scrollWidth,
+                clientWidth: overlay.clientWidth
+              });
+
+              const isRightScrollbar = hasVerticalScrollbar && clickX > rect.right - scrollbarWidth;
+              const isBottomScrollbar = hasHorizontalScrollbar && clickY > rect.bottom - scrollbarWidth;
+
+              console.log('🎚️ Scrollbar detection:', {
+                isRightScrollbar,
+                isBottomScrollbar,
+                rightEdge: rect.right - scrollbarWidth,
+                clickX
+              });
+
+              if (isRightScrollbar || isBottomScrollbar) {
+                console.log('🚫 Scrollbar click detected, preventing close');
+                e.preventDefault();
+                return;
+              }
+            }
+
+            console.log('✅ Not a scrollbar click, allowing close behavior');
+            // Call original handler if provided
+            onInteractOutside?.(e);
+          }}
           className={cn(
             "relative grid gap-4",
             "w-full",

@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ValidationModal } from '@/components/ui/ValidationModal';
 import { AlertTriangle, Save, X, CheckCircle } from 'lucide-react';
 import { usePollForm, PollFormData, PollItem } from '@/hooks/usePollForm';
 import { createPollWithItems, updatePollWithItems } from '@/lib/api/admin-polls';
@@ -70,6 +71,7 @@ export function PollDialog({
   const {
     control,
     handleSubmit,
+    submitForm,
     hasUnsavedChanges,
     isSubmitting,
     isValid,
@@ -78,11 +80,13 @@ export function PollDialog({
     watch,
     setValue,
     getValues,
-    getMinDate
+    getMinDate,
+    trigger
   } = usePollForm({
     defaultValues: formDefaultValues,
     mode,
     onSubmit: async (data: PollFormData) => {
+      console.log('🔥 onSubmit callback called with data:', data);
       setIsLoading(true);
       setError(null);
 
@@ -91,15 +95,20 @@ export function PollDialog({
 
         if (mode === 'create') {
           // Create new poll with items
+          console.log('📝 Calling createPollWithItems...');
           result = await createPollWithItems(data);
+          console.log('✅ createPollWithItems result:', result);
         } else if (mode === 'edit' && poll?.id) {
           // Update existing poll with items
+          console.log('📝 Calling updatePollWithItems...');
           result = await updatePollWithItems(poll.id, data);
+          console.log('✅ updatePollWithItems result:', result);
         } else {
           throw new Error('Invalid mode or missing poll ID');
         }
 
         if (!result.success) {
+          console.error('❌ API returned error:', result.error);
           throw new Error(result.error || 'İşlem başarısız oldu');
         }
 
@@ -112,10 +121,12 @@ export function PollDialog({
         const successMsg = mode === 'create'
           ? 'Anket başarıyla oluşturuldu!'
           : 'Anket başarıyla güncellendi!';
+        console.log('✅ Success! Showing message:', successMsg);
         setSuccessMessage(successMsg);
 
         // Clear success message after delay and close
         setTimeout(() => {
+          console.log('⏰ Timeout complete, closing dialog');
           setSuccessMessage(null);
           reset();
           onSuccess?.();
@@ -123,9 +134,10 @@ export function PollDialog({
         }, 1500);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
+        console.error('❌ Poll submission error:', err);
         setError(errorMessage);
-        console.error('Poll submission error:', err);
       } finally {
+        console.log('🔄 Setting isLoading to false');
         setIsLoading(false);
       }
     }
@@ -224,17 +236,46 @@ export function PollDialog({
 
   // Save and close handler
   const handleSaveAndClose = async () => {
-    if (!isValid || isLoading || isSavingAndClosing) return;
+    console.log('handleSaveAndClose called');
+
+    // Early validation checks
+    if (isLoading || isSavingAndClosing) {
+      console.log('Blocked by loading state:', { isLoading, isSavingAndClosing });
+      return;
+    }
 
     setIsSavingAndClosing(true);
     setShowCloseConfirm(false);
+    setError(null);
 
     try {
-      await handleSubmit();
-      // Note: handleSubmit already closes the dialog on success
+      // Manually trigger form validation
+      console.log('Triggering validation...');
+      const isFormValid = await trigger();
+      console.log('Validation result:', isFormValid);
+
+      if (!isFormValid) {
+        console.log('Validation failed, showing error');
+        setIsSavingAndClosing(false);
+        setError('Lütfen tüm zorunlu alanları doldurun');
+        return;
+      }
+
+      // Get current form values
+      const formData = getValues();
+      console.log('Form data:', formData);
+
+      // Call submitForm which directly invokes the onSubmit handler
+      console.log('Calling submitForm...');
+      await submitForm();
+
+      // Success - reset the saving state
+      // The onSubmit handler in usePollForm will close the dialog after showing success message
+      console.log('submitForm completed successfully');
+      setIsSavingAndClosing(false);
     } catch (error) {
       console.error('Error saving before close:', error);
-      // Don't close if save failed, let user retry
+      setError(error instanceof Error ? error.message : 'Kayıt sırasında hata oluştu');
       setIsSavingAndClosing(false);
     }
   };
@@ -245,17 +286,33 @@ export function PollDialog({
 
     if (isLoading) return;
 
-    // Show validation summary if form is invalid
+    // Show validation modal if form is invalid
     if (!isValid) {
       setShowValidationSummary(true);
-      // Hide after 5 seconds
-      setTimeout(() => setShowValidationSummary(false), 5000);
       return;
     }
 
     setShowValidationSummary(false);
     await handleSubmit();
   };
+
+  // Build validation errors array for ValidationModal
+  const validationErrors = React.useMemo(() => {
+    const errorList: Array<{ field: string; message: string }> = [];
+    if (errors.title) {
+      errorList.push({ field: 'Anket Başlığı', message: errors.title.message || 'Bu alan zorunludur' });
+    }
+    if (errors.start_date) {
+      errorList.push({ field: 'Başlangıç Tarihi', message: errors.start_date.message || 'Bu alan zorunludur' });
+    }
+    if (errors.end_date) {
+      errorList.push({ field: 'Bitiş Tarihi', message: errors.end_date.message || 'Bu alan zorunludur' });
+    }
+    if (errors.items) {
+      errorList.push({ field: 'Anket Seçenekleri', message: errors.items.message || 'En az 2 seçenek gereklidir' });
+    }
+    return errorList;
+  }, [errors]);
 
   // Dialog title based on mode
   const dialogTitle = mode === 'create' ? 'Yeni Anket Oluştur' : 'Anket Düzenle';
@@ -312,37 +369,7 @@ export function PollDialog({
             </div>
           )}
 
-          {/* Validation Summary */}
-          {showValidationSummary && !isValid && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                <div className="flex-1">
-                  <h4 className="font-medium text-yellow-800 dark:text-yellow-200">
-                    Gerekli Alanları Doldurun
-                  </h4>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                    Formu kaydetmek için tüm zorunlu alanları doldurun ve hataları düzeltin.
-                  </p>
-                  <ul className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside space-y-1">
-                    {errors.title && <li>Anket başlığı: {errors.title.message}</li>}
-                    {errors.start_date && <li>Başlangıç tarihi: {errors.start_date.message}</li>}
-                    {errors.end_date && <li>Bitiş tarihi: {errors.end_date.message}</li>}
-                    {errors.items && <li>Anket seçenekleri: {errors.items.message}</li>}
-                  </ul>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowValidationSummary(false)}
-                  className="text-yellow-600 dark:text-yellow-400"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* Note: Validation errors now shown in ValidationModal instead of inline banner */}
 
           {/* Form Content */}
           <div className="space-y-8">
@@ -452,6 +479,15 @@ export function PollDialog({
           </div>
         </form>
       </Modal>
+
+      {/* Validation Errors Modal */}
+      <ValidationModal
+        isOpen={showValidationSummary && !isValid}
+        onClose={() => setShowValidationSummary(false)}
+        errors={validationErrors}
+        title="Form Doğrulama Hataları"
+        description="Formu kaydetmek için lütfen aşağıdaki hataları düzeltin:"
+      />
 
       {/* Close Confirmation Dialog */}
       <Modal
