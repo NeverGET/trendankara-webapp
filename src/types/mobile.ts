@@ -268,6 +268,7 @@ export interface MobileNewsItem {
   slug: string;
   summary?: string;
   featuredImage?: string;
+  redirectUrl?: string;
   category: string;
   categoryId: number;
   isFeatured: boolean;

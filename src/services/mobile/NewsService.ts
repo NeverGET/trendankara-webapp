@@ -206,6 +206,7 @@ export class NewsService {
       slug: news.slug,
       summary: news.summary,
       featuredImage: news.featured_image,
+      redirectUrl: news.redirect_url || undefined,
       category: news.category_name || 'Genel',
       categoryId: news.category_id || 0,
       isFeatured: Boolean(news.is_featured),
