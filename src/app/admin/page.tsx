@@ -9,45 +9,14 @@ import {
   FiRadio,
   FiUsers
 } from 'react-icons/fi';
-import { headers } from 'next/headers';
+import { getDashboardStats } from '@/lib/services/dashboard';
 
 // Force dynamic rendering since this page requires authentication
 export const dynamic = 'force-dynamic';
 
-async function fetchDashboardStats() {
-  try {
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const headersList = await headers();
-    const cookie = headersList.get('cookie') || '';
-
-    const response = await fetch(`${baseUrl}/api/admin/dashboard/stats`, {
-      cache: 'no-store',
-      headers: {
-        cookie: cookie
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch stats');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
-    return {
-      totalNews: 0,
-      totalPolls: 0,
-      activePolls: 0,
-      totalMedia: 0,
-      currentListeners: 0,
-      peakListeners: 0,
-      streamStatus: false
-    };
-  }
-}
-
 export default async function AdminDashboardPage() {
-  const stats = await fetchDashboardStats();
+  // Fetch dashboard stats directly from service (no HTTP call)
+  const stats = await getDashboardStats();
 
   return (
     <div className="space-y-4 md:space-y-6">
