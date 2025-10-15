@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { getNewsBySlug } from '@/lib/db/news';
 import { fixMediaUrl } from '@/lib/utils/url-fixer';
 import { Metadata } from 'next';
@@ -62,15 +63,15 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
         <nav className="mb-6 text-sm">
           <ol className="flex items-center space-x-2 text-dark-text-secondary">
             <li>
-              <a href="/" className="hover:text-dark-text-primary transition-colors">
+              <Link href="/" className="hover:text-dark-text-primary transition-colors">
                 Ana Sayfa
-              </a>
+              </Link>
             </li>
             <li>/</li>
             <li>
-              <a href="/news" className="hover:text-dark-text-primary transition-colors">
+              <Link href="/news" className="hover:text-dark-text-primary transition-colors">
                 Haberler
-              </a>
+              </Link>
             </li>
             <li>/</li>
             <li className="text-dark-text-primary">{news.title}</li>
@@ -82,6 +83,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
           {/* Featured Image */}
           {featuredImageUrl && (
             <div className="w-full aspect-video relative overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={featuredImageUrl}
                 alt={news.title}
@@ -166,7 +168,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
         {/* Back Button */}
         <div className="mt-8">
-          <a
+          <Link
             href="/news"
             className="inline-flex items-center gap-2 px-4 py-2 bg-dark-bg-secondary text-dark-text-primary rounded-lg hover:bg-dark-bg-tertiary transition-colors"
           >
@@ -183,7 +185,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
               />
             </svg>
             Haberlere Dön
-          </a>
+          </Link>
         </div>
       </div>
     </div>
