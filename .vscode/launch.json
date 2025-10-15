@@ -7,18 +7,18 @@
       "name": "Debug Next.js",
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
-      "args": ["dev"],
+      "args": ["dev","--turbopack","-p","3050"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "env": {
-        "NODE_OPTIONS": "--inspect"
+        "NODE_OPTIONS": "--inspect" 
       }
     },
     {
       "type": "chrome",
       "request": "launch",
       "name": "Launch Chrome",
-      "url": "http://localhost:3000",
+      "url": "http://localhost:3050",
       "webRoot": "${workspaceFolder}"
     }
   ]
