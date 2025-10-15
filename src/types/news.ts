@@ -48,6 +48,7 @@ export interface NewsListResponse {
 export interface NewsCardProps {
   id: number;
   title: string;
+  slug: string;
   summary: string;
   thumbnail: string;
   category: NewsCategory;

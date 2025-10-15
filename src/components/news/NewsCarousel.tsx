@@ -107,6 +107,7 @@ export function NewsCarousel({
               <NewsCard
                 id={item.id}
                 title={item.title}
+                slug={item.slug}
                 summary={item.summary}
                 thumbnail={typeof item.thumbnail === 'string' ? item.thumbnail : item.thumbnail.url}
                 category={item.category}

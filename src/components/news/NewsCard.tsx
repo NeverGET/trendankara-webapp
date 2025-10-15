@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { NewsCardProps, NewsCategory } from '@/types/news';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ const categoryColors: Record<string, string> = {
 export function NewsCard({
   id,
   title,
+  slug,
   summary,
   thumbnail,
   category,
@@ -24,12 +26,6 @@ export function NewsCard({
   publishedAt,
   onClick
 }: NewsCardProps) {
-  const handleClick = () => {
-    if (onClick) {
-      onClick(id);
-    }
-  };
-
   const formattedDate = new Date(publishedAt).toLocaleDateString('tr-TR', {
     day: 'numeric',
     month: 'long',
@@ -37,10 +33,10 @@ export function NewsCard({
   });
 
   return (
-    <Card
-      className="cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
-      onClick={handleClick}
-    >
+    <Link href={`/news/${slug}`} className="block">
+      <Card
+        className="cursor-pointer group hover:scale-[1.02] transition-transform duration-200"
+      >
       <div className="relative aspect-video overflow-hidden rounded-t-lg">
         {/* Using a div with background image as Next/Image requires width and height */}
         <div
@@ -87,5 +83,6 @@ export function NewsCard({
         </p>
       </div>
     </Card>
+    </Link>
   );
 }

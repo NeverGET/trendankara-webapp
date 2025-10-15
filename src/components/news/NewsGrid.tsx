@@ -109,6 +109,7 @@ export function NewsGrid({
             key={article.id}
             id={article.id}
             title={article.title}
+            slug={article.slug}
             summary={article.summary}
             thumbnail={typeof article.thumbnail === 'string' ? article.thumbnail : article.thumbnail.url}
             category={article.category}
