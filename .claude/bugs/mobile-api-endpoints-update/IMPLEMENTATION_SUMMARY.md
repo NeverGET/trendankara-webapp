@@ -4,6 +4,8 @@
 **Date**: 2025-10-15
 **Status**: ✅ **COMPLETED**
 
+> **📄 Additional Features**: See [NEWS_NAVIGATION_UPDATE.md](./NEWS_NAVIGATION_UPDATE.md) for comprehensive documentation of extra features implemented beyond the original bug fix (news detail pages, clickable navigation, build error fixes).
+
 ---
 
 ## Changes Implemented
