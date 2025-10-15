@@ -200,13 +200,18 @@ export class NewsService {
    * @returns Mobile news item
    */
   private transformToMobileNewsItem(news: any): MobileNewsItem {
+    // Auto-generate redirect URL if not set in database
+    // Format: https://trendankara.com/news/[slug]
+    const redirectUrl = news.redirect_url ||
+      (news.slug ? `https://trendankara.com/news/${news.slug}` : undefined);
+
     return fixMediaUrlsInObject({
       id: news.id,
       title: news.title,
       slug: news.slug,
       summary: news.summary,
       featuredImage: news.featured_image,
-      redirectUrl: news.redirect_url || undefined,
+      redirectUrl,
       category: news.category_name || 'Genel',
       categoryId: news.category_id || 0,
       isFeatured: Boolean(news.is_featured),
