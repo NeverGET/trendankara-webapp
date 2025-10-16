@@ -156,9 +156,16 @@ export function PollCard({
                 />
               )}
 
-              <span className="text-sm md:text-base text-dark-text-primary flex-1">
-                {option.title}
-              </span>
+              <div className="flex-1 flex flex-col gap-1">
+                <span className="text-sm md:text-base text-dark-text-primary">
+                  {option.title}
+                </span>
+                {option.description && (
+                  <span className="text-xs md:text-sm text-dark-text-secondary">
+                    {option.description}
+                  </span>
+                )}
+              </div>
             </label>
           ))}
         </div>
