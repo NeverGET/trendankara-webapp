@@ -546,7 +546,7 @@ export default function AdminMediaPage() {
 
                 {/* Info */}
                 <div className="flex-1">
-                  <p className="font-medium">{file.filename}</p>
+                  <p className="font-medium">{file.title || file.filename}</p>
                   <p className="text-sm text-gray-500">
                     {formatFileSize(file.size)} •
                     {file.width && file.height && ` ${file.width}×${file.height}px • `}

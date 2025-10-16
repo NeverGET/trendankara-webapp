@@ -13,6 +13,7 @@ interface MediaFile {
   size: number;
   mimeType: string;
   uploadedAt: Date;
+  title?: string;
 }
 
 interface MediaGalleryGridProps {
@@ -120,7 +121,7 @@ export function MediaGalleryGrid({
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <div className="absolute bottom-2 left-2 right-2">
                 <p className="text-white text-xs truncate">
-                  {image.filename}
+                  {image.title || image.filename}
                 </p>
                 <p className="text-white/70 text-xs">
                   {(image.size / 1024 / 1024).toFixed(2)} MB

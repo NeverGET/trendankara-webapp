@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui-adapters/ButtonAdapter';
 import { Input } from '@/components/ui/Input';
@@ -64,6 +64,7 @@ export function MediaPickerDialog({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch media items
   const fetchMedia = useCallback(async (reset = false) => {
@@ -161,8 +162,28 @@ export function MediaPickerDialog({
       });
 
       const data = await response.json();
-      if (data.success) {
-        fetchMedia(true);
+      if (data.media && data.media.length > 0) {
+        // Transform uploaded items to match MediaItem format
+        const newItems = data.media.map((item: any) => ({
+          id: item.id,
+          filename: item.filename,
+          url: item.url,
+          title: item.original_name || item.filename,
+          mime_type: item.mime_type,
+          size: item.size,
+          created_at: item.created_at,
+        }));
+
+        // Add to top of list immediately (optimistic update)
+        setMediaItems(prev => [...newItems, ...prev]);
+
+        // Also refresh to ensure consistency
+        await fetchMedia(true);
+
+        // Reset file input to allow uploading the same file again
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     } catch (error) {
       console.error('Error uploading files:', error);
@@ -224,11 +245,12 @@ export function MediaPickerDialog({
 
             {/* Upload Button */}
             {!hideUpload && (
-              <label className="cursor-pointer">
+              <>
                 <Button
                   variant="primary"
                   size="small"
                   disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
                   className="flex items-center gap-2"
                 >
                   {isUploading ? (
@@ -239,13 +261,14 @@ export function MediaPickerDialog({
                   Yükle
                 </Button>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   multiple
                   accept={accept}
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-              </label>
+              </>
             )}
           </div>
         </div>
@@ -305,7 +328,7 @@ export function MediaPickerDialog({
 
                           {/* Info Overlay - Inside the thumbnail div */}
                           <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                            <p className="text-xs text-white truncate">{item.filename}</p>
+                            <p className="text-xs text-white truncate">{item.title || item.filename}</p>
                             <p className="text-xs text-gray-300">{formatFileSize(item.size)}</p>
                           </div>
                         </div>
