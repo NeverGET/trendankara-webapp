@@ -305,7 +305,7 @@ export function MediaPickerDialog({
 
                           {/* Info Overlay - Inside the thumbnail div */}
                           <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                            <p className="text-xs text-white truncate">{item.filename}</p>
+                            <p className="text-xs text-white truncate">{item.title || item.filename}</p>
                             <p className="text-xs text-gray-300">{formatFileSize(item.size)}</p>
                           </div>
                         </div>
