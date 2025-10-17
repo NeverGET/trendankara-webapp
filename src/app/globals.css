@@ -415,5 +415,64 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
 
+}
+
+/* Print Styles for Privacy Policy Pages */
+@media print {
+  /* Hide navigation elements */
+  header,
+  footer,
+  .privacy-policy-page nav {
+    display: none !important;
+  }
+
+  /* Print-specific styles for privacy policy */
+  .privacy-policy-page {
+    max-width: 100%;
+    padding: 0;
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #000;
+    background: #fff;
+  }
+
+  .privacy-policy-page::before {
+    content: "TrendAnkara Privacy Policy - " attr(data-url);
+    display: block;
+    font-size: 10pt;
+    color: #666;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #ddd;
+  }
+
+  /* Avoid page breaks inside sections */
+  .privacy-policy-page section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Ensure headings stay with content */
+  .privacy-policy-page h1,
+  .privacy-policy-page h2,
+  .privacy-policy-page h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+    color: #000;
+  }
+
+  /* Reset colors for print */
+  .privacy-policy-page * {
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  /* Remove hover effects and transitions */
+  .privacy-policy-page a {
+    text-decoration: underline;
+  }
 }
