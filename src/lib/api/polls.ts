@@ -23,6 +23,7 @@ export async function getActivePolls(): Promise<Poll[]> {
       options: (poll.items || []).map((item: any) => ({
         id: item.id,
         title: item.title,
+        description: item.description,
         imageUrl: item.image_url,
         voteCount: item.vote_count || 0,
         percentage: 0 // Will be calculated on display
@@ -74,6 +75,7 @@ export async function getPoll(pollId: number): Promise<Poll | null> {
       options: (poll.items || []).map((item: any) => ({
         id: item.id,
         title: item.title,
+        description: item.description,
         imageUrl: item.image_url,
         voteCount: item.vote_count || 0,
         percentage: item.vote_count && poll.total_votes > 0
@@ -154,6 +156,7 @@ export async function getPollResults(pollId: number): Promise<Poll | null> {
       options: (poll.items || []).map((item: any) => ({
         id: item.id,
         title: item.title,
+        description: item.description,
         imageUrl: item.image_url,
         voteCount: item.vote_count || 0,
         percentage: item.percentage ? parseFloat(item.percentage) : 0
@@ -201,6 +204,7 @@ export async function getPastPolls(page: number = 1, limit: number = 10): Promis
       options: (poll.items || []).map((item: any) => ({
         id: item.id,
         title: item.title,
+        description: item.description,
         imageUrl: item.image_url,
         voteCount: item.vote_count || 0,
         percentage: item.vote_count && poll.total_votes > 0

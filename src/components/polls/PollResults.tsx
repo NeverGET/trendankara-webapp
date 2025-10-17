@@ -92,6 +92,11 @@ export function PollResults({
                     </svg>
                   )}
                 </div>
+                {option.description && (
+                  <div className="text-xs text-dark-text-secondary mt-1">
+                    {option.description}
+                  </div>
+                )}
                 <div className="text-[10px] md:text-xs text-dark-text-secondary mt-0.5 md:mt-1">
                   {option.voteCount} oy
                 </div>

@@ -5,7 +5,7 @@ export function Footer() {
   return (
     <footer className="bg-dark-surface-primary border-t border-dark-border-primary mt-auto">
       <div className="container mx-auto px-3 md:px-4 py-6 md:py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
           {/* Brand Section */}
           <div className="space-y-3 md:space-y-4">
             <div className="flex items-center gap-2 md:gap-3">
@@ -100,6 +100,27 @@ export function Footer() {
                 </svg>
               </a>
             </div>
+          </div>
+
+          {/* Legal Section */}
+          <div className="space-y-3 md:space-y-4">
+            <h3 className="text-base md:text-lg font-semibold text-dark-text-primary">
+              Yasal
+            </h3>
+            <nav className="space-y-2">
+              <Link
+                href="/gizlilik-politikasi"
+                className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
+              >
+                Gizlilik Politikası
+              </Link>
+              <Link
+                href="/privacy-policy"
+                className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
+              >
+                Privacy Policy
+              </Link>
+            </nav>
           </div>
         </div>
 
