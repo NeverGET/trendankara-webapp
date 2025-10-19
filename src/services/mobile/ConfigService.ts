@@ -233,9 +233,14 @@ export class ConfigService {
           }
           break;
 
-        case 'player_config':
+        case 'player':
           if (value) {
             settings.playerLogoUrl = value.playerLogoUrl ?? null;
+            settings.enableLiveInfo = value.enableLiveInfo ?? false;
+            settings.playerFacebookUrl = value.playerFacebookUrl ?? null;
+            settings.playerInstagramUrl = value.playerInstagramUrl ?? null;
+            settings.playerWhatsappNumber = value.playerWhatsappNumber ?? null;
+            settings.liveCallPhoneNumber = value.liveCallPhoneNumber ?? null;
           }
           break;
 
@@ -255,7 +260,12 @@ export class ConfigService {
       maxNewsCount: settings.maxNewsCount ?? 50,
       enablePolls: settings.enablePolls ?? true,
       enableNews: settings.enableNews ?? true,
-      playerLogoUrl: settings.playerLogoUrl ?? null,
+      playerLogoUrl: settings.playerLogoUrl ?? undefined,
+      enableLiveInfo: settings.enableLiveInfo ?? false,
+      playerFacebookUrl: settings.playerFacebookUrl ?? undefined,
+      playerInstagramUrl: settings.playerInstagramUrl ?? undefined,
+      playerWhatsappNumber: settings.playerWhatsappNumber ?? undefined,
+      liveCallPhoneNumber: settings.liveCallPhoneNumber ?? undefined,
       cardDisplayMode: settings.cardDisplayMode ?? 'grid',
       maxFeaturedCards: settings.maxFeaturedCards ?? 3,
       enableCardAnimation: settings.enableCardAnimation ?? true,
@@ -309,6 +319,21 @@ export class ConfigService {
     if (settings.playerLogoUrl !== undefined) {
       playerConfig.playerLogoUrl = settings.playerLogoUrl;
     }
+    if (settings.enableLiveInfo !== undefined) {
+      playerConfig.enableLiveInfo = settings.enableLiveInfo;
+    }
+    if (settings.playerFacebookUrl !== undefined) {
+      playerConfig.playerFacebookUrl = settings.playerFacebookUrl;
+    }
+    if (settings.playerInstagramUrl !== undefined) {
+      playerConfig.playerInstagramUrl = settings.playerInstagramUrl;
+    }
+    if (settings.playerWhatsappNumber !== undefined) {
+      playerConfig.playerWhatsappNumber = settings.playerWhatsappNumber;
+    }
+    if (settings.liveCallPhoneNumber !== undefined) {
+      playerConfig.liveCallPhoneNumber = settings.liveCallPhoneNumber;
+    }
 
     if (settings.cardDisplayMode !== undefined) {
       cardsConfig.cardDisplayMode = settings.cardDisplayMode;
@@ -331,7 +356,7 @@ export class ConfigService {
       updates['app_config'] = appConfig;
     }
     if (Object.keys(playerConfig).length > 0) {
-      updates['player_config'] = playerConfig;
+      updates['player'] = playerConfig;
     }
     if (Object.keys(cardsConfig).length > 0) {
       updates['cards_config'] = cardsConfig;
@@ -353,6 +378,11 @@ export class ConfigService {
       enablePolls: true,
       enableNews: true,
       playerLogoUrl: undefined,
+      enableLiveInfo: false,
+      playerFacebookUrl: undefined,
+      playerInstagramUrl: undefined,
+      playerWhatsappNumber: undefined,
+      liveCallPhoneNumber: undefined,
       cardDisplayMode: 'grid',
       maxFeaturedCards: 3,
       enableCardAnimation: true,
