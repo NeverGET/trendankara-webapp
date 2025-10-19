@@ -1,6 +1,6 @@
-# Privacy Policy Documentation
+# Privacy Policy & Legal Documentation
 
-This directory contains all documentation needed to implement the privacy policy for TrendAnkara mobile app store release.
+This directory contains all legal documentation needed for TrendAnkara mobile app store release, including Privacy Policy and Terms & Conditions.
 
 ## Documents
 
@@ -27,6 +27,31 @@ This directory contains all documentation needed to implement the privacy policy
 
 **Use this** for day-to-day implementation tracking.
 
+### 3. `terms-and-conditions.html` ✅ **COMPLETE**
+**English Terms & Conditions**:
+- Ready-to-deploy HTML file
+- Dark theme matching TrendAnkara branding
+- Mobile-responsive design
+- All legal sections included
+- Company information filled in
+- URL: `https://trendankara.com/terms-and-conditions.html`
+
+### 4. `kullanim-kosullari.html` ✅ **COMPLETE**
+**Turkish Terms & Conditions** (Kullanım Koşulları):
+- Complete Turkish translation
+- Dark theme matching TrendAnkara branding
+- Mobile-responsive design
+- All legal sections included
+- Company information filled in
+- URL: `https://trendankara.com/kullanim-kosullari.html`
+
+### 5. `kunye.html` ✅ **COMPLETE**
+**Company Information** (Künye):
+- Turkish company details
+- Radio station licensing info
+- Contact information
+- URL: `https://trendankara.com/kunye.html`
+
 ## Quick Start
 
 ### For Webapp Team
@@ -42,17 +67,38 @@ This directory contains all documentation needed to implement the privacy policy
 1. Wait for privacy policy to be deployed
 2. Update `app.json` with privacy policy URL
 3. Remove invalid schema properties
-4. Add link in Settings screen
-5. Enter URL in store submission forms
+4. Add links to ALL legal pages in Settings screen:
+   - Privacy Policy (Gizlilik Politikası)
+   - Terms & Conditions (Kullanım Koşulları)
+   - Künye (Company Identity)
+5. Enter URLs in store submission forms
 6. Test and submit
+
+**📖 Complete Mobile Integration Guide**: [`../api/mobile-legal-pages-integration.md`](../api/mobile-legal-pages-integration.md)
 
 ## Critical Facts
 
-✅ **Privacy policy is MANDATORY** - app will be rejected without it
+✅ **Privacy Policy is MANDATORY** - app will be rejected without it
+✅ **Terms & Conditions are MANDATORY** - required by both app stores
 ✅ **Turkish-only is sufficient** for Turkey-focused app
+✅ **Both documents available** in Turkish and English
 ✅ **VERBIS registration required** (free, Turkey specific)
 ✅ **Must be publicly accessible** (no login)
 ✅ **Must load in < 3 seconds** on mobile
+
+## Available URLs
+
+Once deployed, the following pages will be accessible:
+
+| Document | Turkish | English | Mobile Required |
+|----------|---------|---------|-----------------|
+| **Privacy Policy** | (To be implemented) | (To be implemented) | ✅ YES |
+| **Terms & Conditions** | ✅ `kullanim-kosullari.html` | ✅ `terms-and-conditions.html` | ✅ YES |
+| **Company Info (Künye)** | ✅ `kunye.html` | - | ✅ YES (Turkish law) |
+
+**All three pages must be accessible from the mobile app Settings screen.**
+
+**📱 Mobile Integration**: See complete guide at [`../api/mobile-legal-pages-integration.md`](../api/mobile-legal-pages-integration.md)
 
 ## What Data Does the App Collect?
 
@@ -82,6 +128,11 @@ Estimated **1 week** from start to completion:
 
 ---
 
-**Status**: 📋 Documentation Complete - Ready for Implementation
+**Status**:
+- Privacy Policy: 📋 Documentation Complete - Ready for Implementation
+- Terms & Conditions: ✅ COMPLETE (HTML files ready)
+- Company Info: ✅ COMPLETE
+
 **Priority**: 🔴 CRITICAL (Blocks store submission)
 **Created**: October 17, 2025
+**Last Updated**: October 19, 2025 (Added Terms & Conditions)

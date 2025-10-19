@@ -10,6 +10,7 @@ This directory contains documentation for integrating with the Trend Ankara Radi
 - **[Mobile App Update Guide](./mobile-app-update-guide.md)** - Overview of API changes and migration guide
 - **[Mobile Player Social Features](./mobile-player-social-features.md)** - Complete guide for social integration (WhatsApp, Instagram, Facebook, Phone)
 - **[Quick Reference](./mobile-player-social-quick-reference.md)** - Fast lookup guide for social features
+- **[Legal Pages Integration](./mobile-legal-pages-integration.md)** - 🔴 CRITICAL: Privacy Policy, Terms & Conditions, Künye integration
 
 ### Backend API Documentation
 - **[Radio Settings API](./radio-settings.md)** - Radio configuration endpoints
@@ -91,6 +92,18 @@ To update this documentation:
 3. Include code examples
 4. Test all example code
 5. Submit PR with clear description
+
+---
+
+## 🔴 **Critical: Legal Pages**
+
+All mobile apps MUST include these pages for app store approval:
+
+- ✅ **Privacy Policy** (Gizlilik Politikası) - MANDATORY
+- ✅ **Terms & Conditions** (Kullanım Koşulları) - MANDATORY
+- ✅ **Künye** (Company Identity) - MANDATORY for Turkish radio apps
+
+**Complete Guide**: [Legal Pages Integration](./mobile-legal-pages-integration.md)
 
 ---
 

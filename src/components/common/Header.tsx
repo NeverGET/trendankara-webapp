@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -26,8 +27,15 @@ export function Header({ user }: HeaderProps) {
         <div className="flex items-center justify-between h-14 md:h-[72px]">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 md:gap-3">
-            <div className="w-8 h-8 md:w-10 md:h-10 bg-brand-red-600 rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg md:text-xl">T</span>
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center bg-black">
+              <Image
+                src="/TrendAnkara_Logo.svg"
+                alt="Trend Ankara Logo"
+                width={40}
+                height={40}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <span className="text-lg md:text-xl font-bold text-foreground hidden sm:block">
               Trend Ankara

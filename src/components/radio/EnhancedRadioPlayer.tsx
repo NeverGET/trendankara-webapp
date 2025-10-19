@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRadioPlayer } from '@/hooks/useRadioPlayer';
 
@@ -108,8 +109,14 @@ export function EnhancedRadioPlayer() {
         <div className="flex items-center justify-between h-16 md:h-20 gap-2 md:gap-4">
           {/* Station Name - Desktop Only */}
           <div className="hidden md:flex items-center gap-3 min-w-[200px]">
-            <div className="w-10 h-10 bg-brand-red-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">T</span>
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-black">
+              <Image
+                src="/TrendAnkara_Logo.svg"
+                alt="Trend Ankara Logo"
+                width={40}
+                height={40}
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h3 className="text-sm font-bold text-dark-text-primary">Trend Ankara</h3>
