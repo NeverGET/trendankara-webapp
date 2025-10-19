@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { FaInstagram, FaWhatsapp } from 'react-icons/fa';
 
 export function Footer() {
   return (
@@ -9,8 +11,14 @@ export function Footer() {
           {/* Brand Section */}
           <div className="space-y-3 md:space-y-4">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-brand-red-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg md:text-xl">T</span>
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center bg-black">
+                <Image
+                  src="/TrendAnkara_Logo.svg"
+                  alt="Trend Ankara Logo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="text-lg md:text-xl font-bold text-dark-text-primary">
                 Trend Ankara
@@ -54,50 +62,44 @@ export function Footer() {
               İletişim
             </h3>
             <div className="space-y-1.5 md:space-y-2 text-dark-text-secondary text-xs md:text-sm">
-              <p>Email: info@trendankara.com</p>
-              <p>Telefon: +90 312 XXX XX XX</p>
-              <p>Adres: Ankara, Türkiye</p>
+              <p>
+                <a
+                  href="tel:03122791110"
+                  className="hover:text-dark-text-primary transition-colors"
+                >
+                  Reklam Hattı: 0312 279 11 10
+                </a>
+              </p>
+              <p>
+                <a
+                  href="https://wa.me/903122830606"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-dark-text-primary transition-colors"
+                >
+                  İstek Hattı: 0312 283 06 06
+                </a>
+              </p>
             </div>
             {/* Social Links */}
             <div className="flex gap-3">
               <a
-                href="#"
-                className="min-w-[44px] min-h-[44px] w-11 h-11 md:w-10 md:h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
-                aria-label="Facebook"
-              >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
-                </svg>
-              </a>
-              <a
-                href="#"
-                className="min-w-[44px] min-h-[44px] w-11 h-11 md:w-10 md:h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
-                aria-label="Twitter"
-              >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
-                </svg>
-              </a>
-              <a
-                href="#"
+                href="https://www.instagram.com/radyotrendankara"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="min-w-[44px] min-h-[44px] w-11 h-11 md:w-10 md:h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
                 aria-label="Instagram"
               >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
+                <FaInstagram className="h-5 w-5" />
               </a>
               <a
-                href="#"
+                href="https://wa.me/903122830606"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="min-w-[44px] min-h-[44px] w-11 h-11 md:w-10 md:h-10 rounded-lg bg-dark-surface-secondary flex items-center justify-center text-dark-text-secondary hover:bg-brand-red-600 hover:text-white transition-all"
-                aria-label="YouTube"
+                aria-label="WhatsApp"
               >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M22.54 6.42a2.78 2.78 0 00-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 2A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.4 19.6C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 001.94-2A29 29 0 0023 12a29 29 0 00-.46-5.58z" />
-                  <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="white" />
-                </svg>
+                <FaWhatsapp className="h-5 w-5" />
               </a>
             </div>
           </div>
@@ -109,16 +111,34 @@ export function Footer() {
             </h3>
             <nav className="space-y-2">
               <Link
+                href="/kunye"
+                className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
+              >
+                Künye
+              </Link>
+              <Link
                 href="/gizlilik-politikasi"
                 className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
               >
                 Gizlilik Politikası
               </Link>
               <Link
+                href="/kullanim-kosullari"
+                className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
+              >
+                Kullanım Koşulları
+              </Link>
+              <Link
                 href="/privacy-policy"
                 className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
               >
                 Privacy Policy
+              </Link>
+              <Link
+                href="/terms-and-conditions"
+                className="block text-sm md:text-base text-dark-text-secondary hover:text-dark-text-primary transition-colors min-h-[44px] flex items-center"
+              >
+                Terms & Conditions
               </Link>
             </nav>
           </div>
