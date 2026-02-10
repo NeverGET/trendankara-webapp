@@ -111,7 +111,7 @@ export function EnhancedRadioPlayer() {
           <div className="hidden md:flex items-center gap-3 min-w-[200px]">
             <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center bg-black">
               <Image
-                src="/TrendAnkara_Logo.svg"
+                src="/TrendAnkara-Logo.png"
                 alt="Trend Ankara Logo"
                 width={40}
                 height={40}
