@@ -29,7 +29,7 @@ export function Header({ user }: HeaderProps) {
           <Link href="/" className="flex items-center gap-2 md:gap-3">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex items-center justify-center bg-black">
               <Image
-                src="/TrendAnkara_Logo.svg"
+                src="/TrendAnkara-Logo.png"
                 alt="Trend Ankara Logo"
                 width={40}
                 height={40}
