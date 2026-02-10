@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRadioPlayer } from '@/hooks/useRadioPlayer';
-import { FaPlay } from 'react-icons/fa';
-import Image from 'next/image';
-import { AutoSlidingNewsCarousel } from '@/components/news/AutoSlidingNewsCarousel';
-import { NewsGrid } from '@/components/news/NewsGrid';
-import { NewsModal } from '@/components/news/NewsModal';
-import { PollCard } from '@/components/polls/PollCard';
-import { VoteModal } from '@/components/polls/VoteModal';
-import { Button } from '@/components/ui/button';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { getFeaturedNews, getNews, getNewsArticle } from '@/lib/api/news';
-import { getActivePolls, submitVote } from '@/lib/api/polls';
-import { NewsArticle } from '@/types/news';
-import { Poll } from '@/types/polls';
-import Link from 'next/link';
+import React, { useEffect, useState } from "react";
+import { useRadioPlayer } from "@/hooks/useRadioPlayer";
+import { FaPlay } from "react-icons/fa";
+import Image from "next/image";
+import { AutoSlidingNewsCarousel } from "@/components/news/AutoSlidingNewsCarousel";
+import { NewsGrid } from "@/components/news/NewsGrid";
+import { NewsModal } from "@/components/news/NewsModal";
+import { PollCard } from "@/components/polls/PollCard";
+import { VoteModal } from "@/components/polls/VoteModal";
+import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { getFeaturedNews, getNews, getNewsArticle } from "@/lib/api/news";
+import { getActivePolls, submitVote } from "@/lib/api/polls";
+import { NewsArticle } from "@/types/news";
+import { Poll } from "@/types/polls";
+import Link from "next/link";
 
 export default function HomePageClient() {
   const { play, isPlaying } = useRadioPlayer();
@@ -23,7 +23,9 @@ export default function HomePageClient() {
   // News state
   const [allNews, setAllNews] = useState<NewsArticle[]>([]);
   const [recentNews, setRecentNews] = useState<NewsArticle[]>([]);
-  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(
+    null,
+  );
   const [newsModalOpen, setNewsModalOpen] = useState(false);
   const [newsLoading, setNewsLoading] = useState(true);
 
@@ -42,7 +44,7 @@ export default function HomePageClient() {
         setAllNews(response.articles || []);
         setRecentNews(response.articles?.slice(6) || []);
       } catch (error) {
-        console.error('Error loading news:', error);
+        console.error("Error loading news:", error);
       } finally {
         setNewsLoading(false);
       }
@@ -64,17 +66,19 @@ export default function HomePageClient() {
             setHasVoted(true);
           } else {
             // Show poll modal after a delay on first visit
-            const hasSeenPoll = sessionStorage.getItem(`poll_${polls[0].id}_seen`);
+            const hasSeenPoll = sessionStorage.getItem(
+              `poll_${polls[0].id}_seen`,
+            );
             if (!hasSeenPoll) {
               setTimeout(() => {
                 setPollModalOpen(true);
-                sessionStorage.setItem(`poll_${polls[0].id}_seen`, 'true');
+                sessionStorage.setItem(`poll_${polls[0].id}_seen`, "true");
               }, 3000);
             }
           }
         }
       } catch (error) {
-        console.error('Error loading polls:', error);
+        console.error("Error loading polls:", error);
       }
     };
     loadPolls();
@@ -106,7 +110,10 @@ export default function HomePageClient() {
 
   return (
     <>
-      <div className="mx-auto px-4 py-4 space-y-8" style={{ maxWidth: '1024px' }}>
+      <div
+        className="mx-auto px-4 py-4 space-y-8"
+        style={{ maxWidth: "1024px" }}
+      >
         {/* Hero Section */}
         <section className="relative py-4 md:py-6 text-center bg-gradient-to-br from-rose-950 via-red-950 to-rose-900 rounded-2xl shadow-2xl overflow-hidden">
           {/* Subtle overlay for depth */}
@@ -114,22 +121,27 @@ export default function HomePageClient() {
           <div className="relative space-y-2">
             {/* Logo Image - 16:9 aspect ratio with controlled height */}
             <div className="flex justify-center px-4">
-              <div className="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80" style={{ aspectRatio: '16/9' }}>
+              <div
+                className="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80"
+                style={{ aspectRatio: "16/9" }}
+              >
                 <Image
-                  src="/TrendAnkara-Logo.png"
+                  src="/Trendankara3.png"
                   alt="Trend Ankara Radio"
                   fill
                   className="object-cover object-center drop-shadow-2xl"
                   style={{
-                    objectPosition: '50% 50%',
-                    transform: 'scale(1.2)'
+                    objectPosition: "50% 50%",
+                    transform: "scale(1.2)",
                   }}
                   priority
                 />
               </div>
             </div>
             <p className="text-lg md:text-xl lg:text-2xl text-red-100 max-w-3xl mx-auto px-4">
-              {"Türkiye'nin en iyi radyo istasyonu. 24/7 kesintisiz müzik yayını."}
+              {
+                "Türkiye'nin en iyi radyo istasyonu. 24/7 kesintisiz müzik yayını."
+              }
             </p>
 
             <div className="mt-3 pb-2 flex justify-center">
@@ -151,7 +163,9 @@ export default function HomePageClient() {
                     <span className="w-1 h-8 bg-primary-400 animate-pulse rounded-full animation-delay-400"></span>
                     <span className="w-1 h-12 bg-primary-400 animate-pulse rounded-full animation-delay-600"></span>
                   </div>
-                  <span className="text-lg font-medium text-primary-400">Şu an yayında</span>
+                  <span className="text-lg font-medium text-primary-400">
+                    Şu an yayında
+                  </span>
                 </div>
               )}
             </div>
@@ -161,12 +175,16 @@ export default function HomePageClient() {
         {/* Auto-Sliding News Carousel */}
         {newsLoading ? (
           <section>
-            <h2 className="text-3xl font-bold text-dark-text-primary mb-8">Son Haberler</h2>
+            <h2 className="text-3xl font-bold text-dark-text-primary mb-8">
+              Son Haberler
+            </h2>
             <LoadingSpinner text="Haberler yükleniyor..." />
           </section>
         ) : allNews && allNews.length > 0 ? (
           <section>
-            <h2 className="text-3xl font-bold text-dark-text-primary mb-8">Son Haberler</h2>
+            <h2 className="text-3xl font-bold text-dark-text-primary mb-8">
+              Son Haberler
+            </h2>
             <AutoSlidingNewsCarousel
               items={allNews.slice(0, 6)}
               onItemClick={handleNewsClick}
@@ -177,9 +195,13 @@ export default function HomePageClient() {
           </section>
         ) : (
           <section>
-            <h2 className="text-3xl font-bold text-dark-text-primary mb-8">Son Haberler</h2>
+            <h2 className="text-3xl font-bold text-dark-text-primary mb-8">
+              Son Haberler
+            </h2>
             <div className="text-center py-12 bg-dark-surface-primary rounded-lg">
-              <p className="text-dark-text-secondary">Henüz haber bulunmuyor.</p>
+              <p className="text-dark-text-secondary">
+                Henüz haber bulunmuyor.
+              </p>
             </div>
           </section>
         )}
@@ -188,7 +210,9 @@ export default function HomePageClient() {
         {activePoll && (
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-dark-text-primary">Günün Anketi</h2>
+              <h2 className="text-2xl font-bold text-dark-text-primary">
+                Günün Anketi
+              </h2>
               <Link href="/polls">
                 <Button variant="ghost" size="sm">
                   Tüm Anketler →
@@ -213,17 +237,16 @@ export default function HomePageClient() {
         {recentNews && recentNews.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-dark-text-primary">Son Haberler</h2>
+              <h2 className="text-2xl font-bold text-dark-text-primary">
+                Son Haberler
+              </h2>
               <Link href="/news">
                 <Button variant="ghost" size="sm">
                   Tüm Haberler →
                 </Button>
               </Link>
             </div>
-            <NewsGrid
-              articles={recentNews}
-              onArticleClick={handleNewsClick}
-            />
+            <NewsGrid articles={recentNews} onArticleClick={handleNewsClick} />
           </section>
         )}
       </div>
