@@ -147,6 +147,27 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* TrendAnkara marka paleti.
+   Tailwind v4 `@import "tailwindcss"` ile calisiyor ve tailwind.config.ts'i
+   OKUMUYOR (ne bir @config direktifi var, ne de v4 onu otomatik yukluyor).
+   Bu yuzden marka renkleri burada tanimlanir; tailwind.config.ts icindeki ayni
+   olcek yalnizca referans olarak durur. Degeri degistirirken iki yeri birlikte
+   guncelleyin. Vurgu rengi: brand-red-600 = #dc2626 */
+@theme {
+  --color-brand-red-50: #fef2f2;
+  --color-brand-red-100: #fee2e2;
+  --color-brand-red-200: #fecaca;
+  --color-brand-red-300: #fca5a5;
+  --color-brand-red-400: #f87171;
+  --color-brand-red-500: #ef4444;
+  --color-brand-red-600: #dc2626;
+  --color-brand-red-700: #b91c1c;
+  --color-brand-red-800: #991b1b;
+  --color-brand-red-900: #7f1d1d;
+  --color-brand-black: #000000;
+  --color-brand-white: #ffffff;
+}
+
 /* Mobile-first responsive typography */
 @media (max-width: 640px) {
   html {
@@ -178,9 +199,29 @@
   }
 }
 
-/* Prevent horizontal scroll on mobile */
+/* Yatay kaymayi engelle.
+   NOT: Eskiden burada katmansiz bir `* { max-width: 100vw }` kurali vardi.
+   Katmansiz CSS, Tailwind'in @layer utilities katmanini kosulsuz ezdigi icin
+   sitedeki BUTUN `max-w-*` siniflari sessizce etkisiz kaliyordu. Ayni korumayi
+   tasiyan kurallar @layer base'e alindi; boylece utility siniflari kazanir. */
+html,
+body {
+  overflow-x: hidden;
+}
+
+@layer base {
+  img,
+  video,
+  canvas,
+  svg,
+  iframe,
+  table,
+  pre {
+    max-width: 100%;
+  }
+}
+
 * {
-  max-width: 100vw;
   overflow-wrap: break-word;
 }
 

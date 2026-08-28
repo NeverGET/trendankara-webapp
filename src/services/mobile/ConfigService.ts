@@ -207,51 +207,52 @@ export class ConfigService {
   private combineSettings(rows: SettingRow[]): MobileSettings {
     const settings: any = {};
 
+    // Ayarlar iki farkli anahtar isimlendirmesiyle kayitli olabiliyor:
+    // migration'in tohumladigi "<ad>_config" satirlari ve admin panelinin
+    // yazdigi kisa "<ad>" satirlari. Onceden burada "<ad>_config" okunuyordu,
+    // yani admin panelinde yapilan anket/haber/kart degisiklikleri mobil
+    // uygulamaya HIC ulasmiyordu. Artik adminin yazdigi kisa anahtar
+    // oncelikli; yoksa migration varsayilanina dusulur.
+    const byKey = new Map<string, any>();
     for (const row of rows) {
-      const value = row.setting_value;
+      if (row.setting_value) byKey.set(row.setting_key, row.setting_value);
+    }
+    const pick = (base: string) => byKey.get(base) ?? byKey.get(`${base}_config`);
 
-      switch (row.setting_key) {
-        case 'polls_config':
-          if (value) {
-            settings.showOnlyLastActivePoll = value.showOnlyLastActivePoll ?? false;
-            settings.enablePolls = value.enablePolls ?? true;
-          }
-          break;
+    const polls = pick('polls');
+    if (polls) {
+      settings.showOnlyLastActivePoll = polls.showOnlyLastActivePoll ?? false;
+      settings.enablePolls = polls.enablePolls ?? true;
+    }
 
-        case 'news_config':
-          if (value) {
-            settings.maxNewsCount = value.maxNewsCount ?? 50;
-            settings.enableNews = value.enableNews ?? true;
-          }
-          break;
+    const news = pick('news');
+    if (news) {
+      settings.maxNewsCount = news.maxNewsCount ?? 50;
+      settings.enableNews = news.enableNews ?? true;
+    }
 
-        case 'app_config':
-          if (value) {
-            settings.maintenanceMode = value.maintenanceMode ?? false;
-            settings.minimumAppVersion = value.minimumAppVersion ?? '1.0.0';
-            settings.forceUpdate = value.forceUpdate ?? false;
-          }
-          break;
+    const app = pick('app');
+    if (app) {
+      settings.maintenanceMode = app.maintenanceMode ?? false;
+      settings.minimumAppVersion = app.minimumAppVersion ?? '1.0.0';
+      settings.forceUpdate = app.forceUpdate ?? false;
+    }
 
-        case 'player':
-          if (value) {
-            settings.playerLogoUrl = value.playerLogoUrl ?? null;
-            settings.enableLiveInfo = value.enableLiveInfo ?? false;
-            settings.playerFacebookUrl = value.playerFacebookUrl ?? null;
-            settings.playerInstagramUrl = value.playerInstagramUrl ?? null;
-            settings.playerWhatsappNumber = value.playerWhatsappNumber ?? null;
-            settings.liveCallPhoneNumber = value.liveCallPhoneNumber ?? null;
-          }
-          break;
+    const player = pick('player');
+    if (player) {
+      settings.playerLogoUrl = player.playerLogoUrl ?? null;
+      settings.enableLiveInfo = player.enableLiveInfo ?? false;
+      settings.playerFacebookUrl = player.playerFacebookUrl ?? null;
+      settings.playerInstagramUrl = player.playerInstagramUrl ?? null;
+      settings.playerWhatsappNumber = player.playerWhatsappNumber ?? null;
+      settings.liveCallPhoneNumber = player.liveCallPhoneNumber ?? null;
+    }
 
-        case 'cards_config':
-          if (value) {
-            settings.cardDisplayMode = value.cardDisplayMode ?? 'grid';
-            settings.maxFeaturedCards = value.maxFeaturedCards ?? 3;
-            settings.enableCardAnimation = value.enableCardAnimation ?? true;
-          }
-          break;
-      }
+    const cards = pick('cards');
+    if (cards) {
+      settings.cardDisplayMode = cards.cardDisplayMode ?? 'grid';
+      settings.maxFeaturedCards = cards.maxFeaturedCards ?? 3;
+      settings.enableCardAnimation = cards.enableCardAnimation ?? true;
     }
 
     // Ensure all required fields have defaults
