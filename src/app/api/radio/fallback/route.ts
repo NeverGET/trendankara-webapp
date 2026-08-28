@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getFallbackUrl } from '@/lib/db/queries/radioSettings';
+import { getRadioConfigFromEnv } from '@/lib/config/radio';
 
 /**
  * API endpoint for radio fallback URL configuration
@@ -23,7 +24,7 @@ export async function GET() {
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch fallback URL',
-      fallbackUrl: process.env.RADIO_BACKUP_STREAM_URL || process.env.RADIO_STREAM_URL || null
+      fallbackUrl: process.env.RADIO_BACKUP_STREAM_URL || getRadioConfigFromEnv().streamUrl
     }, { status: 500 });
   }
 }

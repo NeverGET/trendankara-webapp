@@ -125,6 +125,10 @@ export interface StreamMetadata {
     sampleRate?: number;
     /** Number of audio channels */
     channels?: number;
+    /** Live listener count (AzuraCast only) */
+    currentListeners?: number;
+    /** Which upstream endpoint served the metadata (AzuraCast only) */
+    endpoint?: string;
   };
 }
 
@@ -164,7 +168,8 @@ export enum AudioFormat {
  */
 export enum ServerType {
   Shoutcast = 'Shoutcast',
-  Icecast = 'Icecast'
+  Icecast = 'Icecast',
+  AzuraCast = 'AzuraCast'
 }
 
 /**

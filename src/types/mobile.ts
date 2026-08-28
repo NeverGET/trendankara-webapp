@@ -38,6 +38,19 @@ export interface MobileRadioConfig {
 
   /** Optional player logo URL for custom player branding */
   playerLogoUrl?: string;
+  /**
+   * Which metadata dialect the configured server speaks.
+   * Additive and optional — the already-published app ignores it.
+   */
+  provider?: 'azuracast' | 'shoutcast';
+
+  /**
+   * Best now-playing endpoint for the resolved provider: the AzuraCast
+   * now-playing API, or the Shoutcast `currentsong` path.
+   * Additive and optional.
+   */
+  now_playing_url?: string;
+
 }
 
 /**

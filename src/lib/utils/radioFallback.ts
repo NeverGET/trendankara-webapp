@@ -16,6 +16,10 @@
 import { StreamValidationResult, testStreamConnection } from '@/lib/db/queries/radioSettings';
 import { RadioErrorType, RadioErrorHandler } from '@/lib/utils/radioErrorHandler';
 import { logInfo, logWarning, logError, createPrefixedLogger } from '@/lib/utils/logger';
+import {
+  RADIO_DEFAULT_SECONDARY_STREAM_URL,
+  RADIO_DEFAULT_STREAM_URL,
+} from '@/lib/config/radioDefaults';
 
 // Prefixed logger for fallback operations
 const logger = createPrefixedLogger('RadioFallback');
@@ -176,8 +180,8 @@ export async function getFallbackUrls(): Promise<FallbackUrlConfig[]> {
 
     // Priority 5: Default fallback URLs (hardcoded reliable sources)
     const defaultFallbacks = [
-      'https://radyo.yayin.com.tr:5132/stream',
-      'https://stream.radyotrendankara.com/listen',
+      RADIO_DEFAULT_STREAM_URL,
+      RADIO_DEFAULT_SECONDARY_STREAM_URL,
     ];
 
     defaultFallbacks.forEach((url, index) => {
@@ -203,7 +207,7 @@ export async function getFallbackUrls(): Promise<FallbackUrlConfig[]> {
 
     // Return minimal default fallback
     return [{
-      url: 'https://radyo.yayin.com.tr:5132/stream',
+      url: RADIO_DEFAULT_STREAM_URL,
       priority: 999,
       source: 'default',
       description: 'Emergency default fallback URL',

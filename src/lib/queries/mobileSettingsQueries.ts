@@ -170,7 +170,10 @@ export class MobileSettingsQueries {
       {
         key: 'player',
         value: {
-          streamUrl: 'https://radyodinle1.turkhosted.com/yayin?uri=shoutcast2.netdirekt.com.tr:8046/stream',
+          // NOTE: no `streamUrl` here on purpose. The stream URL lives in
+          // `radio_settings` and is resolved through `@/lib/config/radio`
+          // (database -> env -> default); a copy in `mobile_settings` was only
+          // ever written, never read.
           playerBackgroundUrl: null,
           enableLiveInfo: true
         },

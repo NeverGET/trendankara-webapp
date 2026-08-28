@@ -280,7 +280,10 @@ export function validateEnv(): AppConfig {
       radioConfig = {
         streamUrl: validateRequired('RADIO_STREAM_URL', process.env.RADIO_STREAM_URL),
         metadataUrl: validateRequired('RADIO_METADATA_URL', process.env.RADIO_METADATA_URL),
-        corsProxy: validateRequired('RADIO_CORS_PROXY', process.env.RADIO_CORS_PROXY),
+        // Optional since the AzuraCast migration: AzuraCast sends
+        // `Access-Control-Allow-Origin: *` on both its API and its mount, so no
+        // proxy is needed. Only the legacy Shoutcast path still uses one.
+        corsProxy: validateOptional(process.env.RADIO_CORS_PROXY, ''),
       };
     } catch (error) {
       errors.push(`Radio configuration error: ${error instanceof Error ? error.message : 'Unknown error'}`);

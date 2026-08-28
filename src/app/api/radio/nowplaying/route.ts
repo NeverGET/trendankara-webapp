@@ -1,18 +1,42 @@
 import { NextResponse } from 'next/server';
+import { getRadioNowPlaying, toDisplayText } from '@/lib/utils/radioNowPlaying';
 
+/**
+ * GET /api/radio/nowplaying
+ *
+ * Contract (unchanged): `{ nowPlaying: string }` — RadioPlayerContext polls this
+ * every 10 seconds and reads `nowPlaying` only. Extra fields below are additive.
+ *
+ * This proxy NEVER fails: a fetch error, a bad payload, an offline station or a
+ * "Station Offline" track all resolve to Turkish placeholder copy with HTTP 200,
+ * so the client needs no error UI.
+ */
 export async function GET() {
-  try {
-    const response = await fetch('https://radyo.yayin.com.tr:5132/currentsong', {
-      cache: 'no-store'
-    });
+  const result = await getRadioNowPlaying();
 
-    if (response.ok) {
-      const text = await response.text();
-      return NextResponse.json({ nowPlaying: text });
+  return NextResponse.json(
+    {
+      // --- existing contract ---
+      nowPlaying: toDisplayText(result),
+
+      // --- additive ---
+      artist: result.data.artist,
+      title: result.data.title,
+      art: result.data.art,
+      playingNext: result.data.playingNext,
+      songHistory: result.data.songHistory,
+      duration: result.data.duration,
+      elapsed: result.data.elapsed,
+      isOnline: result.data.streamStatus,
+      provider: result.provider,
+      source: result.endpointKind,
+    },
+    {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
     }
-  } catch (error) {
-    // Return empty if error
-  }
-
-  return NextResponse.json({ nowPlaying: 'Now Playing info goes here' });
+  );
 }

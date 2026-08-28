@@ -51,9 +51,9 @@ jobs:
               -e MINIO_SECRET_KEY=minioadmin123 \
               -e MINIO_BUCKET=media \
               -e MINIO_USE_SSL=false \
-              -e RADIO_STREAM_URL=https://radyo.yayin.com.tr:5132/stream \
-              -e RADIO_METADATA_URL=https://radyo.yayin.com.tr:5132/ \
-              -e RADIO_BACKUP_STREAM_URL=https://radyo.yayin.com.tr:5132/stream \
+              -e RADIO_STREAM_URL=https://stream.netradyom.com/listen/trendradyo/radio.mp3 \
+              -e RADIO_METADATA_URL=https://stream.netradyom.com/api/nowplaying/trendradyo \
+              -e RADIO_BACKUP_STREAM_URL=https://stream.netradyom.com/listen/trendradyo/radio.mp3 \
               -e RADIO_CORS_PROXY=https://cros9.yayin.com.tr \
               -e STREAM_TEST_RATE_LIMIT=10 \
               -e GENERAL_API_RATE_LIMIT=100 \

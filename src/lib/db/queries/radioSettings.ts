@@ -13,6 +13,7 @@ import {
 } from './index';
 import { db } from '@/lib/db/client';
 import { StreamConfigurationData } from '@/types/radioSettings';
+import { RADIO_DEFAULT_STREAM_URL } from '@/lib/config/radioDefaults';
 
 /**
  * Radio Settings Database Queries
@@ -493,7 +494,7 @@ export async function getStreamUrlWithFallback(): Promise<{ url: string; isFallb
 
     // No fallback available, return main URL anyway
     return {
-      url: settings?.stream_url || 'https://radyo.yayin.com.tr:5132/stream',
+      url: settings?.stream_url || RADIO_DEFAULT_STREAM_URL,
       isFallback: false
     };
   } catch (error) {
@@ -501,7 +502,7 @@ export async function getStreamUrlWithFallback(): Promise<{ url: string; isFallb
 
     // Return default fallback
     return {
-      url: process.env.RADIO_STREAM_URL || 'https://radyo.yayin.com.tr:5132/stream',
+      url: process.env.RADIO_STREAM_URL || RADIO_DEFAULT_STREAM_URL,
       isFallback: true
     };
   }

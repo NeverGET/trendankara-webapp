@@ -1,5 +1,7 @@
 import { db } from '@/lib/db/client';
 import { count } from '@/lib/db/queries';
+import { getRadioEndpoints } from '@/lib/config/radio';
+import { enrichWithLegacyCounters, getRadioNowPlaying } from '@/lib/utils/radioNowPlaying';
 
 /**
  * Dashboard Statistics Interface
@@ -46,20 +48,20 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     };
 
     try {
-      const radioResponse = await fetch('https://radyo.yayin.com.tr:5132/stats?json=1', {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-        cache: 'no-store',
-        signal: AbortSignal.timeout(5000) // 5 second timeout
-      });
+      // Provider-aware (AzuraCast or Shoutcast) — resolved from radio_settings.
+      const endpoints = await getRadioEndpoints();
+      const result = await getRadioNowPlaying(endpoints);
 
-      if (radioResponse.ok) {
-        const radioData = await radioResponse.json();
+      if (result.success) {
+        const data =
+          result.provider === 'azuracast'
+            ? await enrichWithLegacyCounters(endpoints, result.data)
+            : result.data;
+
         radioStats = {
-          currentListeners: radioData.currentlisteners || 0,
-          peakListeners: radioData.peaklisteners || 0,
-          streamStatus: radioData.streamstatus === 1
+          currentListeners: data.currentListeners,
+          peakListeners: data.peakListeners,
+          streamStatus: data.streamStatus
         };
       }
     } catch (radioError) {

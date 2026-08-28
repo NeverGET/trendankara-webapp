@@ -3,6 +3,7 @@ import { PasswordChangeForm } from '@/components/admin/PasswordChangeForm';
 import { StreamUrlConfigForm } from '@/components/admin/StreamUrlConfigForm';
 import { FiLock, FiUser, FiRadio } from 'react-icons/fi';
 import { Suspense } from 'react';
+import { RADIO_DEFAULT_STREAM_URL } from '@/lib/config/radioDefaults';
 
 export default function AdminSettingsPage() {
   return (
@@ -80,7 +81,7 @@ export default function AdminSettingsPage() {
           }
         >
           <StreamUrlConfigForm
-            initialData={{ stream_url: 'https://radyo.yayin.com.tr:5132/stream' }}
+            initialData={{ stream_url: RADIO_DEFAULT_STREAM_URL }}
             className="border-0 shadow-none bg-transparent"
           />
         </Suspense>

@@ -1,34 +1,52 @@
 import { NextResponse } from 'next/server';
+import { getRadioEndpoints } from '@/lib/config/radio';
+import { enrichWithLegacyCounters, getRadioNowPlaying } from '@/lib/utils/radioNowPlaying';
 
+/**
+ * GET /api/test/radio
+ *
+ * Diagnostic view of whatever the configured provider reports. Contract kept:
+ * `{ success, raw, formatted }` — `raw` is now the normalized payload plus the
+ * resolved endpoints, which is far more useful than the old Shoutcast blob.
+ */
 export async function GET() {
   try {
-    // Test fetching radio stats directly
-    const response = await fetch('https://radyo.yayin.com.tr:5132/stats?json=1', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-      cache: 'no-store'
-    });
+    const endpoints = await getRadioEndpoints();
+    const result = await getRadioNowPlaying(endpoints);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.success) {
+      return NextResponse.json({
+        success: false,
+        error: result.error || 'Unknown error',
+        provider: endpoints.provider,
+        endpointTried: result.endpointUsed
+      });
     }
 
-    const data = await response.json();
+    const data =
+      result.provider === 'azuracast'
+        ? await enrichWithLegacyCounters(endpoints, result.data)
+        : result.data;
 
     return NextResponse.json({
       success: true,
-      raw: data,
+      raw: {
+        provider: result.provider,
+        endpointUsed: result.endpointUsed,
+        endpointKind: result.endpointKind,
+        endpoints,
+        normalized: data
+      },
       formatted: {
-        currentListeners: data.currentlisteners || 0,
-        peakListeners: data.peaklisteners || 0,
-        uniqueListeners: data.uniquelisteners || 0,
-        streamStatus: data.streamstatus === 1,
-        songTitle: data.songtitle || 'Bilgi yok',
-        serverTitle: data.servertitle || 'Radyo',
-        bitrate: data.bitrate || '128',
-        uptime: data.streamuptime || 0,
-        uptimeFormatted: formatUptime(data.streamuptime || 0)
+        currentListeners: data.currentListeners,
+        peakListeners: data.peakListeners,
+        uniqueListeners: data.uniqueListeners,
+        streamStatus: data.streamStatus,
+        songTitle: data.currentSong || 'Bilgi yok',
+        serverTitle: data.serverTitle || 'Radyo',
+        bitrate: data.bitrate,
+        uptime: data.streamUptime,
+        uptimeFormatted: formatUptime(data.streamUptime)
       }
     });
   } catch (error) {

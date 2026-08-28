@@ -1,92 +1,105 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActiveSettings, getStreamUrlWithFallback } from '@/lib/db/queries/radioSettings';
+import { getRadioConfig, getRadioConfigFromEnv, type ResolvedRadioConfig } from '@/lib/config/radio';
+import { getStreamUrlWithFallback } from '@/lib/db/queries/radioSettings';
 
 /**
- * Public API endpoint for radio configuration
- * Fetches configuration from database with environment variable fallbacks
- * Supports requirements 2.4 (settings reload) and 3.1 (fast config updates)
+ * Public API endpoint for radio configuration.
+ *
+ * The single source of truth for the browser: the RadioPlayer and every other
+ * client surface reads its stream/metadata URLs from here rather than from a
+ * hard-coded literal. Resolution (database -> env -> default) lives in
+ * `@/lib/config/radio`.
+ *
+ * Supports requirements 2.4 (settings reload) and 3.1 (fast config updates).
  */
+
+function toPayload(config: ResolvedRadioConfig, overrides?: {
+  streamUrl?: string;
+  isFallbackUrl?: boolean;
+}) {
+  const payload: Record<string, unknown> = {
+    // --- existing contract ---
+    stream_url: overrides?.streamUrl ?? config.streamUrl,
+    metadata_url: config.metadataUrl,
+    station_name: config.stationName,
+    station_description: config.stationDescription,
+    social_links: {
+      facebook: config.socialLinks.facebook,
+      twitter: config.socialLinks.twitter,
+      instagram: config.socialLinks.instagram,
+      youtube: config.socialLinks.youtube,
+    },
+    is_active: config.isActive,
+    updated_at: config.updatedAt,
+    cors_proxy: config.endpoints.corsProxy,
+
+    // --- additive ---
+    config_source: config.source,
+    provider: config.endpoints.provider,
+  };
+
+  if (overrides?.isFallbackUrl !== undefined) {
+    payload.is_fallback_url = overrides.isFallbackUrl;
+  }
+
+  return payload;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // Try to fetch settings from database first with fallback mechanism
-    let radioConfig: any = null;
+    // Database -> environment -> hard-coded default. Never throws.
+    const config = await getRadioConfig();
 
-    try {
-      const dbSettings = await getActiveSettings();
-      if (dbSettings) {
-        // Get stream URL with automatic fallback if main URL fails
+    let streamUrl = config.streamUrl;
+    let isFallbackUrl: boolean | undefined;
+
+    // Only probe the fallback chain when the config actually came from the DB;
+    // env/default configs have nothing to fall back to.
+    if (config.source === 'database') {
+      try {
         const streamResult = await getStreamUrlWithFallback();
+        streamUrl = streamResult.url;
+        isFallbackUrl = streamResult.isFallback;
 
-        radioConfig = {
-          stream_url: streamResult.url,
-          metadata_url: dbSettings.metadata_url,
-          station_name: dbSettings.station_name,
-          station_description: dbSettings.station_description,
-          social_links: {
-            facebook: dbSettings.facebook_url,
-            twitter: dbSettings.twitter_url,
-            instagram: dbSettings.instagram_url,
-            youtube: dbSettings.youtube_url,
-          },
-          is_active: dbSettings.is_active,
-          updated_at: dbSettings.updated_at,
-          // Add fallback indicator for monitoring
-          is_fallback_url: streamResult.isFallback
-        };
-
-        // Log fallback usage for monitoring
         if (streamResult.isFallback) {
           console.warn('Radio config using fallback stream URL:', streamResult.url);
         }
+      } catch (fallbackError) {
+        console.warn('Stream fallback probe failed, using configured URL:', fallbackError);
       }
-    } catch (dbError) {
-      console.warn('Database query failed, falling back to environment variables:', dbError);
     }
 
-    // Fallback to environment variables if database config is not available
-    if (!radioConfig) {
-      radioConfig = {
-        stream_url: process.env.RADIO_STREAM_URL || 'https://radyo.yayin.com.tr:5132/stream',
-        metadata_url: process.env.RADIO_METADATA_URL || 'https://radyo.yayin.com.tr:5132/',
-        station_name: 'Trend Ankara Radio',
-        station_description: 'En güncel müzikler ve haberler',
-        social_links: {
-          facebook: null,
-          twitter: null,
-          instagram: null,
-          youtube: null,
+    const radioConfig = toPayload(config, { streamUrl, isFallbackUrl });
+
+    // ETag is derived from the resolved configuration only (no per-request
+    // timestamps), so repeat requests get a cheap 304 and an admin save
+    // produces a genuinely new tag.
+    const etag = `"radio-config-${Buffer.from(JSON.stringify(radioConfig)).toString('base64').slice(0, 16)}"`;
+
+    // Check for conditional requests before building the body
+    const ifNoneMatch = request.headers.get('if-none-match');
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ETag: etag,
+          'Cache-Control': 'public, max-age=0, must-revalidate, s-maxage=30, stale-while-revalidate=30',
         },
-        is_active: true,
-        updated_at: new Date().toISOString()
-      };
+      });
     }
 
-    // Add CORS proxy if available
-    if (process.env.RADIO_CORS_PROXY) {
-      radioConfig.cors_proxy = process.env.RADIO_CORS_PROXY;
-    }
-
-    // Prepare response with caching headers
     const response = NextResponse.json({
       success: true,
       data: radioConfig
     });
 
-    // Cache for 30 seconds to support fast updates (requirement 3.1)
-    // but still provide reasonable performance
-    response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30');
+    // Shared caches hold the config for 30s (requirement 3.1) but browsers
+    // always revalidate, so an admin save + `invalidateEntityCache('radio')`
+    // is visible on the next request instead of up to 30s later.
+    response.headers.set('Cache-Control', 'public, max-age=0, must-revalidate, s-maxage=30, stale-while-revalidate=30');
     response.headers.set('CDN-Cache-Control', 'public, max-age=30');
     response.headers.set('Vercel-CDN-Cache-Control', 'public, max-age=30');
-
-    // Add ETag for efficient caching
-    const etag = `"radio-config-${Buffer.from(JSON.stringify(radioConfig)).toString('base64').slice(0, 16)}"`;
     response.headers.set('ETag', etag);
-
-    // Check for conditional requests
-    const ifNoneMatch = request.headers.get('if-none-match');
-    if (ifNoneMatch === etag) {
-      return new NextResponse(null, { status: 304 });
-    }
 
     return response;
   } catch (error) {
@@ -96,20 +109,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch radio configuration',
-      data: {
-        stream_url: process.env.RADIO_STREAM_URL || 'https://radyo.yayin.com.tr:5132/stream',
-        metadata_url: process.env.RADIO_METADATA_URL || 'https://radyo.yayin.com.tr:5132/',
-        station_name: 'Trend Ankara Radio',
-        station_description: 'En güncel müzikler ve haberler',
-        social_links: {
-          facebook: null,
-          twitter: null,
-          instagram: null,
-          youtube: null,
-        },
-        is_active: true,
-        updated_at: new Date().toISOString()
-      }
+      data: toPayload(getRadioConfigFromEnv())
     }, { status: 500 });
   }
 }

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/client';
+import { getRadioEndpoints } from '@/lib/config/radio';
+import { enrichWithLegacyCounters, getRadioNowPlaying } from '@/lib/utils/radioNowPlaying';
 
 export async function GET() {
   try {
@@ -28,21 +30,22 @@ export async function GET() {
     };
 
     try {
-      const radioResponse = await fetch('https://radyo.yayin.com.tr:5132/stats?json=1', {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-        cache: 'no-store'
-      });
+      // Provider-aware (AzuraCast or Shoutcast) — resolved from radio_settings.
+      const endpoints = await getRadioEndpoints();
+      const result = await getRadioNowPlaying(endpoints);
 
-      console.log('Radio fetch response status:', radioResponse.status);
+      console.log('Radio provider:', result.provider, 'endpoint:', result.endpointUsed);
 
-      if (radioResponse.ok) {
-        const radioData = await radioResponse.json();
+      if (result.success) {
+        const data =
+          result.provider === 'azuracast'
+            ? await enrichWithLegacyCounters(endpoints, result.data)
+            : result.data;
+
         radioStats = {
-          currentListeners: radioData.currentlisteners || 0,
-          peakListeners: radioData.peaklisteners || 0,
-          streamStatus: radioData.streamstatus === 1
+          currentListeners: data.currentListeners,
+          peakListeners: data.peakListeners,
+          streamStatus: data.streamStatus
         };
         console.log('Radio data fetched successfully:', radioStats);
       }

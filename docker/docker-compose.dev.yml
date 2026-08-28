@@ -22,9 +22,12 @@ services:
       - MINIO_REGION=us-east-1
       - NEXTAUTH_URL=http://localhost:3000
       - NEXTAUTH_SECRET=dev-secret-change-in-production
-      - RADIO_STREAM_URL=https://radyo.yayin.com.tr:5132/stream
-      - RADIO_METADATA_URL=https://radyo.yayin.com.tr:5132/
-      - RADIO_CORS_PROXY=https://cros9.yayin.com.tr
+      # Yayin kaynagi: AzuraCast (istasyon kisa adi: trendradyo).
+      - RADIO_STREAM_URL=https://stream.netradyom.com/listen/trendradyo/radio.mp3
+      - RADIO_METADATA_URL=https://stream.netradyom.com/api/nowplaying/trendradyo
+      # AzuraCast sends Access-Control-Allow-Origin: * on both the API and the
+      # mount, so no CORS proxy is needed. Re-add it only if you go back to Shoutcast.
+      # - RADIO_CORS_PROXY=https://cros9.yayin.com.tr
       - API_VERSION=v1
       - MOBILE_API_KEY=dev-api-key-change-in-production
       - RATE_LIMIT_MOBILE=100

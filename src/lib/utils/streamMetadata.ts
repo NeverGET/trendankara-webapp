@@ -5,6 +5,13 @@
  */
 
 import { StreamMetadata, ServerType, AudioFormat, StreamTestResult } from '@/types/radioSettings';
+import {
+  describeAzuracastUrl,
+  normalizeCorsProxy,
+  toProxiedUrl,
+} from '@/lib/config/radioDefaults';
+import { fetchAzuracastNowPlayingWithFallback } from '@/lib/utils/azuracast';
+import { fixTurkishMojibake } from '@/lib/utils/turkishEncoding';
 
 /**
  * Metadata extraction result interface
@@ -117,13 +124,27 @@ export function parseStreamHeaders(headers: StreamHeaders): StreamMetadata {
  */
 export async function getCurrentSong(
   streamUrl: string,
-  timeout: number = 10000
+  timeout: number = 10000,
+  corsProxy?: string
 ): Promise<MetadataExtractionResult> {
   const startTime = Date.now();
 
+  // AzuraCast exposes a proper JSON now-playing API, which is both richer and
+  // far more reliable than scraping ICY headers off the mount. It also sends
+  // `Access-Control-Allow-Origin: *`, so the CORS proxy is skipped entirely.
+  const azuracast = describeAzuracastUrl(streamUrl);
+  if (azuracast) {
+    return getAzuracastMetadata(azuracast.nowPlayingUrls, timeout, startTime);
+  }
+
   try {
-    // Use CORS proxy for cross-origin requests to streaming servers
-    const proxyUrl = `https://cros9.yayin.com.tr/${streamUrl}`;
+    // Use CORS proxy for cross-origin requests to streaming servers.
+    // Callers on the server should pass the resolved proxy from
+    // `getRadioEndpoints()`; otherwise fall back to env/default.
+    const proxyUrl = toProxiedUrl(
+      streamUrl,
+      normalizeCorsProxy(corsProxy || process.env.RADIO_CORS_PROXY)
+    );
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -200,6 +221,54 @@ export async function getCurrentSong(
       responseTime
     };
   }
+}
+
+/**
+ * Read metadata from an AzuraCast station and map it onto {@link StreamMetadata}
+ * so the admin "test stream" / "test metadata" UI renders it unchanged.
+ *
+ * Tries the cached static file first, then the dynamic API. Turkish mojibake is
+ * already repaired by the AzuraCast normalizer; `fixTurkishMojibake` is applied
+ * to the station name here because that field comes straight off the payload.
+ */
+async function getAzuracastMetadata(
+  nowPlayingUrls: string[],
+  timeout: number,
+  startTime: number
+): Promise<MetadataExtractionResult> {
+  const result = await fetchAzuracastNowPlayingWithFallback(nowPlayingUrls, { timeout });
+  const responseTime = Date.now() - startTime;
+
+  if (!result.success || !result.data) {
+    return {
+      success: false,
+      error: result.error || 'AzuraCast metadata unavailable',
+      responseTime
+    };
+  }
+
+  const data = result.data;
+  const metadata: StreamMetadata = {
+    // Prefer the live track; fall back to the station name when idle.
+    streamTitle: data.currentSong || fixTurkishMojibake(data.serverTitle),
+    serverInfo: {
+      software: ServerType.AzuraCast,
+      description: fixTurkishMojibake(data.serverTitle)
+    },
+    extra: {
+      url: data.listenUrl ?? undefined,
+      contentType: 'application/json',
+      currentListeners: data.currentListeners,
+      endpoint: result.endpointKind
+    }
+  };
+
+  const bitrate = parseInt(data.bitrate, 10);
+  if (!isNaN(bitrate)) {
+    metadata.bitrate = bitrate;
+  }
+
+  return { success: true, metadata, responseTime };
 }
 
 /**

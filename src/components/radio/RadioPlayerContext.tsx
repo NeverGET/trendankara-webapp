@@ -1,7 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
-// Client-side component - use API calls instead of direct database imports
+// Client-side component - use API calls instead of direct database imports.
+// `radioDefaults` is dependency-free and safe in the browser bundle; the live
+// (database-backed) values arrive via GET /api/radio in reloadConfiguration().
+import {
+  RADIO_DEFAULT_METADATA_URL,
+  RADIO_DEFAULT_STREAM_URL,
+  RADIO_FALLBACK_TEXT,
+} from '@/lib/config/radioDefaults';
 import { createRadioEventManager, RADIO_EVENT_NAMES } from '@/lib/utils/radioEvents';
 import type { StreamConfigurationData } from '@/types/radioSettings';
 
@@ -42,8 +49,8 @@ interface RadioPlayerProviderProps {
 
 export function RadioPlayerProvider({
   children,
-  streamUrl: initialStreamUrl = 'https://radyo.yayin.com.tr:5132/stream',
-  metadataUrl: initialMetadataUrl = 'https://radyo.yayin.com.tr:5132/'
+  streamUrl: initialStreamUrl = RADIO_DEFAULT_STREAM_URL,
+  metadataUrl: initialMetadataUrl = RADIO_DEFAULT_METADATA_URL
 }: RadioPlayerProviderProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -64,7 +71,7 @@ export function RadioPlayerProvider({
     }
     return 0.7;
   });
-  const [currentSong, setCurrentSong] = useState('Now Playing info goes here');
+  const [currentSong, setCurrentSong] = useState(RADIO_FALLBACK_TEXT);
   const [currentListeners, setCurrentListeners] = useState(0);
   const [bitrate, setBitrate] = useState('128');
   const [streamHealth, setStreamHealth] = useState(100);

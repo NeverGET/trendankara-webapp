@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getActiveSettings, testStreamConnection } from '@/lib/db/queries/radioSettings';
+import { getRadioConfigFromEnv, deriveRadioEndpoints } from '@/lib/config/radio';
 import { MobileRadioConfig } from '@/types/mobile';
 import { CACHE_TAGS, cacheWithTag } from '@/lib/cache/invalidation';
 import { MobileSettingsQueries } from '@/lib/queries/mobileSettingsQueries';
@@ -174,8 +175,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Step 3: Retrieve active radio settings from database (cache miss or expired)
-    const activeSettings = await getActiveSettings();
+    // Step 3: Retrieve active radio settings from database (cache miss or expired).
+    //
+    // A database blip must NOT take the live mobile app's stream configuration
+    // down with it: this is the endpoint the published app calls to learn where
+    // to play from. Swallow the error and fall through to the env/default
+    // resolution below, mirroring the never-fail behaviour of /api/radio/*.
+    let activeSettings: Awaited<ReturnType<typeof getActiveSettings>> = null;
+    try {
+      activeSettings = await getActiveSettings();
+    } catch (dbError) {
+      console.warn('Radio settings lookup failed, using environment fallback:', dbError);
+    }
 
     let stream_url: string;
     let metadata_url: string | null = null;
@@ -188,14 +199,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       metadata_url = activeSettings.metadata_url;
       station_name = activeSettings.station_name;
     } else {
-      // Step 2: Fallback to environment variables (Requirement 5.4)
-      stream_url = process.env.RADIO_STREAM_URL || 'https://radyo.yayin.com.tr:5132/stream';
-      metadata_url = process.env.RADIO_METADATA_URL || null;
-      station_name = process.env.SITE_NAME || 'Trend Ankara Radio';
+      // Step 2: Fallback to environment variables, then the shared radio
+      // defaults (Requirement 5.4). Resolving through `@/lib/config/radio`
+      // keeps this route on the same AzuraCast-aware defaults as the web
+      // player instead of a stale hard-coded Shoutcast URL.
+      const envConfig = getRadioConfigFromEnv();
+      stream_url = envConfig.streamUrl;
+      metadata_url = envConfig.metadataUrl || null;
+      station_name = process.env.SITE_NAME || envConfig.stationName;
       usedFallback = true;
 
       console.warn('No active radio settings found in database, using environment fallback');
     }
+
+    // Provider is derived from whatever URLs we ended up with, so the app can
+    // tell AzuraCast from Shoutcast without another round trip. Purely
+    // additive — every pre-existing field above is untouched.
+    const endpoints = deriveRadioEndpoints({ streamUrl: stream_url, metadataUrl: metadata_url });
 
     // Step 3.1: Retrieve mobile settings for player logo URL (Requirements 6.3, 7.1)
     let playerLogoUrl: string | undefined = undefined;
@@ -256,7 +276,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       station_name,
       connection_status,
       last_tested,
-      playerLogoUrl
+      playerLogoUrl,
+      // --- additive, optional: safe for the already-published app to ignore ---
+      provider: endpoints.provider,
+      now_playing_url: endpoints.nowPlayingApiUrl ?? endpoints.currentSongUrl
     };
 
     // Step 6: Generate ETag for the new configuration
